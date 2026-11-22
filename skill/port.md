@@ -79,7 +79,7 @@ Answer a port request in this order:
 
 ## The plan's shape
 
-1. One customer's app from `rastrillo new --auth=magic`, one screen per
+1. One customer's app from `rastrillo new --auth=signin`, one screen per
    job, the rich parts as enhancements over forms.
 2. A script that splits the old database by tenant into one SQLite file
    per customer, and its uploads into the object store; rehearse it and

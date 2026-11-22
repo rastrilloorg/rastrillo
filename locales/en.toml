@@ -168,6 +168,7 @@ rastrillo.ui.signin_add_passkey_failed = "That didn't work. Try again, or choose
 rastrillo.ui.signin_add_authenticator_heading = "Add an authenticator app"
 rastrillo.ui.signin_add_authenticator_body = "Scan the code with your authenticator app, then type the code it shows."
 rastrillo.ui.signin_add_authenticator_key = "Can't scan the code? Type this key instead:"
+rastrillo.ui.signin_add_authenticator_qr = "QR code for your authenticator app"
 rastrillo.ui.signin_add_authenticator_submit = "Add authenticator app"
 rastrillo.ui.signin_add_authenticator_wrong = "That code didn't match. Try the latest code from your app."
 rastrillo.ui.signin_add_passphrase_heading = "Set a passphrase"

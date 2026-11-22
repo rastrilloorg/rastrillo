@@ -100,7 +100,7 @@ over its rail). A sign-in page: `stage`.
 To change an existing app's shell, start from
 `$(go list -m -f '{{.Dir}}' amadan.net/rastrillo/rastrillo)/ui/layouts/<shell>.html`
 and carry the app's own edits in `layout.html` across; copied over
-unread, they are lost. A `--auth=magic` app's Sign in/Sign out control
+unread, they are lost. A `--auth=signin` app's Sign in/Sign out control
 (`{{if not (opt $ "Base")}}…{{end}}`) moves into the account card,
 right after `{{block "account" .}}{{end}}`, as its last item, with
 `rst-btn` dropped and `data-busy="false"` on the sign-out form; in

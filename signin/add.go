@@ -2,7 +2,6 @@ package signin
 
 import (
 	"errors"
-	"html/template"
 	"net/http"
 	"net/url"
 	"time"
@@ -239,7 +238,7 @@ func (signins *Signins) authenticatorPage(
 		signins.broke(response, "begin an authenticator", err)
 		return
 	}
-	add.QR, add.Key = template.HTML(enrolment.QR), enrolment.Key
+	add.URI, add.Key = enrolment.URI, enrolment.Key
 	status := http.StatusOK
 	if add.Problem != "" {
 		status = http.StatusUnprocessableEntity

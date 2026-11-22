@@ -2,7 +2,7 @@
 
 `rastrillo new --scaffold=bare|single|accounts --theme=day|plain|signal
 --shell=column|topbar|sidebar|console|stage <name>` (also `--icons`,
-`--icon-delivery`, `--ux`, and `--auth=magic` for sign-in by emailed
+`--icon-delivery`, `--ux`, and `--auth=signin` for sign-in by emailed
 link, which `accounts` starts with) writes the whole app shape plus
 `go.mod`, migrations, templates, static assets, app-owned icons, a test
 harness including the browser drive, a `Makefile` whose `ci` target is

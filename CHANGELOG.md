@@ -10,6 +10,14 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+### Changed: `--auth=signin`
+
+- `rastrillo new --auth=signin` starts an app with sign-in by emailed link. People can add a passkey, authenticator app or passphrase. `--auth=magic` is the old name and creates the same app.
+
+### Changed: the QR code's label
+
+- The add page's authenticator app QR code now has a screen-reader label in the page's language. `totp.Enrolment.LabelledQR` draws a QR code with a label you provide. `signin.Add` now exposes `URI` and `Add.QR(label)`.
+
 ### Added: Fiesta 1.6.0, the stack and the spacing gates
 
 Rastrillo pins Fiesta 1.6.0, so `tokens.css` carries `rst-stack`: a column

@@ -12,7 +12,13 @@ import (
 // authKinds are the sign-ins `rastrillo new --auth` can start an app
 // with. "none" is the default and leaves the scaffold exactly as it
 // was: accounts are an opt-in, so no existing scaffold changes.
-var authKinds = []string{"none", "magic"}
+// "magic" is signin's old name, kept for the scripts and docs that
+// still use it.
+var authKinds = []string{"none", "signin", "magic"}
+
+func signsIn(kind string) bool {
+	return kind == "signin" || kind == "magic"
+}
 
 // magicAuth turns a freshly assembled scaffold into one that signs
 // people in by emailed link (rastrillo/auth, with ui's sign-in screen).
@@ -49,7 +55,7 @@ func applyMagicAuth(
 	edit.perf()
 	edit.agents()
 	if len(edit.problems) > 0 {
-		return fmt.Errorf("--auth=magic: the scaffold has moved under "+
+		return fmt.Errorf("--auth=signin: the scaffold has moved under "+
 			"it:\n  %s", strings.Join(edit.problems, "\n  "))
 	}
 	return formatGo(files)
@@ -361,7 +367,7 @@ func formatGo(files map[string]string) error {
 		}
 		formatted, err := format.Source([]byte(source))
 		if err != nil {
-			return fmt.Errorf("--auth=magic: %s does not parse: %w", path, err)
+			return fmt.Errorf("--auth=signin: %s does not parse: %w", path, err)
 		}
 		files[path] = string(formatted)
 	}

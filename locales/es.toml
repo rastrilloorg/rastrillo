@@ -168,6 +168,7 @@ rastrillo.ui.signin_add_passkey_failed = "Eso no ha funcionado. Inténtalo de nu
 rastrillo.ui.signin_add_authenticator_heading = "Añadir una app de autenticación"
 rastrillo.ui.signin_add_authenticator_body = "Escanea el código con tu app de autenticación y escribe el código que muestre."
 rastrillo.ui.signin_add_authenticator_key = "¿No puedes escanearlo? Escribe esta clave en su lugar:"
+rastrillo.ui.signin_add_authenticator_qr = "Código QR para tu app de autenticación"
 rastrillo.ui.signin_add_authenticator_submit = "Añadir app de autenticación"
 rastrillo.ui.signin_add_authenticator_wrong = "Ese código no coincide. Prueba con el código más reciente de tu app."
 rastrillo.ui.signin_add_passphrase_heading = "Crear una frase de contraseña"

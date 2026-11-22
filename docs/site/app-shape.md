@@ -13,7 +13,7 @@ internal/<app>/models.go       plain GORM structs
 internal/<app>/migrations.go   Schema and BootSchema
 ```
 
-An `accounts` app (`--scaffold accounts`, the same as `--auth=magic`)
+An `accounts` app (`--scaffold accounts`, the same as `--auth=signin`)
 also has `auth.go`, which signs people in by emailed link and holds the
 `owned` seam. A `bare` app is smaller: a page and a route on Go's
 `http.ServeMux`, with no database.
@@ -128,7 +128,7 @@ gets a CSRF check.
 empty `App` to list them, and `make routes` fails for an action that no
 route mounts. See [CLI](/docs/cli#rastrillo-routes).
 
-In an `--auth=magic` app, put sign-in in the guarded group and pages
+In an `--auth=signin` app, put sign-in in the guarded group and pages
 that need a session in their own group. A signed-out visitor who opens
 one of those pages is sent to sign in.
 
@@ -154,7 +154,7 @@ An action reads its input, runs one operation, answers a refusal, and
 says what success looks like. [action](/docs/reference/action) shows
 an action with a form.
 
-In an `--auth=magic` app, every query on an owned row goes through
+In an `--auth=signin` app, every query on an owned row goes through
 `app.owned`, in `auth.go`:
 
 ```go

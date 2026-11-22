@@ -73,7 +73,7 @@ func TestAddAuthenticatorConfirmsOneCode(t *testing.T) {
 	shown := only(t, views)
 	add := shown.Add
 	if shown.Status != http.StatusOK || add.Way != Authenticator ||
-		add.Key == "" || !strings.HasPrefix(string(add.QR), "<svg") ||
+		add.Key == "" || !strings.Contains(add.URI, "secret="+add.Key) ||
 		add.Action != AddAuthenticatorPath || add.ReturnTo != "/reports" {
 		t.Fatalf("add page: %d %+v", shown.Status, add)
 	}
@@ -115,7 +115,7 @@ func TestTwoTabsAddingTheAuthenticator(t *testing.T) {
 	test.get(test.signins.ShowAddAuthenticator, AddAuthenticatorPath,
 		cookie)
 	second := only(t, views).Add
-	if first.Key != second.Key || first.QR != second.QR {
+	if first.Key != second.Key || first.URI != second.URI {
 		t.Fatalf("the second tab began again: %q then %q", first.Key,
 			second.Key)
 	}

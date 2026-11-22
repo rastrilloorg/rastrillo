@@ -162,7 +162,7 @@ func (h *Handlers) Pending(subject, account string) (Enrolment, bool, error) {
 func (h *Handlers) enrolment(secret []byte, account string) (Enrolment, error) {
 	key := b32.EncodeToString(secret)
 	uri := keyURI(h.cfg.Issuer, account, key)
-	svg, err := qrSVG(uri, "QR code for your authenticator app")
+	svg, err := qrSVG(uri, englishQRLabel)
 	if err != nil {
 		return Enrolment{}, err
 	}

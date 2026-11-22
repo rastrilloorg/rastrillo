@@ -56,8 +56,7 @@ func runNew(args []string) error {
 	shell := fset.String("shell", "column", "layout shell: "+strings.Join(ui.LayoutNames(), ", "))
 	// No default: flag would print (default "en") after the help's own.
 	locale := fset.String("locale", "", fmt.Sprintf(newLocaleFlagMsg, strings.Join(rastrillo.BaseLocales(), ", ")))
-	authKind := fset.String("auth", "none", newAuthFlagMsg+
-		strings.Join(authKinds, ", ")+newAuthFlagAccountsMsg)
+	authKind := fset.String("auth", "none", newAuthFlagMsg)
 	// No default, like --locale: the help's own wording carries it.
 	scaffold := fset.String("scaffold", "", newScaffoldFlagMsg)
 	designOn := fset.Bool("design-system", true, newDesignSystemFlagMsg)
@@ -198,7 +197,7 @@ func writeSingle(options newOpts) error {
 		files[filepath.Join(appDir, "static", name)] = string(content)
 	}
 
-	if options.Auth == "magic" {
+	if signsIn(options.Auth) {
 		if err := applyMagicAuth(files, name, pkg, appDir); err != nil {
 			return err
 		}

@@ -54,7 +54,7 @@
 {{if not $preview}}<noscript><p>{{T $L "rastrillo.ui.signin_passkey_noscript"}}</p></noscript>
 <script type="module" src="{{$a.Passkey.ScriptURL}}"></script>
 {{end}}{{else if eq $way "authenticator"}}<p>{{T $L "rastrillo.ui.signin_add_authenticator_body"}}</p>
-{{$a.QR}}
+{{$a.QR (T $L "rastrillo.ui.signin_add_authenticator_qr")}}
 <p>{{T $L "rastrillo.ui.signin_add_authenticator_key"}} <code>{{$a.Key}}</code></p>
 <form rst-signin-form method="post" action="{{$a.Action}}">{{with $a.ReturnTo}}<input type="hidden" name="return_to" value="{{.}}">
 {{end}}{{template "field" (dict "L" $L "ID" "rst-signin-code" "Name" "code" "Label" (T $L "rastrillo.ui.signin_code") "Type" "text" "Inputmode" "numeric" "Autocomplete" "one-time-code" "Required" true "Autofocus" (ne $err "") "Error" $err "QuietError" true)}}

@@ -23,8 +23,9 @@ const (
 	newReservedHomeMsg = "Plan 4 of the multi-instance apps roadmap"
 	newReservedHubMsg  = "Plan 6 of the multi-instance apps roadmap"
 
-	newAuthFlagMsg         = "sign-in the app starts with: "
-	newAuthFlagAccountsMsg = "; accounts starts with magic"
+	newAuthFlagMsg = "signin starts with an emailed link and lets " +
+		"people add a passkey, authenticator app or passphrase; magic " +
+		"is its old name; none gives no sign-in"
 
 	newDesignSystemFlagMsg = "write the design system: templates, " +
 		"styles, scripts and icons (only bare can turn it off)"
@@ -97,7 +98,7 @@ func checkAuth(shapeName string, options newOpts) error {
 // cannot drift into separate sign-in scaffolds kept in step by hand.
 func writeAccounts(options newOpts) error {
 	if !options.Set["auth"] {
-		options.Auth = "magic"
+		options.Auth = "signin"
 	}
 	return writeSingle(options)
 }

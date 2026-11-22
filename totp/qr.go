@@ -6,6 +6,15 @@ import (
 	qrcode "github.com/skip2/go-qrcode"
 )
 
+// englishQRLabel is what a screen reader says for QR; a page in another
+// language passes its own words to LabelledQR.
+const englishQRLabel = "QR code for your authenticator app"
+
+// LabelledQR is QR with label as what a screen reader says for it.
+func (enrolment Enrolment) LabelledQR(label string) (string, error) {
+	return qrSVG(enrolment.URI, label)
+}
+
 // qrSVG renders text as a QR code in inline SVG: one path of unit
 // squares over a viewBox the size of the matrix (quiet zone included),
 // drawn in currentColor so it follows the page's ink in either theme.

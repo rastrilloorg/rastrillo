@@ -168,6 +168,7 @@ rastrillo.ui.signin_add_passkey_failed = "এটি কাজ করেনি।
 rastrillo.ui.signin_add_authenticator_heading = "অথেন্টিকেটর অ্যাপ যোগ করুন"
 rastrillo.ui.signin_add_authenticator_body = "আপনার অথেন্টিকেটর অ্যাপ দিয়ে কোডটি স্ক্যান করুন, তারপর অ্যাপ যে কোড দেখায় তা লিখুন।"
 rastrillo.ui.signin_add_authenticator_key = "স্ক্যান করতে পারছেন না? বরং এই কী-টি লিখুন:"
+rastrillo.ui.signin_add_authenticator_qr = "আপনার অথেন্টিকেটর অ্যাপের জন্য QR কোড"
 rastrillo.ui.signin_add_authenticator_submit = "অথেন্টিকেটর অ্যাপ যোগ করুন"
 rastrillo.ui.signin_add_authenticator_wrong = "কোডটি মেলেনি। অ্যাপে দেখানো সবচেয়ে নতুন কোডটি লিখুন।"
 rastrillo.ui.signin_add_passphrase_heading = "পাসফ্রেজ সেট করুন"

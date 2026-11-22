@@ -168,6 +168,7 @@ rastrillo.ui.signin_add_passkey_failed = "うまくいきませんでした。�
 rastrillo.ui.signin_add_authenticator_heading = "認証アプリを追加"
 rastrillo.ui.signin_add_authenticator_body = "認証アプリでコードをスキャンし、表示されたコードを入力してください。"
 rastrillo.ui.signin_add_authenticator_key = "スキャンできませんか。代わりにこのキーを入力してください:"
+rastrillo.ui.signin_add_authenticator_qr = "認証アプリ用のQRコード"
 rastrillo.ui.signin_add_authenticator_submit = "認証アプリを追加"
 rastrillo.ui.signin_add_authenticator_wrong = "コードが一致しませんでした。アプリに表示されている最新のコードを入力してください。"
 rastrillo.ui.signin_add_passphrase_heading = "パスフレーズを設定"

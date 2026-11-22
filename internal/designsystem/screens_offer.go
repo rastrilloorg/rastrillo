@@ -1,13 +1,8 @@
 package designsystem
 
 import (
-	"html/template"
-	"strconv"
-	"strings"
-
 	"amadan.net/rastrillo/rastrillo/auth"
 	"amadan.net/rastrillo/rastrillo/signin"
-	qrcode "github.com/skip2/go-qrcode"
 )
 
 // offerScreenDocs are the signin package's pages after a sign-in: the
@@ -32,7 +27,7 @@ func offerScreenDocs() []screenDoc {
 			Blurb: "Show the QR code and setup key, then ask for a " +
 				"code to confirm the authenticator app works.",
 			View: addView(signin.Add{Way: signin.Authenticator,
-				Action: signin.AddAuthenticatorPath, QR: galleryQR(),
+				Action: signin.AddAuthenticatorPath, URI: galleryURI,
 				Key: galleryKey})},
 		{Key: "signin-add-passphrase", Name: "Setting a passphrase",
 			Blurb: "Require at least 15 characters. Don't require " +
@@ -54,29 +49,6 @@ func addView(add signin.Add) *signin.View {
 // galleryKey is a made-up authenticator key, the length a real one is.
 const galleryKey = "JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP"
 
-// galleryQR is galleryKey's QR code drawn as totp draws an enrolment's:
-// one path of unit squares in currentColor, without the xmlns an HTML
-// page does not need. A grey box where the code goes would not show
-// how much room it takes.
-func galleryQR() template.HTML {
-	code, err := qrcode.New("otpauth://totp/Harbour:"+graceAddress+
-		"?secret="+galleryKey+"&issuer=Harbour", qrcode.Medium)
-	if err != nil {
-		panic(err) // a fixed text always encodes
-	}
-	bits := code.Bitmap()
-	var path strings.Builder
-	for row, cells := range bits {
-		for column, on := range cells {
-			if on {
-				path.WriteString("M" + strconv.Itoa(column) + " " +
-					strconv.Itoa(row) + "h1v1h-1z")
-			}
-		}
-	}
-	size := strconv.Itoa(len(bits))
-	return template.HTML(`<svg viewBox="0 0 ` + size + ` ` + size +
-		`" role="img" aria-label="QR code for your authenticator app" ` +
-		`shape-rendering="crispEdges"><path fill="currentColor" d="` +
-		path.String() + `"/></svg>`)
-}
+// galleryURI is galleryKey as the otpauth:// link its QR code draws.
+const galleryURI = "otpauth://totp/Harbour:" + graceAddress +
+	"?secret=" + galleryKey + "&issuer=Harbour"

@@ -25,7 +25,7 @@ Adding sign-in to an app that has none, step by step: skill/add-signin.md.
 
 ## The default sign-in (`signin`)
 
-An `--auth=magic` app's `newSignins` calls `signin.New(signin.Config{
+An `--auth=signin` app's `newSignins` calls `signin.New(signin.Config{
 Auth, Sessions: app.auth.Sessions(), DB, Origin, Key (crypto.Derive of
 the instance key), Proof, Ways: signin.Passkey | signin.Authenticator |
 signin.Passphrase, Render, Steps})`; routes get `app.signins.Mount`
@@ -78,7 +78,7 @@ your user's id first. docs/site/magic-links.md
 app.auth.SigninState(request)` (set `state.Passkey` if passkey
 discovery is mounted), then `app.auth.PrepareSigninResponse(response,
 state)` before rendering; make that handler `RenderConfirm` too, as an
-`--auth=magic` app's `signinScreen` is. Mount `POST /signin/forget` →
+`--auth=signin` app's `signinScreen` is. Mount `POST /signin/forget` →
 `app.auth.Forget`. `SigninOneWay: true` draws one way in per page, with
 "Other ways to sign in" (`?ways=1`, `?way=`); set `state.Federated`
 (`auth.FederatedDoor{Provider, Href, Label}`) for Oficina ID and

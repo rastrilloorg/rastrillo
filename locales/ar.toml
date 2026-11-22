@@ -168,6 +168,7 @@ rastrillo.ui.signin_add_passkey_failed = "لم ينجح ذلك. حاول مرة 
 rastrillo.ui.signin_add_authenticator_heading = "إضافة تطبيق مصادقة"
 rastrillo.ui.signin_add_authenticator_body = "امسح الرمز ضوئيًا باستخدام تطبيق المصادقة، ثم اكتب الرمز الذي يعرضه."
 rastrillo.ui.signin_add_authenticator_key = "لا يمكنك المسح الضوئي؟ اكتب هذا المفتاح بدلًا من ذلك:"
+rastrillo.ui.signin_add_authenticator_qr = "رمز QR لتطبيق المصادقة"
 rastrillo.ui.signin_add_authenticator_submit = "إضافة تطبيق المصادقة"
 rastrillo.ui.signin_add_authenticator_wrong = "لم يتطابق هذا الرمز. جرّب أحدث رمز من تطبيقك."
 rastrillo.ui.signin_add_passphrase_heading = "تعيين عبارة مرور"

@@ -91,8 +91,8 @@ which registers everything: `/static`,
 use a bearer token), then every page in a `routes.Group`
 starting `Guard("csrf", csrf.Protect(app.origin))` and
 `Guard("pages", pages.Middleware)`. Owned pages go in a `Group` within,
-behind the session guard (`app.auth.RequireSession` under
-`--auth=magic`). An action, `func (app *App) home(visit
+behind the session guard (`app.auth.RequireSession` with
+`--auth=signin`). An action, `func (app *App) home(visit
 *action.Visit)`, answers with `visit.Render("index", http.StatusOK,
 data)`; its page also goes in `render.go`'s list.
 

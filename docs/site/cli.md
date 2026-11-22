@@ -33,17 +33,17 @@ run `rastrillo generate` after `go mod tidy`.
 | `--ux` | `considered`, `standard` | `considered` |
 | `--theme` | `day`, `plain`, `signal` | `day` |
 | `--shell` | `column`, `topbar`, `sidebar`, `console`, `stage` | `column` |
-| `--auth` | `none`, `magic` | `none`; `accounts` starts with `magic` |
+| `--auth` | `none`, `signin` | `none`; `accounts` starts with `signin` |
 | `--locale` | `en`, `ga`, `zh-Hans`, `es`, `hi`, `pt-PT`, `bn`, `ru`, `ja`, `yue`, `vi`, `ar` | `en` |
 
 `--scaffold` picks what to scaffold. `bare` is a page with no database,
 `single` is one app and its SQLite data, and `accounts` is `single` with
-sign-in by emailed link: it writes what `single --auth=magic` writes, so
-`--auth` means `magic` there and `--auth=none` is refused.
+sign-in by emailed link: it writes what `single --auth=signin` writes, so
+`--auth` means `signin` there and `--auth=none` is refused.
 `home` and `hub` are planned and not built yet.
 `bare` writes no `manifest/`, `gen/`, `Makefile` or `AGENTS.md` and runs
 no `generate`: its gate is `go test ./...`. It refuses `--ux`, which
-only chooses what goes in `AGENTS.md`, and `--auth=magic`, whose sign-in
+only chooses what goes in `AGENTS.md`, and `--auth=signin`, whose sign-in
 keeps its sessions and links in a database `bare` does not have.
 
 `--design-system=false` leaves out the templates, static files, icons
@@ -78,7 +78,8 @@ page at `/menu`, with the route and action that serve it.
 requires, because that obligation is the app's and has to travel with
 the code.
 
-`--scaffold accounts`, which is `single --auth=magic`, starts the app with sign-in by emailed link: the [magic links](/docs/magic-links) plugin with its sign-in screen, the passkey, authenticator app and passphrase people can add after their first link ([the default sign-in](/docs/signin)), a Sign in and Sign out control in the header, and an example page only a signed-in person can open. Rows belong to the signed-in address, read and written through the `owned` seam in `auth.go`. Until you set `<APP>_SMTP_HOST` and `<APP>_SMTP_FROM`, each link is written to the log instead of sent. The app's own tests sign in through the emailed link, so `make ci` passes from the first commit.
+`--scaffold accounts`, which is `single --auth=signin`, starts the app with sign-in by emailed link: the [magic links](/docs/magic-links) plugin with its sign-in screen, the passkey, authenticator app and passphrase people can add after their first link ([the default sign-in](/docs/signin)), a Sign in and Sign out control in the header, and an example page only a signed-in person can open. Rows belong to the signed-in address, read and written through the `owned` seam in `auth.go`. Until you set `<APP>_SMTP_HOST` and `<APP>_SMTP_FROM`, each link is written to the log instead of sent. The app's own tests sign in through the emailed link, so `make ci` passes from the first commit.
+`--auth=magic` is the old name for `--auth=signin` and still works.
 
 `--locale` picks the one language the app starts with, written to
 `manifest/app.toml`. It must be one the framework's own strings ship in,

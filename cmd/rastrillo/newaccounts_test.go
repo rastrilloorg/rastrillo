@@ -63,3 +63,23 @@ func TestBareRefusesAuth(t *testing.T) {
 		"--scaffold single or accounts",
 		"--scaffold", "bare", "--auth=magic")
 }
+
+// signin is the name the help teaches and magic the name older scripts
+// and docs use, so the two must keep writing one app.
+func TestAuthSigninWritesWhatAuthMagicWrites(t *testing.T) {
+	t.Chdir(t.TempDir())
+	for _, run := range [][]string{
+		{"--auth=signin", "plumbus"}, {"--auth=magic", "frobnitz"},
+	} {
+		if err := runNew(run); err != nil {
+			t.Fatalf("rastrillo new %v: %v", run, err)
+		}
+	}
+	sameScaffold(t, "plumbus", "frobnitz")
+}
+
+// A mistyped kind names signin, the one to use, first after none.
+func TestUnknownAuthNamesSignin(t *testing.T) {
+	refusedBeforeWriting(t, `unknown --auth "sigin": known kinds are `+
+		"none, signin, magic", "--auth=sigin")
+}

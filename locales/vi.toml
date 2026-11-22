@@ -168,6 +168,7 @@ rastrillo.ui.signin_add_passkey_failed = "Không thành công. Hãy thử lại,
 rastrillo.ui.signin_add_authenticator_heading = "Thêm ứng dụng xác thực"
 rastrillo.ui.signin_add_authenticator_body = "Quét mã bằng ứng dụng xác thực của bạn, rồi nhập mã mà ứng dụng hiển thị."
 rastrillo.ui.signin_add_authenticator_key = "Không quét được? Hãy nhập khóa này thay thế:"
+rastrillo.ui.signin_add_authenticator_qr = "Mã QR cho ứng dụng xác thực của bạn"
 rastrillo.ui.signin_add_authenticator_submit = "Thêm ứng dụng xác thực"
 rastrillo.ui.signin_add_authenticator_wrong = "Mã đó không khớp. Hãy thử mã mới nhất từ ứng dụng của bạn."
 rastrillo.ui.signin_add_passphrase_heading = "Đặt cụm mật khẩu"

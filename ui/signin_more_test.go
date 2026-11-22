@@ -2,11 +2,11 @@ package ui
 
 import (
 	"html"
-	"html/template"
 	"regexp"
 	"strings"
 	"testing"
 
+	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/auth"
 	"amadan.net/rastrillo/rastrillo/signin"
 )
@@ -85,10 +85,9 @@ func TestAddAuthenticatorFieldIsANumericOneTimeCode(t *testing.T) {
 	out := render(t, "signin-view", viewData(signin.View{
 		Add: &signin.Add{Way: signin.Authenticator,
 			Action: signin.AddAuthenticatorPath, ReturnTo: "/docs/7",
-			QR:  template.HTML(`<svg viewBox="0 0 1 1"></svg>`),
-			Key: "JBSWY3DPEHPK3PXP"},
+			URI: authenticatorURI, Key: "JBSWY3DPEHPK3PXP"},
 	}))
-	if !strings.Contains(out, `<svg viewBox="0 0 1 1"></svg>`) ||
+	if !strings.Contains(out, `<svg `) ||
 		!strings.Contains(out, "JBSWY3DPEHPK3PXP") {
 		t.Fatalf("the QR and the key are not both shown:\n%s", out)
 	}
@@ -106,10 +105,40 @@ func TestAddAuthenticatorFieldIsANumericOneTimeCode(t *testing.T) {
 	}
 }
 
+// authenticatorURI is the otpauth:// link an add page's QR code draws.
+const authenticatorURI = "otpauth://totp/Harbour:ana@example.com" +
+	"?secret=JBSWY3DPEHPK3PXP&issuer=Harbour"
+
+// A screen reader says what the QR code is in the page's language, not
+// in the English totp draws it with.
+func TestAddAuthenticatorQRIsLabelledInThePageLanguage(t *testing.T) {
+	locales, err := rastrillo.NewLocales([]string{"ga"}, "ga",
+		rastrillo.BaseCatalog(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	irish := NewLocalizer("ga", "ga", func(key string, args ...any) string {
+		return locales.Tf("ga", key, args...)
+	})
+	data := viewData(signin.View{Add: &signin.Add{
+		Way: signin.Authenticator, Action: signin.AddAuthenticatorPath,
+		URI: authenticatorURI, Key: "JBSWY3DPEHPK3PXP"}})
+	data["L"] = irish
+	out := render(t, "signin-view", data)
+	label := locales.Tf("ga", "rastrillo.ui.signin_add_authenticator_qr")
+	said := regexp.MustCompile(`<svg [^>]*role="img" aria-label="([^"]*)"`).
+		FindStringSubmatch(out)
+	if label == defaultT("rastrillo.ui.signin_add_authenticator_qr") ||
+		len(said) < 2 || html.UnescapeString(said[1]) != label {
+		t.Fatalf("the QR is not labelled in Irish (%q):\n%s", label, out)
+	}
+}
+
 func TestAddAuthenticatorWrongCodeIsOnTheField(t *testing.T) {
 	out := render(t, "signin-view", viewData(signin.View{
 		Add: &signin.Add{Way: signin.Authenticator,
 			Action: signin.AddAuthenticatorPath, Key: "JBSWY3DPEHPK3PXP",
+			URI:     authenticatorURI,
 			Problem: "rastrillo.ui.signin_add_authenticator_wrong"},
 	}))
 	code := inputNamed(out, "code")

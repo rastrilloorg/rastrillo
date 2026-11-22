@@ -5,6 +5,7 @@ import (
 	"net/url"
 
 	"amadan.net/rastrillo/rastrillo/auth"
+	"amadan.net/rastrillo/rastrillo/totp"
 )
 
 // View is everything a page signin draws needs, handed to
@@ -32,9 +33,9 @@ type Add struct {
 	Way      Ways
 	Action   string // where the form posts
 	ReturnTo string
-	QR       template.HTML // authenticator only
-	Key      string        // authenticator only
-	Problem  string        // a locale key, "" for none
+	URI      string // authenticator only: the key as otpauth://, for QR
+	Key      string // authenticator only
+	Problem  string // a locale key, "" for none
 	Done     bool
 	Passkey  *auth.PasskeyDoor // passkey only: begin/finish and modules
 	// Address names the account to a password manager and to the
@@ -42,6 +43,13 @@ type Add struct {
 	Address string
 	// RevealURL is the passphrase's show/hide module; passphrase only.
 	RevealURL string
+}
+
+// QR draws URI as a QR code; label, in the page's language, is what a
+// screen reader says for it, since only the page knows the language.
+func (add Add) QR(label string) (template.HTML, error) {
+	svg, err := totp.Enrolment{URI: add.URI}.LabelledQR(label)
+	return template.HTML(svg), err
 }
 
 // Choice is one row of the offer: a way's name and its add page.

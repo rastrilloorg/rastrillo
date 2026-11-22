@@ -168,6 +168,7 @@ rastrillo.ui.signin_add_passkey_failed = "Não funcionou. Tente de novo ou escol
 rastrillo.ui.signin_add_authenticator_heading = "Adicionar uma aplicação de autenticação"
 rastrillo.ui.signin_add_authenticator_body = "Digitalize o código com a sua aplicação de autenticação e escreva o código que ela mostra."
 rastrillo.ui.signin_add_authenticator_key = "Não consegue digitalizar? Escreva esta chave em vez disso:"
+rastrillo.ui.signin_add_authenticator_qr = "Código QR para a sua aplicação de autenticação"
 rastrillo.ui.signin_add_authenticator_submit = "Adicionar aplicação de autenticação"
 rastrillo.ui.signin_add_authenticator_wrong = "Esse código não coincide. Tente o código mais recente da sua aplicação."
 rastrillo.ui.signin_add_passphrase_heading = "Definir uma frase-passe"

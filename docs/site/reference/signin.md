@@ -12,7 +12,7 @@ in `auth.Admit`, so refusal, the remembered way, `return_to` and the
 session are the same as for a link.
 
 [The default sign-in](/docs/signin) is the guide. A scaffolded
-`--auth=magic` app wires all of this in `auth.go`.
+`--auth=signin` app wires all of this in `auth.go`.
 
 ## New and Config
 
@@ -201,14 +201,15 @@ type Add struct {
 	Way       Ways
 	Action    string
 	ReturnTo  string
-	QR        template.HTML // authenticator only
-	Key       string        // authenticator only
-	Problem   string        // a locale key
+	URI       string // authenticator only: the otpauth: link
+	Key       string // authenticator only
+	Problem   string // a locale key
 	Done      bool
 	Passkey   *auth.PasskeyDoor
 	Address   string
 	RevealURL string
 }
+func (add Add) QR(label string) (template.HTML, error)
 
 type Options struct {
 	Address    string

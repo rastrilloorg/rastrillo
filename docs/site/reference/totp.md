@@ -80,6 +80,9 @@ it beside the data it seals. Losing it loses every enrolment.
 for the `otpauth:` link, and `QR`, the same URI as an inline SVG — mark
 it `template.HTML`. The factor is live only once `Confirm` has seen a
 code from it, which is what proves the app really scanned the QR.
+The screen-reader label for `Enrolment.QR` is in English. On pages in
+another language, call `Enrolment.LabelledQR` and pass a label in that
+language.
 
 `Begin` and `Disable` belong on pages behind `sessions.RequireFresh`,
 like every change to how an account is entered. `ErrEnrolled` says to
