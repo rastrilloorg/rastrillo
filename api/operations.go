@@ -21,6 +21,16 @@ import (
 const msgBadQuery = "Send each argument as name=value. " +
 	"Percent-encode the name and value."
 
+// msgQueryOnPost and msgBodyOnGet are the 422 for arguments sent where
+// the operation doesn't read them, which it would otherwise run
+// without.
+const (
+	msgQueryOnPost = "Send the arguments in the JSON body, " +
+		"not in the query string."
+	msgBodyOnGet = "Send the arguments in the query string, " +
+		"not in the request body."
+)
+
 // Operations builds the API door for named operations, one route each
 // at /api/v1/<area>/<verb>. A read declared InQuery is GET, with its
 // input in the query string; every other operation is POST, with its
@@ -93,6 +103,16 @@ func doorArguments(
 	response http.ResponseWriter, request *http.Request,
 	descriptor op.Descriptor,
 ) ([]byte, bool) {
+	// Each operation reads its arguments from one place. Anything sent
+	// in the other would be dropped and the operation run without it.
+	if descriptor.InQuery && hasBody(request) {
+		invalid(response, msgBodyOnGet, nil)
+		return nil, false
+	}
+	if !descriptor.InQuery && request.URL.RawQuery != "" {
+		invalid(response, msgQueryOnPost, nil)
+		return nil, false
+	}
 	if descriptor.InQuery {
 		// ParseQuery, not URL.Query, which drops a pair it can't read and
 		// would run the operation without that argument.
@@ -109,6 +129,17 @@ func doorArguments(
 		return []byte("{}"), true
 	}
 	return readJSONBody(response, request)
+}
+
+// hasBody reports whether request carries a body. One of unknown length
+// is read for a byte, which costs nothing: a body here is refused.
+func hasBody(request *http.Request) bool {
+	if request.ContentLength != -1 || request.Body == nil {
+		return request.ContentLength > 0
+	}
+	var first [1]byte
+	read, _ := request.Body.Read(first[:])
+	return read > 0
 }
 
 // queryArguments writes a query string as the JSON object a body would

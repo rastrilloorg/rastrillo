@@ -391,3 +391,69 @@ func TestTheDoorChecksBeforeAnUncheckedInvoke(t *testing.T) {
 		t.Fatalf("notes.purge's Invoke ran %d times, want 0", calls)
 	}
 }
+
+// countingInvokes wraps each descriptor's Invoke to count its calls.
+func countingInvokes(
+	calls *int, descriptors ...op.Descriptor,
+) []op.Descriptor {
+	for index, descriptor := range descriptors {
+		invoke := descriptor.Invoke
+		descriptors[index].Invoke = func(
+			ctx context.Context, rc *rastrillo.Ctx,
+			arguments encodingjson.RawMessage,
+		) (any, error) {
+			*calls++
+			return invoke(ctx, rc, arguments)
+		}
+	}
+	return descriptors
+}
+
+// Arguments sent where the operation doesn't read them would be
+// dropped, and the operation run without them, so they are refused.
+func TestArgumentsInTheUnusedPlaceAreRefusedBeforeInvoke(t *testing.T) {
+	var calls int
+	operations := notes()
+	tree := mustNew(t, config(), Operations(countingInvokes(&calls,
+		operations.create.Descriptor, operations.list.Descriptor)...)...)
+	chunked := httptest.NewRequest(http.MethodGet, "/api/v1/notes/list",
+		strings.NewReader(`{"limit":5}`))
+	chunked.ContentLength = -1
+	chunked.Header.Set("Authorization", "Bearer agent-read")
+	cases := []struct {
+		name    string
+		answer  func() *httptest.ResponseRecorder
+		message string
+	}{
+		{"a POST with a query", func() *httptest.ResponseRecorder {
+			return serve(tree, http.MethodPost,
+				"/api/v1/notes/create?dry_run=true", "person-write",
+				`{"title":"Hello"}`)
+		}, msgQueryOnPost},
+		{"a GET with a body", func() *httptest.ResponseRecorder {
+			return serve(tree, http.MethodGet,
+				"/api/v1/notes/list?limit=5", "agent-read", `{"limit":6}`)
+		}, msgBodyOnGet},
+		{"a GET with a body of unknown length",
+			func() *httptest.ResponseRecorder {
+				recorder := httptest.NewRecorder()
+				tree.ServeHTTP(recorder, chunked)
+				return recorder
+			}, msgBodyOnGet},
+	}
+	for _, each := range cases {
+		t.Run(each.name, func(t *testing.T) {
+			recorder := each.answer()
+			assertCode(t, recorder,
+				http.StatusUnprocessableEntity, "invalid")
+			refused := decodeError(t, recorder)
+			if refused.Message != each.message || len(refused.Fields) != 0 {
+				t.Fatalf("answered %+v, want %q and no fields",
+					refused, each.message)
+			}
+		})
+	}
+	if calls != 0 {
+		t.Fatalf("Invoke ran %d times, want 0", calls)
+	}
+}

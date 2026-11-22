@@ -184,6 +184,10 @@ var List = op.Define("posts.list", op.Spec{
 object. A repeated or unknown parameter, or a value of the wrong type,
 is a 422 that names the parameter.
 
+Each operation reads its arguments from one place. A POST with a query
+string, or a GET with a body, is a 422, so no argument is ever dropped
+silently.
+
 An operation that returns `op.None` answers 204 with no body.
 
 ## The refusal order
