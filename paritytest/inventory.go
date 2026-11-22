@@ -1,6 +1,7 @@
 package paritytest
 
 import (
+	"fmt"
 	"net/http"
 	"slices"
 	"testing"
@@ -49,29 +50,36 @@ func declarationOf(descriptor op.Descriptor) declaration {
 	}
 }
 
-// checkServedAs fails served unless it is declared exactly.
-func checkServedAs(
-	t testing.TB, door string, served, declared op.Descriptor,
-) {
-	t.Helper()
-	servedAs, declaredAs := declarationOf(served), declarationOf(declared)
-	if servedAs != declaredAs {
-		t.Errorf(msgDiffers, door, declared.ID, servedAs, declaredAs)
-	}
-}
-
-// checkUnexpected fails each operation a door serves that is neither
-// declared nor generated, once however many routes serve it.
-func checkUnexpected(
-	t testing.TB, door string, served []op.Descriptor,
+// checkServed holds everything a door serves to the declarations, at
+// every route, not only an operation's expected one: a declared ID at a
+// second path must be the declared operation too, or a door could serve
+// a human-only operation there without its refusal. A served operation
+// neither declared nor generated is unexpected. Each failure is reported
+// once, however many routes repeat it.
+func checkServed(
+	t testing.TB, door string, served, declared []op.Descriptor,
 	known map[string]bool,
 ) {
 	t.Helper()
+	declaredAs := map[string]declaration{}
+	for _, descriptor := range declared {
+		declaredAs[descriptor.ID] = declarationOf(descriptor)
+	}
 	reported := map[string]bool{}
 	for _, descriptor := range served {
-		if !known[descriptor.ID] && !reported[descriptor.ID] {
-			reported[descriptor.ID] = true
-			t.Errorf(msgUnexpected, door, descriptor.ID)
+		var failure string
+		wanted, isDeclared := declaredAs[descriptor.ID]
+		servedAs := declarationOf(descriptor)
+		switch {
+		case isDeclared && servedAs != wanted:
+			failure = fmt.Sprintf(msgDiffers, door, descriptor.ID,
+				servedAs, wanted)
+		case !isDeclared && !known[descriptor.ID]:
+			failure = fmt.Sprintf(msgUnexpected, door, descriptor.ID)
+		}
+		if failure != "" && !reported[failure] {
+			reported[failure] = true
+			t.Error(failure)
 		}
 	}
 }
@@ -104,11 +112,9 @@ func checkAPI(
 		case found.ID != descriptor.ID:
 			t.Errorf(msgWrongOperation, found.ID, expected.Method,
 				expected.Pattern, descriptor.ID)
-		default:
-			checkServedAs(t, apiDoor, found, descriptor)
 		}
 	}
-	checkUnexpected(t, apiDoor, served, known)
+	checkServed(t, apiDoor, served, declared, known)
 }
 
 // checkMCP compares MCP's whole inventory with the declarations.
@@ -123,16 +129,14 @@ func checkMCP(
 		return
 	}
 	for _, descriptor := range declared {
-		found := slices.IndexFunc(served, func(each op.Descriptor) bool {
+		isServed := slices.ContainsFunc(served, func(each op.Descriptor) bool {
 			return each.ID == descriptor.ID
 		})
-		if found < 0 {
+		if !isServed {
 			t.Errorf(msgMissing, descriptor.ID, mcpDoor, mcpTakes)
-			continue
 		}
-		checkServedAs(t, mcpDoor, served[found], descriptor)
 	}
-	checkUnexpected(t, mcpDoor, served, known)
+	checkServed(t, mcpDoor, served, declared, known)
 }
 
 // checkMounted asks the whole app for each declared operation's route

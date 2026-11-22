@@ -93,8 +93,10 @@ find routes registered outside the table. A route registered directly
 on a `ServeMux` isn't seen.
 
 Mount the API tree and MCP endpoint directly on the router at
-`/api/v1/` and `/api/v1/mcp`. The walk skips routes under `/api/v1/`;
-other checks cover them.
+`/api/v1/` and `/api/v1/mcp`. The walk skips only the routes those
+mounts produce: `/api/v1/*`, `/api/v1/mcp`, `/api/v1/mcp/` and
+`/api/v1/mcp/*`. Other checks cover them. Register every other route
+under `/api/v1/` through the table.
 
 ## Mark
 

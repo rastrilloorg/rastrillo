@@ -81,6 +81,12 @@ type exampleOptions struct {
 	// directRoutes registers GET /direct, and mounts a handler at
 	// /files/, on a chi router itself, outside the table.
 	directRoutes bool
+	// webhookOnRouter registers POST /api/v1/webhooks/stripe on a chi
+	// router itself, under the API's prefix but outside both doors.
+	webhookOnRouter bool
+	// humanOnlyElsewhere also serves the unsafe tokens.create at
+	// POST /api/v1/tokens/mint, beside the declared one at its route.
+	humanOnlyElsewhere bool
 }
 
 type exampleApp struct {
@@ -411,6 +417,11 @@ func (app *exampleApp) apiRoutes() []api.Route {
 		misplaced.Pattern = "/api/v1/notes/delete"
 		routes = append(routes, misplaced)
 	}
+	if app.options.humanOnlyElsewhere {
+		minting := api.Operations(app.unsafeTokens())[0]
+		minting.Pattern = "/api/v1/tokens/mint"
+		routes = append(routes, minting)
+	}
 	return routes
 }
 
@@ -503,6 +514,9 @@ func (app *exampleApp) overChi(surface *Surface) *route.Table {
 	if app.options.directRoutes {
 		router.Get("/direct", plainPage)
 		router.Mount("/files/", http.NotFoundHandler())
+	}
+	if app.options.webhookOnRouter {
+		router.Post("/api/v1/webhooks/stripe", plainPage)
 	}
 	surface.Handler, surface.Router = router, router
 	return table

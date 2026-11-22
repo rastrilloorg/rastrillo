@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"amadan.net/rastrillo/rastrillo/op"
 	"amadan.net/rastrillo/rastrillo/route"
 )
 
@@ -177,6 +178,52 @@ func TestParityFailsAHumanOnlyOperationAnAgentCanCall(t *testing.T) {
 			fmt.Sprintf(msgHumanListed, "tokens.create"),
 			fmt.Sprintf(msgHumanCallable, "tokens.create", "the API", "ok"),
 			fmt.Sprintf(msgHumanCallable, "tokens.create", "MCP", "ok"))
+	})
+}
+
+func TestParityFailsAHumanOnlyOperationServedAtASecondPath(
+	t *testing.T,
+) {
+	eachRouter(t, func(t *testing.T, router string) {
+		options := exampleOptions{humanOnlyElsewhere: true}
+		surface, app := buildExample(t, router, options)
+		minting := call{descriptor: app.tokens.Descriptor, token: "writer-a",
+			arguments: []byte(`{"agent":"Claude"}`), session: agentSession}
+		answer := send(t, surface.Handler, http.MethodPost,
+			"/api/v1/tokens/mint", mcpHeader(minting.header()),
+			minting.arguments)
+		if answer.status != http.StatusOK || app.mintedCount() != 1 {
+			t.Fatalf("POST /api/v1/tokens/mint answered %d and minted "+
+				"%d, want 200 and 1", answer.status, app.mintedCount())
+		}
+		surface, app = buildExample(t, router, options)
+		wantFailures(t, surface, fmt.Sprintf(msgDiffers, "the API",
+			"tokens.create", declarationOf(app.unsafeTokens()),
+			declarationOf(app.tokens.Descriptor)))
+	})
+}
+
+func TestParityFailsARouteRegisteredDirectlyUnderTheAPIPrefix(
+	t *testing.T,
+) {
+	surface, _ := buildExample(t, "chi",
+		exampleOptions{webhookOnRouter: true})
+	wantFailures(t, surface,
+		fmt.Sprintf(msgUnrecorded, "POST", "/api/v1/webhooks/stripe"))
+}
+
+// Generated operations are gen/paritytest's to check, so serving one on
+// both doors and naming it from a page is no failure here.
+func TestParityLeavesGeneratedOperationsToGenParitytest(t *testing.T) {
+	eachRouter(t, func(t *testing.T, router string) {
+		surface, app := buildExample(t, router, exampleOptions{
+			apiExtra: true, mcpExtra: true,
+			extraMark: func(app *exampleApp) route.Mark {
+				return route.Operation(app.export.Descriptor)
+			},
+		})
+		surface.Generated = []op.Descriptor{app.export.Descriptor}
+		wantFailures(t, surface)
 	})
 }
 

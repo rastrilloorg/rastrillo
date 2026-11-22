@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"slices"
-	"strings"
 	"testing"
 
 	"github.com/go-chi/chi/v5"
@@ -110,9 +109,17 @@ func checkPages(
 	}
 }
 
-// doorsPrefix is where the API tree and MCP are mounted. They are
-// mounted on the router directly, and their own checks cover them.
-const doorsPrefix = "/api/v1/"
+// doorMounts are the paths chi's walk gives the two doors' mounts: the
+// API tree at /api/v1/ and MCP at /api/v1/mcp. Both are mounted on the
+// router directly, and their own checks cover them. Only these paths
+// are skipped, so a route registered directly anywhere else under
+// /api/v1/, such as a webhook, is still found.
+var doorMounts = map[string]bool{
+	"/api/v1/*":     true,
+	"/api/v1/mcp":   true,
+	"/api/v1/mcp/":  true,
+	"/api/v1/mcp/*": true,
+}
 
 // checkRecorded walks a chi router for routes registered on it
 // directly, which the table never saw and so never marked. The walk
@@ -130,8 +137,7 @@ func checkRecorded(t testing.TB, surface Surface) {
 	var failures []string
 	err := chi.Walk(surface.Router, func(method, path string,
 		_ http.Handler, _ ...func(http.Handler) http.Handler) error {
-		doors := strings.HasPrefix(path+"/", doorsPrefix)
-		if !doors && !recorded[method+" "+path] {
+		if !doorMounts[path] && !recorded[method+" "+path] {
 			failures = append(failures,
 				fmt.Sprintf(msgUnrecorded, method, path))
 		}
