@@ -68,26 +68,8 @@ func Decode(w http.ResponseWriter, r *http.Request, dst any) bool {
 		// it into a 500 with a ref rather than a 422 that blames the client.
 		panic(fmt.Sprintf("api: Decode needs a non-nil pointer, got %T", dst))
 	}
-	mt, _, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
-	if err != nil || mt != "application/json" {
-		answer(w, "unsupported_media_type")
-		return false
-	}
-	body := r.Body
-	if body == nil {
-		body = http.NoBody
-	}
-	data, err := io.ReadAll(http.MaxBytesReader(w, body, maxBodyFrom(r)))
-	if err != nil {
-		var tooLarge *http.MaxBytesError
-		if errors.As(err, &tooLarge) {
-			answer(w, "too_large")
-			return false
-		}
-		// The client stopped sending mid-body. What arrived is not a whole
-		// object, and the client is most likely gone; a 500 would log an
-		// error for every dropped connection.
-		invalid(w, msgNotObject, nil)
+	data, read := readJSONBody(w, r)
+	if !read {
 		return false
 	}
 	if err := op.DecodeInput(data, dst); err != nil {
@@ -106,6 +88,39 @@ func Decode(w http.ResponseWriter, r *http.Request, dst any) bool {
 		return false
 	}
 	return true
+}
+
+// readJSONBody is Decode's 415 and 413, shared with the named door, which
+// hands the bytes to Invoke unparsed so that op.DecodeInput alone judges
+// them there, as it does for MCP. On false it has already answered.
+func readJSONBody(
+	response http.ResponseWriter, request *http.Request,
+) ([]byte, bool) {
+	mediaType, _, err := mime.ParseMediaType(
+		request.Header.Get("Content-Type"))
+	if err != nil || mediaType != "application/json" {
+		answer(response, "unsupported_media_type")
+		return nil, false
+	}
+	body := request.Body
+	if body == nil {
+		body = http.NoBody
+	}
+	data, err := io.ReadAll(
+		http.MaxBytesReader(response, body, maxBodyFrom(request)))
+	if err != nil {
+		var tooLarge *http.MaxBytesError
+		if errors.As(err, &tooLarge) {
+			answer(response, "too_large")
+			return nil, false
+		}
+		// The client stopped sending mid-body. What arrived is not a whole
+		// object, and the client is most likely gone; a 500 would log an
+		// error for every dropped connection.
+		invalid(response, msgNotObject, nil)
+		return nil, false
+	}
+	return data, true
 }
 
 // NoBody is what a handler with no input calls first, as a DELETE does.

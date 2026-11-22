@@ -46,7 +46,8 @@ missing, or if a route:
 
 - has no `Op.ID`, `Op.Input`, `Op.Result` or `Handle`;
 - has an `Op.Access` that does not match its method: GET and HEAD must
-  be `Read`, and POST, PUT, PATCH and DELETE must be `Write`;
+  be `Read`, and POST, PUT, PATCH and DELETE must be `Write`, except a
+  POST read from [Operations](#operations);
 - has the same method and pattern as another route.
 
 Every answer is JSON with `Cache-Control: no-store`. A request goes
@@ -91,6 +92,45 @@ token that sends no `Agent-Session`.
 If a handler panics before writing, the answer is 500 with a `ref`. If
 it panics after, the connection is closed. Either way the panic is
 logged to `Config.Logger` under the ref, after `Config.Redact`.
+
+## Operations
+
+```go
+func Operations(descriptors ...op.Descriptor) []Route
+```
+
+`Operations` builds one route for each named operation, such as one
+from `op.Define`. Pass the routes to `New`, beside any you build by
+hand. `notes.create` is served at `POST /api/v1/notes/create`. A read
+with `InQuery` set is a GET instead, such as `GET /api/v1/notes/list`.
+
+Each route runs `op.Check` before it reads any input, even when the
+descriptor's `Invoke` does not call it. A caller the operation refuses
+is told so before anything about its input, and the operation never
+runs.
+
+A POST takes its input as a JSON body:
+
+- With no body, it runs with `{}`.
+- A body needs `Content-Type: application/json`, or the answer is 415.
+- A body over the cap is 413.
+- Otherwise the body goes to `Invoke` as sent. A bad body gets the
+  answer MCP gives for the same arguments: 422 `invalid`, with `fields`
+  naming the member when there is one.
+
+A GET reads its query string as that JSON object, one member per
+parameter. A parameter whose input field is a number is sent as a
+number when it is a valid one, and one whose field is a bool as `true`
+or `false`. Everything else is a string. So `?limit=five`,
+`?limit=1&limit=2` and an unknown parameter are each 422, with `fields`
+naming that parameter, as they would be in a body.
+
+The answer is 200 with the result, 204 when the operation returns
+`op.None`, or the refusal its error maps to under [Errors](#errors).
+
+A read served by POST takes a read-only token. Only a route from
+`Operations` can be one: a POST route you build yourself must be
+`Write`.
 
 ## Errors
 

@@ -78,6 +78,13 @@ type Route struct {
 	// agree with Method.
 	Op     op.Descriptor
 	Handle func(ctx context.Context, rc *rastrillo.Ctx, w http.ResponseWriter, r *http.Request)
+
+	// readByPost lets a POST route declare Read, for a read whose input
+	// is a JSON body. Only Operations sets it: there the access comes
+	// from the operation's declaration, which Admit and op.Check both
+	// enforce, so a read-only token may call it and still can't write.
+	// A hand-built route keeps the stricter rule that POST is Write.
+	readByPost bool
 }
 
 // methodAccess is the access each method must declare. GET and HEAD
@@ -142,7 +149,7 @@ func New(cfg Config, routes ...Route) (http.Handler, error) {
 
 func (t *tree) add(rt Route) error {
 	name := rt.Method + " " + rt.Pattern
-	want, known := methodAccess[rt.Method]
+	want, known := accessFor(rt)
 	switch {
 	case !known:
 		return fmt.Errorf("api: route %s: method must be one of GET, HEAD, POST, PUT, PATCH, DELETE", name)
@@ -177,6 +184,18 @@ func (t *tree) add(rt Route) error {
 	}
 	t.patterns[name] = true
 	return nil
+}
+
+// accessFor is the Access route's method must declare, and whether the
+// tree serves that method at all.
+func accessFor(route Route) (rastrillo.Access, bool) {
+	postedRead := route.Method == http.MethodPost &&
+		route.Op.Access == rastrillo.Read
+	if postedRead && route.readByPost {
+		return rastrillo.Read, true
+	}
+	want, known := methodAccess[route.Method]
+	return want, known
 }
 
 func register(mux *http.ServeMux, pattern string, h http.Handler) (err error) {
