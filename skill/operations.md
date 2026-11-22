@@ -22,7 +22,8 @@ A write whose verb undoes or sends (`cancel`, `send`, `delete`) must be
 `Destructive`.
 
 **Types.** `In` is a struct; `Out` is a struct or `op.None` (204, no
-body). Every exported field has a `json` tag equal to the snake_case of
+body). Each must be a JSON object on the wire (not `time.Time`), and no
+field may hold `op.None`. Every exported field has a `json` tag equal to the snake_case of
 the Go name (`PublishedAt` is `published_at`) or `Define` panics.
 `op.Invalid.Fields` is keyed by the Go name; the API and MCP report it
 as the wire name. A field that may be left out is `op.Opt[T]`, one that
@@ -50,7 +51,8 @@ run `op.Check` before they read any input.
 (415); no body at all runs as `{}`. `InQuery: true` on a read, with every
 input field a string, number or bool, serves it as
 `GET /api/v1/<area>/<verb>?field=value`; a repeated, unknown or ill-typed
-parameter is 422 naming it. A read-only token may use a POST read from
+parameter is 422 naming it. A POST with a query string, or a GET with a
+body, is 422. A read-only token may use a POST read from
 `api.Operations`.
 
 **Refusal order,** on both doors and in `op.Check`: human-only
@@ -63,9 +65,10 @@ hides a human-only tool from the list and refuses a call to it.
 
 ```go
 table := route.New(route.Chi(router)) // or route.Mux(mux)
-table.Handle("POST /posts/{id}/publish", app.publish,
+table.HandleFunc("POST /posts/{id}/publish", app.publish,
 	route.Operation(posts.Publish.Descriptor))
-table.Handle("GET /style.css", app.css, route.PageOnly("the stylesheet"))
+table.HandleFunc("GET /style.css", app.css,
+	route.PageOnly("the stylesheet"))
 admin := table.On(route.Chi(sub), "/admin") // a sub-router
 ```
 
@@ -87,7 +90,9 @@ under another name (`routeparity`).
 **`paritytest.Run`.** `Run(t, Scenario{Fresh: newFixture, Steps: ...})`
 does each `Step{Name, Person, Operation, Input}` on three fresh fixtures,
 through the page, the API and MCP, and compares kind, fields, body,
-message and stored state. Write a `Fixture`: `Surface`, `Token(person)`,
+message, field messages and stored state. If a result holds a generated
+ID or time, give the fixture `Normalize(step, body)` to strip it from
+the API and MCP bodies first. Write a `Fixture`: `Surface`, `Token(person)`,
 `Page(person, step)` (drive the page, answer an `Outcome`; for `invalid`
 use wire names, `api.FieldName`) and `State` (what is stored, without ids
 and times). Include a refused step, such as `{}` to a create. A step on a
