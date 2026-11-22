@@ -33,6 +33,21 @@ const (
 		`or use On to register a sub-router's routes`
 )
 
+// Failures to read a door's answer, so a broken answer is reported
+// rather than compared as nothing. Each names the door and operation.
+const (
+	msgNoBody = `%s answered %s with no body for its result; ` +
+		`return the result`
+	msgNotJSON = `%s answered %s with a body that isn't one JSON value: ` +
+		`%v; return one JSON value`
+	msgNotObject = `%s answered %s with %s, not a JSON object; ` +
+		`return an object`
+	msgEmptyToolError = `MCP answered %s with a tool error ` +
+		`that has no content`
+	msgListUnread = `the MCP tool list for Surface.Token answered %d ` +
+		`with %s, not a list of tools`
+)
+
 // Run's failures.
 const (
 	msgDoorsDiffer  = `step %q: %s returned %s %v, but %s returned %s %v`
@@ -40,6 +55,9 @@ const (
 		`MCP returned body %v`
 	msgMessagesDiffer = `step %q: API refused with message %q; ` +
 		`MCP refused with message %q`
+	msgFieldsDiffer = `step %q: API refused fields with %v; ` +
+		`MCP refused fields with %v; ` +
+		`make both doors refuse the same fields with the same messages`
 	msgStateDiffers = `after step %q: %s left state %v; ` +
 		`%s left state %v`
 	msgScenarioHumanOnly = `step %q calls human-only %s. ` +

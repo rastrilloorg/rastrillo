@@ -94,6 +94,9 @@ type exampleOptions struct {
 	// than it stored, and mcpMessageDiffers has it word a conflict its
 	// own way, so only the API and MCP bodies or messages differ.
 	mcpResultDiffers, mcpMessageDiffers bool
+	// mcpFieldMessageDiffers has MCP's notes.create word its refusal of
+	// an empty title its own way, on the same field.
+	mcpFieldMessageDiffers bool
 }
 
 type exampleApp struct {
@@ -476,6 +479,11 @@ func (app *exampleApp) mcpCreate(
 		case errors.As(err, new(op.Conflict)) &&
 			app.options.mcpMessageDiffers:
 			return nil, op.Conflict{Message: "That title is taken."}
+		case errors.As(err, new(op.Invalid)) &&
+			app.options.mcpFieldMessageDiffers:
+			return nil, op.Invalid{
+				Fields: map[string]string{"Title": "Title is required."},
+			}
 		}
 		return result, err
 	}

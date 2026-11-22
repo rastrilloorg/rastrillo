@@ -262,3 +262,16 @@ func TestRunRefusesAHumanOnlyStep(t *testing.T) {
 		}
 	})
 }
+
+func TestRunCatchesAFieldWhoseMessageDiffers(t *testing.T) {
+	eachRouter(t, func(t *testing.T, router string) {
+		factory := &examples{router: router,
+			options: exampleOptions{mcpFieldMessageDiffers: true}}
+		scenario := Scenario{Fresh: factory.fresh,
+			Steps: exampleSteps[1:2]}
+		wantRunFailures(t, scenario, fmt.Sprintf(msgFieldsDiffer,
+			"a creates nothing",
+			map[string]string{"title": "Enter a title."},
+			map[string]string{"title": "Title is required."}))
+	})
+}

@@ -91,7 +91,9 @@ type Outcome struct {
 	Status int
 	Kind   string         // "ok" for 2xx, else the error's code
 	Fields []string       // an invalid answer's field names, sorted
-	Body   map[string]any // numbers as json.Number
+	// FieldMessages is an invalid answer's message for each field.
+	FieldMessages map[string]string
+	Body          map[string]any // numbers as json.Number
 	// Message is a refusal's message.
 	Message string
 }
@@ -114,9 +116,13 @@ the tool names MCP lists for `Token`, sorted.
 An `Outcome`'s `Kind` is `"ok"` for a success, and the error's code for
 a refusal, so the two doors' answers compare directly. `Status` is the
 HTTP status. MCP answers a refused tool call with 200, so compare
-`Kind`, not `Status`. `Body` is a success's JSON object, and nil for
-anything else. `Message` is a refusal's message, which the API and MCP
-both write with `api.Refusal`.
+`Kind`, not `Status`. `Body` contains a success's JSON object and is nil
+otherwise. A success with a missing body, invalid JSON, or a non-object
+body is reported, as is an MCP tool error with no content. `Message` is
+a refusal's message, which the API and MCP both write with
+`api.Refusal`. `FieldMessages` contains an `invalid` answer's message
+for each field. `ToolNames` reports an unreadable tool list instead of
+returning an empty list.
 
 ## Scenarios and Run
 
@@ -155,7 +161,7 @@ each:
 After each step, `Run` compares:
 
 - `Kind` and `Fields` across all three doors;
-- `Body` and `Message` between the API and MCP;
+- `Body`, `Message` and `FieldMessages` between the API and MCP;
 - `State` across all three doors. A difference in state is reported
   once, at the step where it starts.
 

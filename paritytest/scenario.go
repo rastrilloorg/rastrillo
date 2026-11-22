@@ -1,6 +1,7 @@
 package paritytest
 
 import (
+	"maps"
 	"reflect"
 	"slices"
 	"testing"
@@ -107,8 +108,9 @@ func agentOf(t testing.TB, fixture Fixture, person string) Surface {
 }
 
 // compareOutcomes holds each agent's door to the page's Kind and
-// Fields, and the API's body and refusal message to MCP's. A page
-// renders its own HTML, so its body and wording aren't compared.
+// Fields, and the API's body, refusal message and field messages to
+// MCP's. A page renders its own HTML, so its body and wording aren't
+// compared.
 // outcomes are in doors' order.
 func compareOutcomes(
 	t testing.TB, step Step, doors []*door, outcomes []Outcome,
@@ -130,6 +132,10 @@ func compareOutcomes(
 	if viaAPI.Message != viaMCP.Message {
 		t.Errorf(msgMessagesDiffer, step.Name, viaAPI.Message,
 			viaMCP.Message)
+	}
+	if !maps.Equal(viaAPI.FieldMessages, viaMCP.FieldMessages) {
+		t.Errorf(msgFieldsDiffer, step.Name, viaAPI.FieldMessages,
+			viaMCP.FieldMessages)
 	}
 }
 

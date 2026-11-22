@@ -168,7 +168,12 @@ func checkListed(
 	t testing.TB, surface Surface, declared []op.Descriptor,
 ) {
 	t.Helper()
-	listed := ToolNames(t, surface)
+	// A list it couldn't read is reported already; every operation
+	// missing from it would only repeat that.
+	listed, read := toolNames(t, surface)
+	if !read {
+		return
+	}
 	for _, descriptor := range declared {
 		shown := slices.Contains(listed, mcp.ToolName(descriptor.ID))
 		humanOnly := descriptor.HumanOnly != ""
