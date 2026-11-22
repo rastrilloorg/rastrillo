@@ -184,6 +184,11 @@
           "blurb": "The MCP endpoint: one tool per operation, behind the API's gate."
         },
         {
+          "slug": "reference/route",
+          "label": "route",
+          "blurb": "Register page routes on chi or ServeMux, each with its operation."
+        },
+        {
           "slug": "reference/apitoken",
           "label": "apitoken",
           "blurb": "Personal API tokens for agents: make, verify, list and revoke them."
