@@ -10,12 +10,15 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+## v0.43.1
+
 ### Fixed
 
-- MCP now accepts request bodies up to the API's `MaxBody`. It previously
-  capped bodies at 4 MiB. An app with `MaxBody` set to 16 MiB could accept
-  a 10 MB upload through the API but reject it over MCP. Bodies over the
-  limit now receive the API's JSON 413 response with code `too_large`.
+- MCP now accepts request bodies up to the API's `MaxBody` limit. It
+  previously capped them at 4 MiB. An app with `MaxBody` set to 16 MiB could
+  accept a 10 MB upload through the API but reject it over MCP. Requests with
+  bodies over the limit now receive the API's JSON 413 response with code
+  `too_large`.
 
 ## v0.43.0
 
