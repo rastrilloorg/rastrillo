@@ -22,9 +22,10 @@ A write whose verb undoes or sends (`cancel`, `send`, `delete`) must be
 `Destructive`.
 
 **Types.** `In` is a struct; `Out` is a struct or `op.None` (204, no
-body). Each must be a JSON object on the wire (not `time.Time`), and no
-field may hold `op.None`. Every exported field has a `json` tag equal to the snake_case of
-the Go name (`PublishedAt` is `published_at`) or `Define` panics.
+body). A struct must be a JSON object on the wire (not `time.Time`),
+and no field may hold `op.None`. Every exported field has a `json` tag
+equal to the snake_case of the Go name (`PublishedAt` is
+`published_at`) or `Define` panics.
 `op.Invalid.Fields` is keyed by the Go name; the API and MCP report it
 as the wire name. A field that may be left out is `op.Opt[T]`, one that
 may be `null` is `op.Nullable[T]`; a pointer in an input is refused, and

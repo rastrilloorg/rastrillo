@@ -72,9 +72,9 @@ the same field as `published_at`.
   `op.Opt` or `op.Nullable`.
 - Strings, numbers, bools, structs, slices and maps with string keys
   are allowed. A type that contains itself is refused.
-- A field of type `any`, raw JSON, or a type with its own JSON methods
-  may hold any JSON value except `null`. Use `op.Nullable` to allow
-  `null`.
+- In an input, a field of type `any`, raw JSON, or a type with its own
+  JSON methods may hold any JSON value except `null`. Use
+  `op.Nullable` to allow `null`.
 
 `Input` and `Result` on the descriptor are JSON Schema that `Define`
 derives from these types, so they can't drift from the code.
