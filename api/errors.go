@@ -158,6 +158,12 @@ func Refuse(w http.ResponseWriter, r *http.Request, err error) {
 	WriteError(w, status, refused)
 }
 
+// RefuseBodyTooLarge answers the 413 Decode gives a body over the cap, for
+// a door that reads the body itself and meets http.MaxBytesError.
+func RefuseBodyTooLarge(response http.ResponseWriter) {
+	answer(response, "too_large")
+}
+
 // IsAgentSessionRefusal reports whether err is, or wraps, Admit's
 // refusal of an agent's write sent with no Agent-Session header. MCP
 // lists such a write anyway, so that the call itself tells the agent

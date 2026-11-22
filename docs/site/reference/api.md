@@ -302,6 +302,7 @@ func Write(w http.ResponseWriter, status int, v any)
 func Encode(value any) ([]byte, error)
 func WriteError(w http.ResponseWriter, status int, e Error)
 func Refuse(w http.ResponseWriter, r *http.Request, err error)
+func RefuseBodyTooLarge(response http.ResponseWriter)
 ```
 
 `Write` answers with `v` as JSON, with `Content-Type: application/json`
@@ -327,6 +328,10 @@ response carries only the ref. `op.Forbidden.Reason` is logged and never
 sent. `op.HumanOnly` is 403 `human_only`. Both doors log it at Info after
 applying `Config.Redact`, with the operation's ID and the caller, so an
 agent's attempt leaves a record.
+
+`RefuseBodyTooLarge` returns a 413 response with code `too_large`,
+matching Decode when the body exceeds the limit. Call it when your
+handler reads the body directly and encounters an `*http.MaxBytesError`.
 
 ```go
 var ErrUnauthorized = errors.New("rastrillo/api: unauthorized")

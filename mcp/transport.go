@@ -2,6 +2,7 @@ package mcp
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -10,6 +11,8 @@ import (
 	json "github.com/go-json-experiment/json"
 	"github.com/go-json-experiment/json/jsontext"
 	"github.com/modelcontextprotocol/go-sdk/jsonrpc"
+
+	"amadan.net/rastrillo/rastrillo/api"
 )
 
 // jsonSpace is what the SDK's decoder skips before a value, so a batch
@@ -64,8 +67,13 @@ func refusingStreams(next http.Handler) http.Handler {
 			return
 		}
 		body, err := readBody(request)
-		// The SDK reads the body again, and must meet the same error,
-		// so a body over Gate.MaxBody is still its 413.
+		// The SDK would answer this in plain text, which no client of
+		// the API's error shape can read.
+		var tooLarge *http.MaxBytesError
+		if errors.As(err, &tooLarge) {
+			api.RefuseBodyTooLarge(response)
+			return
+		}
 		request.Body = replay(body, err)
 		if err == nil {
 			if refused, found := streamed(body); found {

@@ -72,6 +72,11 @@ token gets the API's 401 or 503, and every answer has
   answer would carry a different id. The refusal is 400 with JSON-RPC
   error -32600 and a null id, and nothing runs. A string `id` is never
   refused.
+- MCP accepts request bodies up to `Gate.MaxBody`, the same limit as the
+  API. If the value is zero or less, the limit is 1 MiB. Larger bodies
+  receive the API's 413 response,
+  `{"error":{"code":"too_large", ...}}`, as JSON rather than plain text.
+  Set `MaxBody` in the API config. MCP has no separate limit.
 - Each request gets its own stateless server, which answers plain JSON
   and never advertises list changes.
 - `tools/list` shows only the tools `Gate.Admit` and `op.Check` allow

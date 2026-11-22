@@ -8,6 +8,15 @@ This file starts at v0.23.0. Earlier releases are in the git history and their
 tags; nothing has been reconstructed for them, because a changelog written
 backwards from commits is a guess wearing a date.
 
+## Unreleased
+
+### Fixed
+
+- MCP now accepts request bodies up to the API's `MaxBody`. It previously
+  capped bodies at 4 MiB. An app with `MaxBody` set to 16 MiB could accept
+  a 10 MB upload through the API but reject it over MCP. Bodies over the
+  limit now receive the API's JSON 413 response with code `too_large`.
+
 ## v0.43.0
 
 If your app does not call `op.Define`, the additions do not affect it.

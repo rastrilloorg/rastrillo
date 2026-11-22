@@ -8,6 +8,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"net/http"
 	"slices"
 
@@ -201,6 +202,10 @@ func (served *server) ServeHTTP(
 		func(*http.Request) *sdk.Server { return built },
 		&sdk.StreamableHTTPOptions{
 			Stateless: true, JSONResponse: true,
+			// The gate has already capped the body at Gate.MaxBody, so
+			// both doors take the same size. Left at zero, the SDK
+			// would cap it again at 4 MiB, under what the API allows.
+			MaxRequestBodyBytes: math.MaxInt64,
 			// The SDK's DNS-rebinding check would refuse every app behind
 			// a loopback proxy, and the gate has already required a bearer
 			// token, which a rebinding page does not have.
