@@ -13,14 +13,20 @@ import (
 // here, where the page door and the API door both meet it, rather than
 // in middleware only one of them runs.
 //
-// The order is fixed. The read-only and no-subject checks run before
-// the app's policy so that a policy which allows too much cannot hand a
-// read-only token a write, or an anonymous caller a scoped row: those
-// two are properties of the credential and the operation, not choices
-// an app makes. The policy's error comes back unchanged, so a refusal
-// keeps its type for errors.As and anything else is a 500.
+// The order is fixed. The human-only, read-only and no-subject checks
+// run before the app's policy so that a policy which allows too much
+// cannot hand an agent a human-only operation, a read-only token a
+// write, or an anonymous caller a scoped row: those are properties of
+// the credential and the operation, not choices an app makes. The
+// policy's error comes back unchanged, so a refusal keeps its type for
+// errors.As and anything else is a 500.
 func Check(ctx context.Context, rc *rastrillo.Ctx, o rastrillo.Operation) error {
 	a := rc.Actor
+	// First, so a read-only agent is told that no token will do rather
+	// than that it needs a writing one, which would not help either.
+	if o.HumanOnly != "" && (a.IsToken() || a.Agent != "") {
+		return HumanOnly{ID: o.ID}
+	}
 	// A session carries Write and the app's zero actor carries no
 	// Access at all, so only a read-only token is refused here.
 	if o.Access == rastrillo.Write && a.Access == rastrillo.Read {

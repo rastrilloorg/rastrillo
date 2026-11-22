@@ -608,3 +608,40 @@ func TestCallLogsOneLine(t *testing.T) {
 			"actor: %s", lines[0])
 	}
 }
+
+// Every other refusal tells the agent what to change, and no change
+// makes an agent a person, so human_only answers ahead of them all.
+func TestCallingAHumanOnlyToolAnswersHumanOnlyWhateverElseIsWrong(
+	t *testing.T,
+) {
+	tests := []struct {
+		name      string
+		session   bool // the gate requires an agent session
+		token     string
+		arguments string
+	}{
+		{"as_the_read_only_token", false, readerToken, `{}`},
+		{"as_a_writer_with_no_session", true, writerToken, `{}`},
+		{"with_an_unknown_null_member", false, writerToken, `{"x": null}`},
+		{"with_a_lone_surrogate", false, writerToken,
+			`{"x":"` + escape("d83d") + `"}`},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var invokes atomic.Int64
+			config := testConfig()
+			config.Gate.RequireAgentSession = test.session
+			url := serve(t, config, withTokensCreate(&invokes)...)
+			answer := post(t, http.MethodPost, url, test.token,
+				"2025-06-18", callBody("tokens_create", test.arguments))
+			refused := answer.call(t).refusal(t)
+			if refused.Code != "human_only" {
+				t.Errorf("code %q, want human_only: %+v",
+					refused.Code, refused)
+			}
+			if invokes.Load() != 0 {
+				t.Errorf("Invoke ran %d times, want 0", invokes.Load())
+			}
+		})
+	}
+}

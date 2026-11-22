@@ -322,6 +322,16 @@ func TestListShowsWritesWithoutASession(t *testing.T) {
 	}
 }
 
+// A human-only tool stays registered, so a call to it is answered
+// human_only, but listing it would offer the agent what it can't do.
+func TestListHidesAHumanOnlyOperation(t *testing.T) {
+	var invokes atomic.Int64
+	url := serve(t, testConfig(), withTokensCreate(&invokes)...)
+	if got := toolNames(t, url, writerToken); !slices.Equal(got, everyTool) {
+		t.Errorf("a writer lists %v, want %v", got, everyTool)
+	}
+}
+
 // lockedBuffer is a log destination the server's goroutines share.
 type lockedBuffer struct {
 	mutex  sync.Mutex

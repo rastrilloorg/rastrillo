@@ -71,7 +71,8 @@ func TestTreeAndGateAnswerAlike(t *testing.T) {
 		{"an agent write with no session", "/api/v1/things",
 			"agent-write", nil, 422, "invalid", msgAgentSession},
 		{"a read-only agent's write with no session", "/api/v1/things",
-			"agent-read", nil, 422, "invalid", msgAgentSession},
+			"agent-read", nil, 403, "forbidden",
+			codes["forbidden"].message},
 		{"a handler panic", "/api/v1/panics", "person-write", nil,
 			500, "internal", codes["internal"].message},
 	}
@@ -225,7 +226,9 @@ func TestAdmitRefusalsSkipAfter(t *testing.T) {
 	}
 }
 
-func TestAdmitChecksTheSessionBeforeReadOnly(t *testing.T) {
+// A read-only token may not write whatever headers it sends, so it is
+// told that first: sending a session would not help it.
+func TestAdmitChecksReadOnlyBeforeTheSession(t *testing.T) {
 	strict := Gate{RequireAgentSession: true}
 	readThing := desc("things.get", rastrillo.Read).Operation
 	cases := []struct {
@@ -237,7 +240,7 @@ func TestAdmitChecksTheSessionBeforeReadOnly(t *testing.T) {
 		message   string
 	}{
 		{"a read-only agent's write with no session", strict, agentRead,
-			writeThing, 422, msgAgentSession},
+			writeThing, 403, codes["forbidden"].message},
 		{"an agent's write with no session", strict, agentWrite,
 			writeThing, 422, msgAgentSession},
 		{"a read-only token's write", strict, personRead,
@@ -332,5 +335,74 @@ func TestIsAgentSessionRefusal(t *testing.T) {
 	}
 	if IsAgentSessionRefusal(nil) {
 		t.Error("nil is the session refusal")
+	}
+}
+
+// humanOnlyWrite is an operation only a person may call, such as one
+// that hands out tokens.
+func humanOnlyWrite() op.Descriptor {
+	descriptor := desc("tokens.create", rastrillo.Write)
+	descriptor.HumanOnly = "an agent must not raise its own access"
+	return descriptor
+}
+
+// Every other refusal would tell the caller what to change, and no
+// change to a token's request makes it a person, so human_only wins.
+func TestAdmitRefusesEveryTokenOnAHumanOnlyOperationFirst(t *testing.T) {
+	strict := Gate{RequireAgentSession: true}
+	request := WithLogger(httptest.NewRequest(http.MethodPost, "/", nil),
+		slog.New(slog.DiscardHandler))
+	callers := []struct {
+		name  string
+		actor rastrillo.Actor
+	}{
+		{"a read-only agent with no session", agentRead},
+		{"an agent with no session", agentWrite},
+		{"a person's own token", personWrite},
+	}
+	for _, caller := range callers {
+		t.Run(caller.name, func(t *testing.T) {
+			err := strict.Admit(caller.actor, humanOnlyWrite().Operation)
+			if err == nil {
+				t.Fatal("Admit = nil, want op.HumanOnly")
+			}
+			status, refused := Refusal(request, err)
+			if status != http.StatusForbidden ||
+				refused.Code != "human_only" ||
+				refused.Message != codes["human_only"].message {
+				t.Fatalf("Admit = %v, answered %d %+v; want 403 human_only",
+					err, status, refused)
+			}
+		})
+	}
+}
+
+func TestAHumanOnlyRouteRefusesBeforeTheBodyIsRead(t *testing.T) {
+	var handled int
+	route := Route{
+		Method: http.MethodPost, Pattern: "/api/v1/tokens",
+		Op: humanOnlyWrite(),
+		Handle: func(
+			_ context.Context, _ *rastrillo.Ctx,
+			response http.ResponseWriter, request *http.Request,
+		) {
+			handled++
+			var input struct{}
+			if Decode(response, request, &input) {
+				Write(response, http.StatusCreated, input)
+			}
+		},
+	}
+	tree := mustNew(t, config(), route)
+	recorder := serve(tree, http.MethodPost, "/api/v1/tokens",
+		"agent-write", "not json")
+	refused := decodeError(t, recorder)
+	if recorder.Code != http.StatusForbidden ||
+		refused.Code != "human_only" {
+		t.Fatalf("answered %d %+v, want 403 human_only",
+			recorder.Code, refused)
+	}
+	if handled != 0 {
+		t.Fatalf("Handle ran %d times, want 0", handled)
 	}
 }

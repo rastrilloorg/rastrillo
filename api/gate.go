@@ -111,24 +111,30 @@ func (gate Gate) Wrap(handler http.Handler) http.Handler {
 	})
 }
 
-// Admit is the gate's per-operation half, in the tree's order:
-// RequireAgentSession for a write, then the read-only check. A
-// read-only agent's write with no session is refused for the session,
-// so both doors give that caller the same answer.
+// Admit is the gate's per-operation half, the same on both doors:
+// human-only, then the read-only check, then RequireAgentSession for a
+// write, so a caller first hears what no change to its request fixes.
 func (gate Gate) Admit(
 	actor rastrillo.Actor, operation rastrillo.Operation,
 ) error {
+	// Human-only is a property of the operation and the credential, and
+	// must win, so an agent learns that no token will do. A person's
+	// own token counts too: an agent may be holding it.
+	maybeAgent := actor.IsToken() || actor.Agent != ""
+	if operation.HumanOnly != "" && maybeAgent {
+		return op.HumanOnly{ID: operation.ID}
+	}
 	// Anything but Read is held to the write rules, so an operation
 	// that lost its Access to a bug is refused rather than let through.
 	writes := operation.Access != rastrillo.Read
+	// Not "== Read": an Access added later would otherwise pass as a
+	// writer. Only Write may write, whatever headers it sends.
+	if writes && actor.Access != rastrillo.Write {
+		return op.Forbidden{Reason: "read-only credential"}
+	}
 	missingSession := actor.Agent != "" && actor.Session == ""
 	if gate.RequireAgentSession && writes && missingSession {
 		return errAgentSession
-	}
-	// Not "== Read": an Access added later would otherwise pass as a
-	// writer. Only Write may write.
-	if writes && actor.Access != rastrillo.Write {
-		return op.Forbidden{Reason: "read-only credential"}
 	}
 	return nil
 }

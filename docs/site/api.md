@@ -301,6 +301,7 @@ Branch on `code`, never on `message`. Each code has one status:
 |---|---|---|
 | `unauthorized` | 401 | no token, or one that does not work |
 | `forbidden` | 403 | the token may not do this |
+| `human_only` | 403 | only a person may do this, in the app |
 | `not_found` | 404 | no such row, or not the caller's; no such path |
 | `method_not_allowed` | 405 | the path exists but not with this method |
 | `conflict` | 409 | the change clashes with what is stored |

@@ -93,3 +93,57 @@ func TestDefaultPolicy(t *testing.T) {
 		t.Errorf("a session on an unscoped operation: err = %v, want nil", err)
 	}
 }
+
+// tokensCreate is an operation only a person may call: one that hands
+// out access, which an agent must never be able to raise for itself.
+var tokensCreate = rastrillo.Operation{
+	ID: "tokens.create", Resource: "tokens", Access: rastrillo.Write,
+	HumanOnly: "an agent must not raise its own access",
+}
+
+func TestCheckRefusesEveryTokenOnAHumanOnlyOperation(t *testing.T) {
+	allowAll := func(
+		context.Context, rastrillo.Actor, rastrillo.Operation,
+	) error {
+		return nil
+	}
+	callers := map[string]rastrillo.Actor{
+		"an agent's token": {Subject: "a", Agent: "Claude",
+			Credential: "x", Access: rastrillo.Write},
+		"a person's own token": {Subject: "a", Credential: "x",
+			Access: rastrillo.Write},
+		"an agent with no credential": {Subject: "a", Agent: "Claude",
+			Access: rastrillo.Write},
+		"a read-only agent token": {Subject: "a", Agent: "Claude",
+			Credential: "x", Access: rastrillo.Read},
+	}
+	for name, actor := range callers {
+		t.Run(name, func(t *testing.T) {
+			rc := &rastrillo.Ctx{Actor: actor, Authorize: allowAll}
+			err := Check(context.Background(), rc, tokensCreate)
+			var refused HumanOnly
+			if !errors.As(err, &refused) {
+				t.Fatalf("Check = %v, want op.HumanOnly", err)
+			}
+			if refused.ID != "tokens.create" {
+				t.Fatalf("ID = %q, want tokens.create", refused.ID)
+			}
+		})
+	}
+}
+
+func TestCheckLetsAPersonAndTheAppCallAHumanOnlyOperation(t *testing.T) {
+	callers := map[string]rastrillo.Actor{
+		"a person": {Subject: "a", Access: rastrillo.Write},
+		"the app":  {},
+	}
+	for name, actor := range callers {
+		t.Run(name, func(t *testing.T) {
+			rc := &rastrillo.Ctx{Actor: actor}
+			if err := Check(context.Background(), rc,
+				tokensCreate); err != nil {
+				t.Fatalf("Check = %v, want nil", err)
+			}
+		})
+	}
+}

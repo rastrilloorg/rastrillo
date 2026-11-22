@@ -19,9 +19,10 @@ type Invalid struct {
 type NotFound struct{}
 type Forbidden struct{ Reason string }
 type Conflict struct{ Message string }
+type HumanOnly struct{ ID string }
 ```
 
-An operation returns one of these to refuse a call. All four are values,
+An operation returns one of these to refuse a call. All five are values,
 so match them with `errors.As`:
 
 ```go
@@ -37,12 +38,14 @@ key into its wire name. When `AsSent` is true, the API and MCP report
 the keys under the names the client sent. `NotFound` is the answer both
 for a row that does not exist and for one that is not the caller's.
 `Forbidden.Reason` is for your logs and never reaches the response.
-`Conflict.Message` is safe to show.
+`Conflict.Message` is safe to show. `HumanOnly` is what `Check` returns
+when a token or an agent calls an operation only a person may call; the
+API and MCP answer it as `human_only`.
 
-`Invalid.Error`, `NotFound.Error`, `Forbidden.Error` and `Conflict.Error`
-are for log lines: `invalid: Amount, Title` (the field names, sorted,
-never the messages), `not found`, `forbidden: <reason>` and
-`conflict: <message>`.
+`Invalid.Error`, `NotFound.Error`, `Forbidden.Error`, `Conflict.Error`
+and `HumanOnly.Error` are for log lines: `invalid: Amount, Title` (the
+field names, sorted, never the messages), `not found`,
+`forbidden: <reason>`, `conflict: <message>` and `human only: <id>`.
 
 ## Check and DefaultPolicy
 
@@ -54,18 +57,22 @@ func DefaultPolicy(ctx context.Context, a rastrillo.Actor, o rastrillo.Operation
 `Check` is the one place both doors ask who may do what. Call it first in
 any operation you write by hand. It asks, in order:
 
-1. A read-only token on a `Write` operation is refused.
-2. A scoped operation with no `Subject` is refused.
-3. If `rc.Authorize` is set, its error is the answer. Return `nil` to
+1. An operation with `HumanOnly` set is refused, as `HumanOnly`, for
+   any token or agent. A person's own token is refused too, since an
+   agent may be holding it.
+2. A read-only token on a `Write` operation is refused.
+3. A scoped operation with no `Subject` is refused.
+4. If `rc.Authorize` is set, its error is the answer. Return `nil` to
    allow, or `Forbidden` or `NotFound` to refuse. `Check` returns your
    error unchanged, and the door that called it answers it the way it
    answers the same error from an operation: the API by its errors
    table, a page with its 403 or 404 page. An error neither recognises
    is a 500.
-4. Otherwise `DefaultPolicy` decides.
+5. Otherwise `DefaultPolicy` decides.
 
-The first two run before your policy, so no policy can let a read-only
-token write or let a caller with no subject reach a scoped row.
+The first three run before your policy, so no policy can let an agent
+call a human-only operation, let a read-only token write, or let a
+caller with no subject reach a scoped row.
 
 `DefaultPolicy` allows a scoped operation, because the owner filter keeps
 the caller to their own rows. It allows an unscoped operation for a

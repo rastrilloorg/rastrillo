@@ -53,6 +53,11 @@ type Forbidden struct{ Reason string }
 // crossing a currency change. Message is safe to show.
 type Conflict struct{ Message string }
 
+// HumanOnly refuses a token on an operation only a person may call. It
+// is its own type, not a Forbidden, so a door can tell the agent that
+// no token will do and that the person must act in the app.
+type HumanOnly struct{ ID string }
+
 // Error names the fields, sorted so a log line is stable, but not the
 // messages: those are for the response, and a log that repeats them
 // says nothing the field names do not.
@@ -71,6 +76,9 @@ func (e Invalid) Error() string {
 func (NotFound) Error() string    { return "not found" }
 func (e Forbidden) Error() string { return "forbidden: " + e.Reason }
 func (e Conflict) Error() string  { return "conflict: " + e.Message }
+func (refused HumanOnly) Error() string {
+	return "human only: " + refused.ID
+}
 
 // Money is an amount on the wire: minor units and an ISO 4217 code.
 // Currency may be empty on input; the operation fills the manifest's

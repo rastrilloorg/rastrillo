@@ -57,10 +57,12 @@ through these steps in order, and the first one that refuses answers:
 2. `Config.Before`, such as a rate limiter.
 3. `Verify`: 401 or 503.
 4. The agent headers: 422.
-5. With `RequireAgentSession`, an agent's write with no
-   `Agent-Session`: 422.
+5. Any token on a route whose operation has `HumanOnly` set: 403
+   `human_only`.
 6. A read-only token on a `Write` route: 403.
-7. `Config.After`, then the route's `Handle`.
+7. With `RequireAgentSession`, an agent's write with no
+   `Agent-Session`: 422.
+8. `Config.After`, then the route's `Handle`.
 
 The answer is held until `Handle` returns, then sent, and with a
 `Rechecker` it is checked again on the way out. See [Gate](#gate).
@@ -108,6 +110,7 @@ not on `Message`: each code maps to one status, and the prose may change.
 |---|---|---|
 | `unauthorized` | 401 | the token is missing or does not work |
 | `forbidden` | 403 | the token may not do this |
+| `human_only` | 403 | only a person may do this, in the app; no token can |
 | `not_found` | 404 | no such row, or not the caller's; no such path |
 | `method_not_allowed` | 405 | a known path, wrong method |
 | `conflict` | 409 | the write lost a race |
@@ -155,10 +158,12 @@ and checked, with the actor on the request's context. It panics if a
 `Before` or `After` returns nil. It doesn't call `Admit`; the handler
 calls it once it knows the operation.
 
-`Admit` is the per-operation half, in the tree's order. With
-`RequireAgentSession` set, it refuses an agent's write that came with
-no `Agent-Session`. Then it refuses a read-only token on anything but a
-`Read` operation, as `op.Forbidden`.
+`Admit` is the per-operation half, in the tree's order. First it
+refuses any token or agent on an operation with `HumanOnly` set, as
+`op.HumanOnly`, a person's own token included. Then it refuses a
+read-only token on anything but a `Read` operation, as `op.Forbidden`.
+Then, with `RequireAgentSession` set, it refuses an agent's write that
+came with no `Agent-Session`.
 
 `MaxBody` caps a request body, and zero or less means 1 MiB.
 `MaxResponse` caps an answer, which is held whole until it has been

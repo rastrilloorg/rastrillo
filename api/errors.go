@@ -34,9 +34,9 @@ var (
 )
 
 // Error is the body of every refusal, under an "error" member. Code is
-// one of the twelve in the codes table; Fields is set only for invalid,
-// keyed by wire name; Ref is set only for internal, so the person who
-// reports the failure can quote what the log line carries.
+// one of the thirteen in the codes table; Fields is set only for
+// invalid, keyed by wire name; Ref is set only for internal, so the
+// person who reports the failure can quote what the log line carries.
 type Error struct {
 	Code    string            `json:"code"`
 	Message string            `json:"message"`
@@ -70,6 +70,12 @@ var codes = map[string]refusal{
 	// was fine and the answer to it would be too big to send.
 	"response_too_large": {
 		http.StatusUnprocessableEntity, msgResponseTooLarge,
+	},
+	// Not forbidden, which says this token can't: here no token can,
+	// so the agent must ask its person rather than another token.
+	"human_only": {
+		http.StatusForbidden,
+		"A person must do this in the app. Ask them to do it there.",
 	},
 }
 
@@ -169,8 +175,11 @@ func Refusal(request *http.Request, err error) (int, Error) {
 		notFound     op.NotFound
 		forbidden    op.Forbidden
 		conflict     op.Conflict
+		humanOnly    op.HumanOnly
 	)
 	switch {
+	case errors.As(err, &humanOnly):
+		return tableRefusal("human_only")
 	case errors.Is(err, errAgentSession):
 		return codes["invalid"].status,
 			Error{Code: "invalid", Message: msgAgentSession}

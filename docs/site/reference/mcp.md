@@ -69,10 +69,13 @@ token gets the API's 401 or 503, and every answer has
   and never advertises list changes.
 - `tools/list` shows only the tools `Gate.Admit` and `op.Check` allow
   the caller, without the agent-session check, which a list never needs.
-  Only `op.Forbidden` or `op.NotFound` hides a tool. Any other error
+  Only `op.Forbidden`, `op.NotFound` or `op.HumanOnly` hides a tool, so
+  a human-only tool is never listed for a token. Any other error
   fails the list as a JSON-RPC internal error, with a ref in its data.
-- A tool call runs `Gate.Admit` and `op.Check` before `Invoke`, so a
-  hand-written `Invoke` that skips `op.Check` is still checked. A
+- A tool call runs `Gate.Admit` and `op.Check` before it reads the
+  arguments or calls `Invoke`, so a hand-written `Invoke` that skips
+  `op.Check` is still checked, and a human-only tool answers
+  `human_only` whatever the arguments. A
   refusal is a tool error holding the API's error envelope, from
   `api.Refusal`. A panic in a call is an `internal` tool error with a
   ref. So is a result that isn't an object, including `null`, when the
