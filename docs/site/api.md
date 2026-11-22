@@ -80,10 +80,12 @@ The [api reference](/docs/reference/api) has every option.
 
 Every operation starts with `op.Check`. It asks, in order:
 
-1. Is this a read-only token on a write? Refused.
-2. Is this a resource with `scope = "user"` and no signed-in person?
+1. Does this operation allow only a person, and is the caller a token
+   or an agent? Refused as `human_only`, whatever else is wrong.
+2. Is this a read-only token on a write? Refused.
+3. Is this a resource with `scope = "user"` and no signed-in person?
    Refused.
-3. Your `Authorize` function decides. With none set, `op.DefaultPolicy`
+4. Your `Authorize` function decides. With none set, `op.DefaultPolicy`
    decides.
 
 `op.DefaultPolicy` lets a token do what its owner can do on a
@@ -187,7 +189,12 @@ An agent may send two more headers:
 Each must be 200 bytes or fewer, with no control characters, or the
 answer is 422. They are read only for a token made for an agent. Set
 `api.Config.RequireAgentSession` to refuse a write from an agent that
-does not send `Agent-Session`.
+does not send `Agent-Session`. A read-only token's write is refused as
+`forbidden` first, whether or not it sent one.
+
+Every answer to a request that matches one of the API's routes carries
+`Rastrillo-Operation`, the ID of the operation the route serves, even a
+401. A request that matches no route doesn't have it.
 
 Every request that reaches a handler logs one line, `api: request`,
 with the method, the path, the actor, and the two agent headers when
@@ -382,6 +389,10 @@ if err := op.Check(ctx, rc, CreateOp); err != nil {
 `rastrillo generate --check` fails if a function starts any other way,
 if a package-level `var` calls a function to get its value, or if the
 file is missing its `//go:build` line.
+
+Operations you declare with `op.Define` are served by `api.Operations`.
+[Named operations and parity](/docs/operations) shows how, and how to
+test that your pages and the API agree.
 
 ## Changing a page action by hand
 

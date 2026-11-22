@@ -291,6 +291,11 @@ string's constant. Skipped, with reasons:
     `step %q: API refused with message %q; MCP refused with message %q`
   - [`msgStateDiffers`]: `after step %q: %s left state %v; %s left state %v`
   - [`msgScenarioHumanOnly`]: `step %q calls human-only %s. Test it with paritytest.Routes`
+- **`action` panic for a second mark** [`msgTwoMarks`], added in Task 10 by
+  Luna on 2026-11-22 (the draft "action: %s %s has more than one mark. Pass
+  one: route.Operation takes every operation the route serves" did not say
+  what to pass; the method and path stay first):
+  `action: %s %s has more than one mark. Pass one mark: use route.Operation for the operations this page serves, or route.PageOnly(reason)`
 - **`rastrillo routes --check`** [`unmarkedRoutes`]:
   `This app declares operations. Each route must name one or explain why it has none. These routes don't:\n\n%s\nUse route.Operation to name each route's operation. Use route.PageOnly for routes agents should not use.`
 

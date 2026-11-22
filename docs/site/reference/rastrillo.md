@@ -363,10 +363,11 @@ type Operation struct {
 `Read` observes and never changes state. `Write` changes state. The zero
 `Access` is invalid: set one explicitly. `Access.String` is `"read"`,
 `"write"` or `"invalid"`, and `Access.Valid` is true for `Read` and
-`Write`. An `Operation` is what `Ctx.Authorize` is asked about.
-`HumanOnly` is the reason only a person may call it, such as creating a
-token, and empty when an agent may call it too. Every token is refused
-a human-only operation, a person's own included, before any other check.
+`Write`. An `Operation` is what `Ctx.Authorize` is asked about. Set
+`HumanOnly` to the reason only a person may call the operation, such as
+creating a token. Leave it empty if an agent may call it too. Every
+token is refused when it calls a human-only operation, a person's own
+included, and this check runs first.
 
 ```go
 type Actor struct {

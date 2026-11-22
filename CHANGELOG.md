@@ -8,6 +8,49 @@ This file starts at v0.23.0. Earlier releases are in the git history and their
 tags; nothing has been reconstructed for them, because a changelog written
 backwards from commits is a guess wearing a date.
 
+## Unreleased
+
+If your app does not call `op.Define`, the additions do not affect it.
+The changes under Changed still apply.
+
+### Changed
+
+- The API and MCP now refuse a read-only token's write as `forbidden`,
+  not `invalid`, even if the request has no `Agent-Session` header. The
+  access check now runs before the agent-session check. If a client
+  retries with the header after an `invalid` answer, it now gets
+  `forbidden`: the token can't write, with or without the header.
+- MCP checks the caller before it decodes a call's arguments. An agent
+  that sent bad arguments to a tool it may not call used to get a field
+  error and now gets the refusal. `Invoke` is not called until the caller
+  is allowed.
+- Every API answer to a request that matches one of its routes carries
+  `Rastrillo-Operation: <id>`, a 401 included. A request that matches no
+  route doesn't have it.
+
+### Added
+
+- Named operations. `op.Define` declares an operation from an ID, a
+  `Spec` and a function. The page calls `Call`, and the API and MCP serve
+  its `Descriptor`, with JSON Schema derived from the Go types. See
+  [Named operations and parity](/docs/operations).
+- `api.Operations` builds a route for each descriptor, as a POST or, for
+  a read with `Spec.InQuery`, a GET. `op.None` is the result of an
+  operation that returns nothing.
+- `api.Served` and `mcp.Served` return what a handler serves, so a test
+  can compare the two doors.
+- Human-only operations. `Spec.HumanOnly` and `Operation.HumanOnly` mark
+  an operation only a person may call. Every token is refused, as the new
+  `human_only` code (403), before any other check, and MCP hides the tool.
+- `route`, a recorder for page routes over chi or `ServeMux`, with
+  `route.Operation` and `route.PageOnly` marks. `action.Routes` takes the
+  marks on `Get`, `Post` and `Handle`.
+- `paritytest`: `Routes` checks that the page table, the API and MCP
+  offer the same operations, and `Run` drives a scenario through the page,
+  the API and MCP and compares the answers and the stored state.
+- `rastrillo routes --check` fails a route with no mark, once the module
+  calls `op.Define`. An app that doesn't is held to nothing new.
+
 ## v0.42.0
 
 `rastrillo migration` can now identify the app package when other packages

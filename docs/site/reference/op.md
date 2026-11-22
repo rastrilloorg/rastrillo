@@ -183,12 +183,12 @@ type Descriptor struct {
 ```
 
 `Descriptor` names one operation for any transport. The embedded
-`rastrillo.Operation` gives its ID, resource, scope and access. `Exposed`
-says whether the resource is on the API. `Confirm` is the sentence an
-agent shows before a write. `InQuery` means the API serves the read at
-GET, with its input in the query string. `Input` and `Result` are JSON
-Schema, and both are required. `Invoke` decodes `input` with the API door's rules and
-calls the operation.
+`rastrillo.Operation` gives its ID, resource, scope and access.
+`Exposed` says whether the resource is on the API. `Confirm` is the
+sentence an agent shows before a write. `InQuery` means the API serves
+the read at GET, with its input in the query string. `Input` and
+`Result` are JSON Schema, and both are required. `Invoke` decodes
+`input` with the API door's rules and calls the operation.
 
 `Destructive` means a call may change or remove what is already there;
 false means it does not. `Idempotent` means two calls with the same

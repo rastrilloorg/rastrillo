@@ -2,9 +2,10 @@
 
 `amadan.net/rastrillo/rastrillo/paritytest`
 
-Check, in an app's own tests, that its pages, its API and its MCP
-endpoint offer the same named operations. An agent can then do what a
-person can, and no door serves an operation the app never declared.
+In your app's tests, use `Routes` to check that every page names its
+operation, and that the API and MCP serve the same operations the app
+declares and no others. Use `Run` to check that a person and their agent
+get the same answers.
 
 ## Surface and Routes
 

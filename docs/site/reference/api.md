@@ -105,9 +105,8 @@ hand. `notes.create` is served at `POST /api/v1/notes/create`. A read
 with `InQuery` set is a GET instead, such as `GET /api/v1/notes/list`.
 
 Each route runs `op.Check` before it reads any input, even when the
-descriptor's `Invoke` does not call it. A caller the operation refuses
-is told so before anything about its input, and the operation never
-runs.
+descriptor's `Invoke` does not call it. If the check refuses the caller,
+the route answers with that refusal and the operation never runs.
 
 A POST takes its input as a JSON body:
 

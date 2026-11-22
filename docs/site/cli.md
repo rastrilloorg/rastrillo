@@ -739,7 +739,7 @@ uses the module cache and changes neither `go.mod` nor `go.sum`.
 | Flag | Purpose |
 |---|---|
 | `--package` | The import path of the package whose `Routes` to call, when more than one package has one |
-| `--check` | Also fail for each action no route mounts, and, once the app declares an operation, for each route with no mark |
+| `--check` | Also fail for each action no route mounts and, once the module calls `op.Define`, each route with no mark |
 
 `--check` finds every action in the module: each function or method that
 takes one `*action.Visit` and returns nothing. It names each one that no
@@ -747,13 +747,13 @@ route mounts. Mount it in `Routes`, or delete it. An action mounted
 through an interface value counts as not mounted: mount the method on
 its type instead.
 
-Once the app declares a named operation, a call to `op.Define` anywhere
-in the module, `--check` also needs every route to say what it is for.
-Give `Get`, `Post` or `Handle` one mark: `route.Operation` names the
-operations the page serves, and `route.PageOnly` says why an agent has
-no use for the route, such as a stylesheet. `--check` names each route
-with neither, by method and path. A `Mount` needs no mark. An app that
-calls `op.Define` nowhere is not held to this rule.
+If the module calls `op.Define` anywhere, `--check` also needs every
+route to say what it is for. Give `Get`, `Post` or `Handle` one mark:
+`route.Operation` names the operations the page serves, and
+`route.PageOnly` says why an agent has no use for the route, such as a
+stylesheet. `--check` names each route with neither, by method and path.
+A `Mount` needs no mark. An app that calls `op.Define` nowhere is not
+held to this rule.
 
 ```go
 routes.Post("/notes", app.noteCreate,

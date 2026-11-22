@@ -158,12 +158,13 @@ func (routes *Routes) List() []Route
 `List` returns every route mounted so far, in the order it was mounted.
 Each `Path` is the path as you wrote it, and `Guards` names the guards
 that apply. A `Get` or `Post` is listed by its function's name, so a
-method value such as `app.tagRename` appears as `tagRename`. Its `Action`
-is the full name, such as `example.com/app/internal/app.(*App).tagRename`.
-Compare `Action`, not `Handler`, to tell two methods called `Show` apart.
-`Action` is empty for `Handle` and `Mount`. A `Mount` is one line, `*`
-with the path `<prefix>/*`. `Operations` and `PageOnly` hold the
-route's mark, and both are empty without one. Read `List` in a test to check that an admin
+method value such as `app.tagRename` appears as `tagRename`. Its
+`Action` is the full name, such as
+`example.com/app/internal/app.(*App).tagRename`. Compare `Action`, not
+`Handler`, to tell two methods called `Show` apart. `Action` is empty
+for `Handle` and `Mount`. A `Mount` is one line, `*` with the path
+`<prefix>/*`. `Operations` and `PageOnly` hold the route's mark, and
+both are empty without one. Read `List` in a test to check that an admin
 route has its guard, without serving a request.
 
 ## Naming a path

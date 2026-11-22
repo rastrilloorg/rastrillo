@@ -53,8 +53,9 @@ type Route struct {
 
 // msgTwoMarks refuses a second mark: a route serves its operations or
 // none, and route.Operation already takes every operation it serves.
-const msgTwoMarks = "action: %s %s has more than one mark. Pass one: " +
-	"route.Operation takes every operation the route serves"
+const msgTwoMarks = "action: %s %s has more than one mark. Pass one mark: " +
+	"use route.Operation for the operations this page serves, " +
+	"or route.PageOnly(reason)"
 
 // Routes mounts handlers on a chi router and records each one. Nothing
 // is built or called while routes are registered: an app can register

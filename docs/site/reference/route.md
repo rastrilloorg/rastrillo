@@ -2,8 +2,8 @@
 
 `amadan.net/rastrillo/rastrillo/route`
 
-Register an app's page routes on chi or a `ServeMux`, and record each
-one with the operation it serves or why an agent has no use for it.
+Register each page route through a `Table`, on chi or a `ServeMux`. Mark
+it with the operation it serves, or say why an agent has no use for it.
 `paritytest` reads that record to check that every page has an agent
 twin on the API and MCP.
 
@@ -47,10 +47,10 @@ table.Handle("GET /style.css", stylesheet, route.PageOnly("the stylesheet"))
 ```
 
 `Table.On` is a table for a sub-router mounted at `prefix`. It shares
-the record and the twice-check with the table it came from, so one
-`List` holds the whole app, and each route is recorded under its full
-path. The prefix is relative to the table `On` is called on, as chi's
-`Route` is:
+the route list and the duplicate-route check with the table it came
+from, so one `List` holds the whole app, and each route is recorded
+under its full path. The prefix is relative to the table `On` is called
+on, as chi's `Route` is:
 
 ```go
 router.Route("/admin", func(sub chi.Router) {
