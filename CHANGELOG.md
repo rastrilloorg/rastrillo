@@ -10,13 +10,23 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
-### Changed: `--auth=signin`
+## v0.45.0
 
-- `rastrillo new --auth=signin` starts an app with sign-in by emailed link. People can add a passkey, authenticator app or passphrase. `--auth=magic` is the old name and creates the same app.
+### Added: a default sign-in for new apps
 
-### Changed: the QR code's label
+`rastrillo new --auth=signin` and the accounts scaffold now give apps a familiar sign-in flow. `--auth=magic` remains supported as the old name.
 
-- The add page's authenticator app QR code now has a screen-reader label in the page's language. `totp.Enrolment.LabelledQR` draws a QR code with a label you provide. `signin.Add` now exposes `URI` and `Add.QR(label)`.
+- Users sign in with a link sent to their email. If the address is a Keymail inbox, Keymail's own sign-in starts instead. The sign-in flow never shows the word "Keymail".
+- After their first sign-in, users can add a passkey, authenticator app, or passphrase. Each method works on its own. They can choose "Not now" and won't be asked again.
+- Next time, the screen leads with the method they used last, with "Other ways to sign in" below it.
+- Users can add or remove methods on the Sign-in options page. The email link always stays available.
+- Your app can add sign-up steps, such as asking for a name. They run after the email address is verified.
+
+The new `signin` package handles the flow, and the scaffold sets it up in one call. Wrong codes and passphrases are limited to 5 per account and 30 per client IP every 15 minutes. An unknown address gets the same response as a wrong code or passphrase. See `docs/site/signin.md` for details.
+
+Keymail is now enabled by default in new apps. When the app server looks up a Keymail address or exchanges a token, it connects only to public internet addresses, never to localhost or a private network. Set `auth.Config.KeymailServers` to limit it to the servers you list.
+
+The authenticator app's QR code has a screen-reader label in the page's language. `totp.Enrolment.LabelledQR` draws a QR code with a label you provide.
 
 ### Added: Fiesta 1.6.0, the stack and the spacing gates
 
@@ -36,6 +46,10 @@ with a `/* spacing-allow: why */` comment for the exceptions.
 reports off-scale gaps, text touching a control, and a heading further from
 its content than from the block before it. An app vendoring `tokens.css`
 takes the stack with `rastrillo doctor -fix`.
+
+### Changed: Fiesta 1.6.1
+
+Fiesta 1.6.1 updates its three Keymail sign-in examples so they don't display the name Keymail, matching what Rastrillo now renders.
 
 ## v0.44.1
 
