@@ -8,10 +8,10 @@ This file starts at v0.23.0. Earlier releases are in the git history and their
 tags; nothing has been reconstructed for them, because a changelog written
 backwards from commits is a guess wearing a date.
 
-## Unreleased
+## v0.43.0
 
 If your app does not call `op.Define`, the additions do not affect it.
-The changes under Changed still apply.
+The changes in the Changed section still apply.
 
 ### Changed
 
@@ -38,7 +38,7 @@ The changes under Changed still apply.
   a read with `Spec.InQuery`, a GET. `op.None` is the result of an
   operation that returns nothing.
 - `api.Served` and `mcp.Served` return what a handler serves, so a test
-  can compare the two doors.
+  can compare what the API and MCP serve.
 - Human-only operations. `Spec.HumanOnly` and `Operation.HumanOnly` mark
   an operation only a person may call. Every token is refused, as the new
   `human_only` code (403), before any other check, and MCP hides the tool.
