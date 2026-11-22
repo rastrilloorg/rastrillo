@@ -1,6 +1,7 @@
 package paritytest
 
 import (
+	"encoding/json"
 	"fmt"
 	"maps"
 	"net/http"
@@ -88,6 +89,8 @@ func pageOutcome(response *httptest.ResponseRecorder) Outcome {
 		outcome.Kind = "forbidden"
 	case http.StatusNotFound:
 		outcome.Kind = "not_found"
+	case http.StatusConflict:
+		outcome.Kind = "conflict"
 	default:
 		outcome.Kind = fmt.Sprintf("HTTP %d", response.Code)
 	}
@@ -208,6 +211,35 @@ func TestRunCatchesAPageThatSkipsTheOperation(t *testing.T) {
 					door, "forbidden", []string(nil)))
 		}
 		wantRunFailures(t, scenario, want...)
+	})
+}
+
+func TestRunCatchesAnAPIAndMCPBodyThatDiffer(t *testing.T) {
+	eachRouter(t, func(t *testing.T, router string) {
+		factory := &examples{router: router,
+			options: exampleOptions{mcpResultDiffers: true}}
+		scenario := Scenario{Fresh: factory.fresh, Steps: exampleSteps}
+		note := func(title string) map[string]any {
+			return map[string]any{"id": json.Number("1"), "title": title}
+		}
+		wantRunFailures(t, scenario, fmt.Sprintf(msgBodiesDiffer,
+			"a creates Hello", note("Hello"), note("Hello (MCP)")))
+	})
+}
+
+func TestRunCatchesARefusalWhoseMessageDiffers(t *testing.T) {
+	eachRouter(t, func(t *testing.T, router string) {
+		factory := &examples{router: router,
+			options: exampleOptions{mcpMessageDiffers: true}}
+		scenario := Scenario{Fresh: factory.fresh, Steps: []Step{
+			exampleSteps[0],
+			{"a creates Hello again", "a", named.create.Descriptor,
+				map[string]any{"title": "Hello"}},
+		}}
+		wantRunFailures(t, scenario, fmt.Sprintf(msgMessagesDiffer,
+			"a creates Hello again",
+			"A note has that title. Choose another.",
+			"That title is taken."))
 	})
 }
 

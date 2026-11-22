@@ -32,6 +32,10 @@ type Outcome struct {
 	Kind   string         // "ok" for 2xx, else the error's code
 	Fields []string       // an invalid answer's field names, sorted
 	Body   map[string]any // numbers as json.Number
+	// Message is a refusal's message. The API and MCP both write it
+	// with api.Refusal, so Run compares their messages; a page renders its
+	// own HTML wording.
+	Message string
 }
 
 // CallAPI calls descriptor through surface.Handler's API with
@@ -180,7 +184,8 @@ func refusalOf(body []byte) Outcome {
 		Error api.Error `json:"error"`
 	}
 	_ = json.Unmarshal(body, &envelope)
-	outcome := Outcome{Kind: envelope.Error.Code}
+	outcome := Outcome{Kind: envelope.Error.Code,
+		Message: envelope.Error.Message}
 	if len(envelope.Error.Fields) > 0 {
 		outcome.Fields = slices.Sorted(maps.Keys(envelope.Error.Fields))
 	}

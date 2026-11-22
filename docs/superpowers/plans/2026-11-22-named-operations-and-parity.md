@@ -285,6 +285,10 @@ string's constant. Skipped, with reasons:
 - **`paritytest.Run` failures:**
   - [`msgDoorsDiffer`]: `step %q: %s returned %s %v, but %s returned %s %v`
   - [`msgBodiesDiffer`]: `step %q: API returned body %v; MCP returned body %v`
+  - [`msgMessagesDiffer`], added in Task 8's fix round by Luna on
+    2026-11-22 (kept as drafted), for a refusal whose message differs
+    between the API and MCP:
+    `step %q: API refused with message %q; MCP refused with message %q`
   - [`msgStateDiffers`]: `after step %q: %s left state %v; %s left state %v`
   - [`msgScenarioHumanOnly`]: `step %q calls human-only %s. Test it with paritytest.Routes`
 - **`rastrillo routes --check`** [`unmarkedRoutes`]:

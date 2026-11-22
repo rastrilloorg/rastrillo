@@ -90,6 +90,8 @@ type Outcome struct {
 	Kind   string         // "ok" for 2xx, else the error's code
 	Fields []string       // an invalid answer's field names, sorted
 	Body   map[string]any // numbers as json.Number
+	// Message is a refusal's message.
+	Message string
 }
 
 func CallAPI(t testing.TB, surface Surface, descriptor op.Descriptor,
@@ -111,7 +113,8 @@ An `Outcome`'s `Kind` is `"ok"` for a success, and the error's code for
 a refusal, so the two doors' answers compare directly. `Status` is the
 HTTP status. MCP answers a refused tool call with 200, so compare
 `Kind`, not `Status`. `Body` is a success's JSON object, and nil for
-anything else.
+anything else. `Message` is a refusal's message, which the API and MCP
+both write with `api.Refusal`.
 
 ## Scenarios and Run
 
@@ -147,12 +150,16 @@ each:
 - the API fixture with `CallAPI`, and the MCP fixture with `CallTool`,
   each with `Token(person)`.
 
-After each step, `Run` fails when:
+After each step, `Run` compares:
 
-- the API's or MCP's `Kind` or `Fields` differ from the page's;
-- the API's `Body` differs from MCP's;
-- the API's or MCP's `State` starts to differ from the page's. A state
-  that differs is reported once, at the step where it starts.
+- `Kind` and `Fields` across all three doors;
+- `Body` and `Message` between the API and MCP;
+- `State` across all three doors. A difference in state is reported
+  once, at the step where it starts.
+
+`Run` doesn't compare the page's rendered body or its wording. For a
+read, it checks only that the page's `Kind` matches, and that the API
+and MCP return the same body.
 
 A step that calls a human-only operation fails, and runs on no door,
 because the doors answer it differently by design. `Routes` checks

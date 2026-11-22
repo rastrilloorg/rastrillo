@@ -87,6 +87,10 @@ type exampleOptions struct {
 	// humanOnlyElsewhere also serves the unsafe tokens.create at
 	// POST /api/v1/tokens/mint, beside the declared one at its route.
 	humanOnlyElsewhere bool
+	// mcpResultDiffers has MCP's notes.create return another title
+	// than it stored, and mcpMessageDiffers has it word a conflict its
+	// own way, so only the API and MCP bodies or messages differ.
+	mcpResultDiffers, mcpMessageDiffers bool
 }
 
 type exampleApp struct {
@@ -143,7 +147,18 @@ func (app *exampleApp) createNote(
 			Fields: map[string]string{"Title": "Enter a title."},
 		}
 	}
+	if app.hasTitle(input.Title) {
+		return noteResult{}, op.Conflict{
+			Message: "A note has that title. Choose another.",
+		}
+	}
 	return app.store(input.Title), nil
+}
+
+func (app *exampleApp) hasTitle(title string) bool {
+	app.mutex.Lock()
+	defer app.mutex.Unlock()
+	return slices.Contains(slices.Collect(maps.Values(app.notes)), title)
 }
 
 func (app *exampleApp) store(title string) noteResult {
@@ -277,6 +292,8 @@ func refusedPage(response http.ResponseWriter, err error) bool {
 		response.WriteHeader(http.StatusForbidden)
 	case errors.As(err, new(op.NotFound)):
 		response.WriteHeader(http.StatusNotFound)
+	case errors.As(err, new(op.Conflict)):
+		response.WriteHeader(http.StatusConflict)
 	default:
 		http.Error(response, err.Error(), http.StatusInternalServerError)
 	}
@@ -398,7 +415,7 @@ func (app *exampleApp) doors(
 	mcpHandler, err = mcp.New(mcp.Config{
 		Gate: config.Gate(), Ctx: config.Ctx, Authorize: authorize,
 		Name: "notes", Version: "v1",
-	}, app.doorOperations(app.options.mcpLeavesOut, app.options.mcpExtra)...)
+	}, app.mcpOperations()...)
 	if err != nil {
 		t.Fatalf("mcp.New: %v", err)
 	}
@@ -423,6 +440,42 @@ func (app *exampleApp) apiRoutes() []api.Route {
 		routes = append(routes, minting)
 	}
 	return routes
+}
+
+// mcpOperations is what MCP gets: doorOperations, with notes.create
+// answering apart from the API's for mcpResultDiffers and
+// mcpMessageDiffers.
+func (app *exampleApp) mcpOperations() []op.Descriptor {
+	descriptors := app.doorOperations(app.options.mcpLeavesOut,
+		app.options.mcpExtra)
+	for index, descriptor := range descriptors {
+		if descriptor.ID == app.create.Descriptor.ID {
+			descriptors[index].Invoke = app.mcpCreate(descriptor.Invoke)
+		}
+	}
+	return descriptors
+}
+
+// mcpCreate wraps notes.create's invoke as mcpOperations needs.
+func (app *exampleApp) mcpCreate(
+	invoke func(context.Context, *rastrillo.Ctx, json.RawMessage) (
+		any, error),
+) func(context.Context, *rastrillo.Ctx, json.RawMessage) (any, error) {
+	return func(
+		ctx context.Context, rc *rastrillo.Ctx, arguments json.RawMessage,
+	) (any, error) {
+		result, err := invoke(ctx, rc, arguments)
+		note, created := result.(noteResult)
+		switch {
+		case created && app.options.mcpResultDiffers:
+			note.Title += " (MCP)"
+			return note, err
+		case errors.As(err, new(op.Conflict)) &&
+			app.options.mcpMessageDiffers:
+			return nil, op.Conflict{Message: "That title is taken."}
+		}
+		return result, err
+	}
 }
 
 // doorOperations is what one door gets: the declared operations less

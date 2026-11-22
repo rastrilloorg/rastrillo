@@ -42,9 +42,9 @@ type Scenario struct {
 // Run does every step of scenario on three fresh fixtures, one through
 // the pages, one through the API and one through MCP, the agents with
 // Token(person). After each step it reports, with t.Errorf, a door
-// whose answer differs from the page's, API and MCP bodies that
-// differ, and a door whose state starts to differ from the page's. It
-// never stops early.
+// whose answer differs from the page's, API and MCP bodies or refusal
+// messages that differ, and a door whose state starts to differ from
+// the page's. It never stops early.
 //
 // A step naming a human-only operation is reported and done on no
 // door, because the API and MCP refuse it to an agent by design.
@@ -107,7 +107,9 @@ func agentOf(t testing.TB, fixture Fixture, person string) Surface {
 }
 
 // compareOutcomes holds each agent's door to the page's Kind and
-// Fields, and the API's body to MCP's. outcomes are in doors' order.
+// Fields, and the API's body and refusal message to MCP's. A page
+// renders its own HTML, so its body and wording aren't compared.
+// outcomes are in doors' order.
 func compareOutcomes(
 	t testing.TB, step Step, doors []*door, outcomes []Outcome,
 ) {
@@ -124,6 +126,10 @@ func compareOutcomes(
 	viaAPI, viaMCP := outcomes[1], outcomes[2]
 	if !reflect.DeepEqual(viaAPI.Body, viaMCP.Body) {
 		t.Errorf(msgBodiesDiffer, step.Name, viaAPI.Body, viaMCP.Body)
+	}
+	if viaAPI.Message != viaMCP.Message {
+		t.Errorf(msgMessagesDiffer, step.Name, viaAPI.Message,
+			viaMCP.Message)
 	}
 }
 

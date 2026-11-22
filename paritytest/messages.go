@@ -38,6 +38,8 @@ const (
 	msgDoorsDiffer  = `step %q: %s returned %s %v, but %s returned %s %v`
 	msgBodiesDiffer = `step %q: API returned body %v; ` +
 		`MCP returned body %v`
+	msgMessagesDiffer = `step %q: API refused with message %q; ` +
+		`MCP refused with message %q`
 	msgStateDiffers = `after step %q: %s left state %v; ` +
 		`%s left state %v`
 	msgScenarioHumanOnly = `step %q calls human-only %s. ` +
