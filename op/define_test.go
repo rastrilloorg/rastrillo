@@ -354,3 +354,44 @@ func TestAnOperationThatTakesNoneTakesAnEmptyObject(t *testing.T) {
 		t.Errorf("Invoke({}) = %#v, %v, want nil, nil", value, err)
 	}
 }
+
+// probed counts its decodes, so a test can tell whether Invoke read
+// the input before it checked the caller.
+type probed struct{}
+
+var probeDecodes int
+
+func (*probed) UnmarshalJSON([]byte) error {
+	probeDecodes++
+	return nil
+}
+
+type probedInput struct {
+	Probe probed `json:"probe"`
+}
+
+func TestInvokeChecksTheCallerBeforeItReadsTheInput(t *testing.T) {
+	counter := &counted{}
+	closeAccount := Define("account.close", Spec{
+		Description: "Close the account.", Access: rastrillo.Write,
+		HumanOnly: "Only you can close your account.",
+	}, func(
+		ctx context.Context, rc *rastrillo.Ctx, _ probedInput,
+	) (note, error) {
+		return counter.create(ctx, rc, noteInput{})
+	})
+	agent := &rastrillo.Ctx{Actor: rastrillo.Actor{Subject: "ana",
+		Agent: "Claude", Credential: "tok", Access: rastrillo.Write}}
+	probeDecodes = 0
+	for _, sent := range []string{`{"probe":`, `{"probe":1}`} {
+		_, err := closeAccount.Descriptor.Invoke(context.Background(),
+			agent, []byte(sent))
+		if !errors.As(err, new(HumanOnly)) {
+			t.Errorf("Invoke(%s) as an agent = %v, want HumanOnly", sent, err)
+		}
+	}
+	if probeDecodes != 0 || counter.calls != 0 {
+		t.Errorf("the decoder ran %d times and run %d, want 0 and 0",
+			probeDecodes, counter.calls)
+	}
+}

@@ -72,8 +72,8 @@ func Define[In, Out any](
 	return named
 }
 
-// Call runs the operation for the page door, and for Invoke, after
-// Check, so a caller who may not run it never reaches run.
+// Call runs the operation for the page door after Check, so a caller
+// who may not run it never reaches run.
 func (named *Named[In, Out]) Call(
 	ctx context.Context, rc *rastrillo.Ctx, input In,
 ) (Out, error) {
@@ -84,17 +84,23 @@ func (named *Named[In, Out]) Call(
 	return named.run(ctx, rc, input)
 }
 
-// invoke decodes with the API's rules into a fresh input, so the API and
-// MCP refuse the same arguments the same way. A None result is nil,
+// invoke checks the caller, then decodes with the API's rules into a
+// fresh input, so the API and MCP refuse the same arguments the same
+// way. Check comes first, as at both doors: a caller who may not run
+// the operation hears that, not what is wrong with its input, and an
+// input type's own decoder never runs for it. A None result is nil,
 // which the doors answer as nothing to read.
 func (named *Named[In, Out]) invoke(
 	ctx context.Context, rc *rastrillo.Ctx, arguments json.RawMessage,
 ) (any, error) {
+	if err := Check(ctx, rc, named.Descriptor.Operation); err != nil {
+		return nil, err
+	}
 	var decoded In
 	if err := DecodeInput(arguments, &decoded); err != nil {
 		return nil, err
 	}
-	result, err := named.Call(ctx, rc, decoded)
+	result, err := named.run(ctx, rc, decoded)
 	if err != nil {
 		return nil, err
 	}
