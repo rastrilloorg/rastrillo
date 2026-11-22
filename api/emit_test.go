@@ -482,6 +482,15 @@ func TestEmitTooLarge(t *testing.T) {
 		size, _ := strconv.Atoi(request.URL.Query().Get("size"))
 		_, _ = response.Write([]byte(strings.Repeat("x", size)))
 	}))
+	raised := config()
+	raised.MaxResponse = 3 << 20
+	raisedCap := mustNew(t, raised, getThing(func(
+		_ context.Context, _ *rastrillo.Ctx,
+		response http.ResponseWriter, request *http.Request,
+	) {
+		size, _ := strconv.Atoi(request.URL.Query().Get("size"))
+		_, _ = response.Write([]byte(strings.Repeat("x", size)))
+	}))
 	cases := []struct {
 		name    string
 		handler http.Handler
@@ -490,6 +499,7 @@ func TestEmitTooLarge(t *testing.T) {
 	}{
 		{"MaxResponse", wrapped, "/", 1000},
 		{"the 2 MiB default", defaultCap, "/api/v1/things/1", 2 << 20},
+		{"Config.MaxResponse", raisedCap, "/api/v1/things/1", 3 << 20},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

@@ -18,6 +18,7 @@ type Config struct {
 	Authorize           func(ctx context.Context, a rastrillo.Actor, o rastrillo.Operation) error
 	Logger              *slog.Logger
 	MaxBody             int64
+	MaxResponse         int64
 	Before              []func(http.Handler) http.Handler
 	After               []func(http.Handler) http.Handler
 	RequireAgentSession bool
@@ -203,8 +204,7 @@ func (g Gate) Admit(actor rastrillo.Actor, operation rastrillo.Operation) error
 ```
 
 `Gate` is the request pipeline the tree and [mcp](/docs/reference/mcp)
-share. `Config.Gate` copies it out of a tree's `Config`. `Config` has no
-`MaxResponse`, so the tree's answers are capped at 2 MiB.
+share. `Config.Gate` copies it out of a tree's `Config`.
 
 `Validate` reports a gate that would fail on its first request: no
 `Verify`, or a nil `Before` or `After`. `New` and `mcp.New` call it.
@@ -227,6 +227,10 @@ came with no `Agent-Session`.
 `MaxResponse` caps an answer, which is held whole until it has been
 checked, and zero or less means 2 MiB. An answer over the cap is 422
 `response_too_large`, refused before any recheck.
+
+Set `MaxResponse` above `MaxBody` if a write can store a record as large
+as its request body. Otherwise, the write can commit but reads of that
+record will fail with `response_too_large`.
 
 ### Rechecker and Disclosed
 

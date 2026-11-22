@@ -139,6 +139,7 @@ func TestConfigGateCopiesFields(t *testing.T) {
 		Verify:              newRechecker(verifier()),
 		Logger:              slog.New(slog.DiscardHandler),
 		MaxBody:             10,
+		MaxResponse:         20,
 		Before:              []func(http.Handler) http.Handler{passThrough},
 		After:               []func(http.Handler) http.Handler{passThrough},
 		RequireAgentSession: true,
@@ -163,9 +164,6 @@ func TestConfigGateCopiesFields(t *testing.T) {
 			t.Errorf("Gate.%s = %v, want Config's %v",
 				field.Name, gate.Field(index), from)
 		}
-	}
-	if got := configuration.Gate().MaxResponse; got != 0 {
-		t.Errorf("MaxResponse = %d, want 0 for the default", got)
 	}
 }
 

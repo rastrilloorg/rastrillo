@@ -40,6 +40,10 @@ type Config struct {
 	Logger *slog.Logger
 	// MaxBody caps a request body. Zero or less means 1 MiB.
 	MaxBody int64
+	// MaxResponse caps the size of an answer. Zero or less means 2 MiB.
+	// Raise it if a write can store a record larger than this limit
+	// allows a read to return.
+	MaxResponse int64
 	// Before runs on every matched request before the credential
 	// check, first element outermost. A rate limiter goes here, so it
 	// counts the requests that fail the check too.
@@ -63,6 +67,7 @@ func (configuration Config) Gate() Gate {
 		Verify:              configuration.Verify,
 		Logger:              configuration.Logger,
 		MaxBody:             configuration.MaxBody,
+		MaxResponse:         configuration.MaxResponse,
 		Before:              configuration.Before,
 		After:               configuration.After,
 		RequireAgentSession: configuration.RequireAgentSession,

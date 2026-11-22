@@ -10,6 +10,14 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+### Added
+
+- `api.Config.MaxResponse` sets the response size limit, and `Config.Gate`
+  passes it to the gate. Zero keeps the 2 MiB default. Previously, only a
+  hand-built `Gate` could raise the limit. An app using `api.New` could accept
+  a large write, store the record, then refuse to return it on a read with
+  `response_too_large`.
+
 ## v0.43.1
 
 ### Fixed
