@@ -134,6 +134,10 @@ type Fixture interface {
 	State(t testing.TB) any
 }
 
+type Normalizer interface {
+	Normalize(step string, body map[string]any) map[string]any
+}
+
 type Step struct {
 	Name      string
 	Person    string
@@ -164,6 +168,13 @@ After each step, `Run` compares:
 - `Body`, `Message` and `FieldMessages` between the API and MCP;
 - `State` across all three doors. A difference in state is reported
   once, at the step where it starts.
+
+The API and MCP each run on a fresh fixture, so a result with a
+generated value, such as a new ID or a time, differs between them even
+when both doors behave the same. Give your fixture a `Normalize` method,
+and `Run` passes each API and MCP body through it before comparing them.
+Return the body with those values removed or replaced. Without the
+method, the bodies must match exactly.
 
 `Run` doesn't compare the page's rendered body or its wording. For a
 read, it checks only that the page's `Kind` matches, and that the API

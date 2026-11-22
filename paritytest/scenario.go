@@ -26,6 +26,16 @@ type Fixture interface {
 	State(t testing.TB) any
 }
 
+// Normalizer is a Fixture that cleans a body before Run compares it.
+// The API and MCP each run on a fresh fixture, so a result holding a
+// generated value, such as a new ID or a time, differs between them
+// even when both doors behave the same. Run passes each API and MCP
+// body that isn't nil through Normalize, with the step's name, and
+// compares what it returns. A Fixture without it is compared strictly.
+type Normalizer interface {
+	Normalize(step string, body map[string]any) map[string]any
+}
+
 // Step is one thing a person, or their agent, does.
 type Step struct {
 	Name      string
@@ -126,8 +136,10 @@ func compareOutcomes(
 		}
 	}
 	viaAPI, viaMCP := outcomes[1], outcomes[2]
-	if !reflect.DeepEqual(viaAPI.Body, viaMCP.Body) {
-		t.Errorf(msgBodiesDiffer, step.Name, viaAPI.Body, viaMCP.Body)
+	apiBody := normalized(doors[1].fixture, step, viaAPI.Body)
+	mcpBody := normalized(doors[2].fixture, step, viaMCP.Body)
+	if !reflect.DeepEqual(apiBody, mcpBody) {
+		t.Errorf(msgBodiesDiffer, step.Name, apiBody, mcpBody)
 	}
 	if viaAPI.Message != viaMCP.Message {
 		t.Errorf(msgMessagesDiffer, step.Name, viaAPI.Message,
@@ -137,6 +149,17 @@ func compareOutcomes(
 		t.Errorf(msgFieldsDiffer, step.Name, viaAPI.FieldMessages,
 			viaMCP.FieldMessages)
 	}
+}
+
+// normalized is body as fixture's Normalize leaves it, or as it is.
+func normalized(
+	fixture Fixture, step Step, body map[string]any,
+) map[string]any {
+	normalizer, normalizes := fixture.(Normalizer)
+	if !normalizes || body == nil {
+		return body
+	}
+	return normalizer.Normalize(step.Name, body)
 }
 
 // compareStates holds each agent's door's state to the page's. Once

@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 
 	"github.com/go-chi/chi/v5"
@@ -97,7 +98,14 @@ type exampleOptions struct {
 	// mcpFieldMessageDiffers has MCP's notes.create word its refusal of
 	// an empty title its own way, on the same field.
 	mcpFieldMessageDiffers bool
+	// generatedIDs gives each note an ID from a counter every app
+	// shares, as a database sequence or a UUID differs between fresh
+	// fixtures.
+	generatedIDs bool
 }
+
+// sharedIDs is the counter generatedIDs draws from.
+var sharedIDs atomic.Int64
 
 type exampleApp struct {
 	options exampleOptions
@@ -172,6 +180,9 @@ func (app *exampleApp) store(title string) noteResult {
 	defer app.mutex.Unlock()
 	app.lastID++
 	app.notes[app.lastID] = title
+	if app.options.generatedIDs {
+		return noteResult{ID: 1000 + sharedIDs.Add(1), Title: title}
+	}
 	return noteResult{ID: app.lastID, Title: title}
 }
 

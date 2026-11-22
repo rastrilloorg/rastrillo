@@ -275,3 +275,35 @@ func TestRunCatchesAFieldWhoseMessageDiffers(t *testing.T) {
 			map[string]string{"title": "Title is required."}))
 	})
 }
+
+// normalizing is an example fixture that drops the ID it generates.
+type normalizing struct{ *exampleFixture }
+
+func (normalizing) Normalize(
+	_ string, body map[string]any,
+) map[string]any {
+	delete(body, "id")
+	return body
+}
+
+// A generated ID differs between the API's and MCP's fresh fixtures, so
+// only a fixture's Normalize lets a correct operation pass.
+func TestRunComparesBodiesAsTheFixtureNormalizesThem(t *testing.T) {
+	eachRouter(t, func(t *testing.T, router string) {
+		factory := &examples{router: router,
+			options: exampleOptions{generatedIDs: true}}
+		strict := Scenario{Fresh: factory.fresh, Steps: exampleSteps[:1]}
+		failures := runFailures(t, strict)
+		differ := fmt.Sprintf(msgBodiesDiffer, "a creates Hello", nil, nil)
+		prefix, _, _ := strings.Cut(differ, "<nil>")
+		if len(failures) != 1 || !strings.HasPrefix(failures[0], prefix) {
+			t.Errorf("without Normalize, Run reported %q, want one %q",
+				failures, prefix)
+		}
+		normalized := Scenario{Steps: exampleSteps[:1],
+			Fresh: func(t testing.TB) Fixture {
+				return normalizing{factory.fresh(t).(*exampleFixture)}
+			}}
+		wantRunFailures(t, normalized)
+	})
+}
