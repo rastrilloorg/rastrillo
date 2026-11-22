@@ -89,6 +89,11 @@ type Money struct {
 	Currency string `json:"currency"`
 }
 
+// None is the result of an operation that returns nothing. Its result
+// schema is null, so a client is told there is nothing to read rather
+// than an object with no members.
+type None struct{}
+
 // Descriptor names one operation, independent of transport. It is what
 // the MCP spec will list as tools and what the skill spec will describe,
 // so it carries everything a caller needs to invoke the operation

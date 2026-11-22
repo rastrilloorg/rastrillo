@@ -20,6 +20,11 @@ type Opt[T any] struct {
 	Set   bool
 }
 
+// optional is the marker schemaFor reads to leave an Opt field out of
+// required. It asks the type, as DecodeInput asks for IsNullable,
+// because it cannot name Opt[T] for every T.
+func (Opt[T]) optional() {}
+
 // Some is a present Opt.
 func Some[T any](v T) Opt[T] { return Opt[T]{Value: v, Set: true} }
 

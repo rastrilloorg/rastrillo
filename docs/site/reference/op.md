@@ -194,6 +194,15 @@ input leave the state one call would. MCP sends both to clients as
 hints, and `rastrillo generate` sets them: see
 [MCP](/docs/mcp#the-flags).
 
+## None
+
+```go
+type None struct{}
+```
+
+`None` is the result of an operation that has nothing to return. Its
+result schema is `{"type":"null"}`.
+
 ## CheckFlags and FenceVerbs
 
 ```go
