@@ -5,7 +5,7 @@
 # runs. None of the four names a real file, so the pattern rule already
 # reruns unconditionally without needing .PHONY's safety here.
 .PHONY: ci suite suite-roles gofmt budget code root next-go perf staticcheck govulncheck gitleaks chromedp-graph gorm-free race generate-check scaffold-smoke browser \
-        browser-sweep mirror mirror-check money money-cldr bench locale-dates
+        browser-sweep mirror mirror-check release release-check money money-cldr bench locale-dates
 
 # The READMEs' documented sweeps all run with GOFLAGS=-mod=mod: the tests
 # that build scratch modules (replace => this repo) rely on it to resolve
@@ -454,6 +454,18 @@ mirror-check:
 	echo "carry those across on a branch cut from the mirror's main, land it"; \
 	echo "with an ordinary amadan branch merge (not -squash), then: make mirror"; \
 	exit 1
+
+# Every tag with a CHANGELOG section is a release on both forges, with
+# the section as notes and the CLI for four platforms. Not part of ci,
+# for the reason mirror is not: publishing is not a runner's job, and a
+# release missing is no branch's fault. Run release after pushing a
+# tag, and release-check whenever you want to know nothing was missed.
+release: | $(BIN)/tmp
+	@test -n "$(TAG)" || { echo "usage: make release TAG=vX.Y.Z"; exit 2; }
+	hack/release.sh $(TAG)
+
+release-check:
+	@hack/release.sh -check
 
 root staticcheck govulncheck gitleaks money chromedp-graph race build-cli: | $(BIN)/tmp
 

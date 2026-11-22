@@ -63,6 +63,20 @@ copies the mirror's commits instead of adopting them, so they never
 become ancestors of `origin/main` and `make mirror` is rejected for
 good. Then mirror.
 
+## Releases
+
+    make release TAG=vX.Y.Z   # after the tag is pushed to origin
+    make release-check        # lists any tag missing a release
+
+A release is the tag on amadan and on GitHub, with the tag's CHANGELOG
+section as its notes and the CLI for four platforms attached. `release`
+pushes the tag to the mirror if it is not there yet, then publishes on
+each forge that lacks it, so it is safe to re-run after a failure.
+
+amadan cannot delete a release or edit its notes. Get the CHANGELOG
+section right before you tag; `hack/release.sh -n vX.Y.Z` builds
+everything and prints where, without publishing.
+
 ## The gate
 
 One definition, run before pushing and by CI:
