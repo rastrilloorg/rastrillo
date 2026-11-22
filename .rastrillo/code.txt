@@ -25819,7 +25819,6 @@ columns webauthn/browser_test.go 0359851d7658 1
 columns webauthn/browser_test.go 0f2100aeb2c8 1
 columns webauthn/browser_test.go 292d8b299106 1
 columns webauthn/browser_test.go 2e61ff2702bd 1
-columns webauthn/browser_test.go 5f0350b60dd2 1
 columns webauthn/browser_test.go 661a9f9a5b3c 1
 columns webauthn/browser_test.go 72d6e773f36f 1
 columns webauthn/browser_test.go 83ea01943654 1

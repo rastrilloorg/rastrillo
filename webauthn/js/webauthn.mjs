@@ -67,7 +67,7 @@ function prfExtension(prfSalt) {
 // is missing (and a salt was asked for) an assertion runs immediately to
 // fetch it. Two prompts on those platforms — worse, but honest, and
 // better than storing a credential that turns out to open nothing
-// (kass's rule, kept).
+// (kass's rule, kept). Safari with iCloud Keychain is one of them.
 export async function register({ challenge, rpId, rpName, userId, userName, prfSalt }) {
   const credential = await navigator.credentials.create({
     publicKey: {
@@ -84,7 +84,7 @@ export async function register({ challenge, rpId, rpName, userId, userName, prfS
   let prf;
   if (prfSalt) {
     prf = credential.getClientExtensionResults()?.prf?.results?.first;
-    if (!prf) prf = await prfByAssertion(credential.rawId, prfSalt);
+    if (!prf) prf = await prfByAssertion(rpId, credential.rawId, prfSalt);
     prf = new Uint8Array(prf);
   }
 
@@ -170,9 +170,14 @@ async function getAssertion(rpId, challenge, prfSalt, how) {
   }
 }
 
-async function prfByAssertion(rawId, prfSalt) {
+// prfByAssertion must ask under the rpId the passkey was made with.
+// Without one the browser uses the page's host, which finds nothing when
+// the app registers under a parent domain (pages on acct.example.com, the
+// passkey under example.com), and setup fails after the passkey exists.
+async function prfByAssertion(rpId, rawId, prfSalt) {
   const assertion = await navigator.credentials.get({
     publicKey: {
+      rpId,
       challenge: crypto.getRandomValues(new Uint8Array(32)),
       allowCredentials: [{ type: "public-key", id: rawId }],
       userVerification: "required",

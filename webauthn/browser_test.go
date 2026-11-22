@@ -17,6 +17,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"sync"
 	"testing"
 
@@ -29,13 +30,19 @@ import (
 // fixture is the app under drive: one enrolled credential, one pending
 // challenge, the real Config doing the verifying. RPID is "localhost"
 // because the rig's origin is http://localhost:PORT — the trustworthy
-// origin an IP address can never be.
+// origin an IP address can never be. rpID and pageHost replace both,
+// so the page can be served from a subdomain of the relying party, as
+// an app that registers under a parent domain is; Chromium resolves
+// any *.localhost to the loopback.
 type fixture struct {
 	mu        sync.Mutex
 	cfg       webauthn.Config
 	challenge []byte
 	cred      webauthn.Credential
 	enrolled  bool
+	rpID      string
+	pageHost  string
+	origin    string
 }
 
 const fixturePage = `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>webauthn fixture</title><script type="module" src="/driver.mjs"></script></head><body><p id="page">webauthn fixture</p></body></html>`
@@ -63,11 +70,11 @@ async function json(url, body) {
 window.driver = {
   // register runs the library's creation ceremony and hands the result
   // to the server's Config.Register.
-  async register() {
+  async register(rpId = "localhost") {
     const begin = await json("/register/begin");
     const cred = await register({
       challenge: begin.challenge,
-      rpId: "localhost",
+      rpId,
       rpName: "fixture",
       userId: begin.userId,
       userName: "frida@example.com",
@@ -82,9 +89,10 @@ window.driver = {
   },
   // authenticate runs the library's discoverable assertion and hands
   // the result to the server's Config.Verify.
-  async authenticate() {
+  async authenticate(rpId = "localhost") {
     const begin = await json("/signin/begin");
-    const asrt = await authenticate({ challenge: begin.challenge, rpId: "localhost", prfSalt: salt });
+    const asrt = await authenticate({
+      challenge: begin.challenge, rpId, prfSalt: salt });
     await json("/signin/finish", {
       credentialId: asrt.credentialId,
       clientDataJSON: asrt.clientDataJSON,
@@ -98,10 +106,10 @@ window.driver = {
   // probe's credential is deliberately non-resident (residentKey
   // "discouraged"), so it never shows up in a later discoverable
   // assertion and cannot make authenticate() ambiguous.
-  async probeCreatePRF() {
+  async probeCreatePRF(rpId = "localhost") {
     const cred = await navigator.credentials.create({
       publicKey: {
-        rp: { id: "localhost", name: "fixture" },
+        rp: { id: rpId, name: "fixture" },
         user: { id: crypto.getRandomValues(new Uint8Array(16)), name: "probe@example.com", displayName: "probe" },
         challenge: crypto.getRandomValues(new Uint8Array(32)),
         pubKeyCredParams: [{ type: "public-key", alg: -7 }],
@@ -121,7 +129,14 @@ document.body.append(ready);
 `
 
 func (f *fixture) handler(origin string) http.Handler {
-	f.cfg = webauthn.Config{RPID: "localhost", Origin: origin}
+	if f.pageHost != "" {
+		origin = strings.Replace(origin, "//localhost:", "//"+f.pageHost+":", 1)
+	}
+	if f.rpID == "" {
+		f.rpID = "localhost"
+	}
+	f.origin = origin
+	f.cfg = webauthn.Config{RPID: f.rpID, Origin: origin}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -323,4 +338,37 @@ func TestRegisterFallsBackToPRFByAssertion(t *testing.T) {
 		t.Fatalf("straight assertion PRF %q != fallback PRF %q — the fallback fetched something other than the credential's real PRF", authPRF, regPRF)
 	}
 	rig.Screen("#ready", "after the fallback ceremonies")
+}
+
+// TestRegisterFallbackKeepsAParentRelyingParty is the fallback on a
+// page whose host is not the relying party: the page on
+// acct.box.localhost, the passkey under box.localhost. A fallback
+// prompt that leaves the RP ID out asks the browser for passkeys of
+// acct.box.localhost, finds none, and register() fails after the
+// passkey was made. (Chromium will not take bare localhost as a parent:
+// it is the top-level label.)
+func TestRegisterFallbackKeepsAParentRelyingParty(t *testing.T) {
+	app := &fixture{rpID: "box.localhost", pageHost: "acct.box.localhost"}
+	rig := harness.New(t, app.handler, harness.WithoutPRFAtCreation())
+	rig.Run(chromedp.Navigate(app.origin + "/"))
+	rig.Screen("#ready", "subdomain fixture booted")
+	probe := evalString(rig, `driver.probeCreatePRF("box.localhost")`)
+	if probe != "" {
+		t.Fatalf("shimmed create still returned PRF %q, "+
+			"so register() would never fall back", probe)
+	}
+	// The rejection comes back as a value so the failure names the step.
+	regPRF := evalString(rig, `driver.register("box.localhost")`+
+		`.catch((err) => "rejected: " + err.name)`)
+	if len(regPRF) != 64 {
+		t.Fatalf("register() under box.localhost from acct.box.localhost "+
+			"answered %q, want 32 bytes of PRF hex: the fallback prompt "+
+			"did not find the passkey it had just made", regPRF)
+	}
+	authPRF := evalString(rig, `driver.authenticate("box.localhost")`)
+	if authPRF != regPRF {
+		t.Fatalf("straight assertion PRF %q != fallback PRF %q",
+			authPRF, regPRF)
+	}
+	rig.Screen("#ready", "after the subdomain fallback ceremonies")
 }

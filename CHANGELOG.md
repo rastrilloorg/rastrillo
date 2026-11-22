@@ -10,6 +10,18 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+### Fixed
+
+- `register()` in `webauthn.mjs` now fetches the PRF output under the
+  `rpId` you pass it. Some browsers, such as Safari with iCloud Keychain,
+  return no PRF output when the passkey is made, so `register()` asks for
+  it with a second prompt. That prompt left out the `rpId`, so the browser
+  used the page's host instead. If your app registers passkeys under a
+  parent domain, for example `example.com` from pages on
+  `acct.example.com`, the second prompt found no passkey and `register()`
+  failed. The person was left with a passkey your app never recorded.
+  Serve `webauthn.JS()` from this release to get the fix.
+
 ## v0.44.0
 
 A root app can call its instances with `rootcall`, and `roster` can keep
