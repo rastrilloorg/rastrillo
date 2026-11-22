@@ -9,6 +9,7 @@ import (
 	"go/parser"
 	"go/token"
 	"io"
+	"path"
 	"path/filepath"
 	"slices"
 	"strconv"
@@ -89,39 +90,48 @@ func (listed listedPackage) parse() ([]sourceFile, error) {
 		files = append(files, sourceFile{
 			syntax:      syntax,
 			fileSet:     fileSet,
-			actionNames: actionNames(syntax),
+			actionNames: importNames(syntax, actionPackage),
 		})
 	}
 	return files, nil
 }
 
-func actionNames(file *ast.File) map[string]bool {
+// importNames holds each name the file imports importPath under, "."
+// when it is dot-imported. An import without a name is known by the
+// path's last element, which is the package's name for the action and
+// op packages, the two looked for here.
+func importNames(file *ast.File, importPath string) map[string]bool {
 	names := map[string]bool{}
 	for _, spec := range file.Imports {
-		importPath, err := strconv.Unquote(spec.Path.Value)
-		if err != nil || importPath != actionPackage {
+		imported, err := strconv.Unquote(spec.Path.Value)
+		if err != nil || imported != importPath {
 			continue
 		}
 		if spec.Name != nil {
 			names[spec.Name.Name] = true
 		} else {
-			names["action"] = true
+			names[path.Base(importPath)] = true
 		}
 	}
 	return names
 }
 
 // isActionType reports whether expr names a type of the action package
-// in this file: action.name, an alias of it, or a bare name where the
-// package is dot-imported.
+// in this file.
 func (file sourceFile) isActionType(expr ast.Expr, name string) bool {
+	return refersTo(expr, file.actionNames, name)
+}
+
+// refersTo reports whether expr is name in the package a file imports
+// under names: pkg.name, an alias of it, or a bare name where the
+// package is dot-imported.
+func refersTo(expr ast.Expr, names map[string]bool, name string) bool {
 	switch typed := ast.Unparen(expr).(type) {
 	case *ast.Ident:
-		return typed.Name == name && file.actionNames["."]
+		return typed.Name == name && names["."]
 	case *ast.SelectorExpr:
 		qualifier, ok := typed.X.(*ast.Ident)
-		return ok && typed.Sel.Name == name &&
-			file.actionNames[qualifier.Name]
+		return ok && typed.Sel.Name == name && names[qualifier.Name]
 	}
 	return false
 }

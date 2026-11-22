@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"amadan.net/rastrillo/rastrillo"
+	"amadan.net/rastrillo/rastrillo/route"
 	"amadan.net/rastrillo/rastrillo/sessions"
 	"github.com/go-chi/chi/v5"
 )
@@ -41,7 +42,19 @@ type Route struct {
 	Action string
 
 	Guards []string
+
+	// Operations and PageOnly are the route's mark: the operations it
+	// is the page door of, or why an agent has no use for it. Both are
+	// empty on a route registered without a mark, and on a Mount, whose
+	// subtree is not a page.
+	Operations []string
+	PageOnly   string
 }
+
+// msgTwoMarks refuses a second mark: a route serves its operations or
+// none, and route.Operation already takes every operation it serves.
+const msgTwoMarks = "action: %s %s has more than one mark. Pass one: " +
+	"route.Operation takes every operation the route serves"
 
 // Routes mounts handlers on a chi router and records each one. Nothing
 // is built or called while routes are registered: an app can register
@@ -101,36 +114,57 @@ func NewRecorder() *Routes {
 }
 
 // Get mounts an action for GET at path, the full path from the root.
-func (routes *Routes) Get(path Path, handler Handler) {
-	routes.action(http.MethodGet, path, handler)
+// A mark, route.Operation or route.PageOnly, says what the route is
+// for, so rastrillo routes --check and paritytest can read it.
+func (routes *Routes) Get(
+	path Path, handler Handler, marks ...route.Mark,
+) {
+	routes.action(http.MethodGet, path, handler, marks)
 }
 
-// Post mounts an action for POST at path, the full path from the root.
-func (routes *Routes) Post(path Path, handler Handler) {
-	routes.action(http.MethodPost, path, handler)
+// Post mounts an action for POST at path, the full path from the root,
+// with at most one mark, as Get takes.
+func (routes *Routes) Post(
+	path Path, handler Handler, marks ...route.Mark,
+) {
+	routes.action(http.MethodPost, path, handler, marks)
 }
 
-func (routes *Routes) action(method string, path Path, handler Handler) {
+func (routes *Routes) action(
+	method string, path Path, handler Handler, marks []route.Mark,
+) {
+	mark := onlyMark(method, path, marks)
 	inner := routes.within(string(path))
 	identity := actionIdentity(handler)
 	routes.record(Route{
-		Method:  method,
-		Path:    string(path),
-		Handler: identity[strings.LastIndex(identity, ".")+1:],
-		Action:  identity,
+		Method:     method,
+		Path:       string(path),
+		Handler:    identity[strings.LastIndex(identity, ".")+1:],
+		Action:     identity,
+		Operations: mark.Operations(),
+		PageOnly:   mark.Reason(),
 	})
 	routes.router.Method(method, inner, routes.serve(handler))
 	routes.refuseTwice(method, string(path), inner)
 }
 
 // Handle mounts an existing net/http handler. It has no function name
-// worth reading, so the caller says what to call it in List.
+// worth reading, so the caller says what to call it in List. It takes
+// at most one mark, as Get does.
 func (routes *Routes) Handle(
 	method string, path Path, handler http.Handler, name string,
+	marks ...route.Mark,
 ) {
 	method = strings.ToUpper(method)
+	mark := onlyMark(method, path, marks)
 	inner := routes.within(string(path))
-	routes.record(Route{Method: method, Path: string(path), Handler: name})
+	routes.record(Route{
+		Method:     method,
+		Path:       string(path),
+		Handler:    name,
+		Operations: mark.Operations(),
+		PageOnly:   mark.Reason(),
+	})
 	routes.router.Method(method, inner, routes.standIn(handler))
 	routes.refuseTwice(method, string(path), inner)
 }
@@ -192,6 +226,7 @@ func (routes *Routes) List() []Route {
 	listing := make([]Route, len(*routes.recorded))
 	for position, route := range *routes.recorded {
 		route.Guards = slices.Clone(route.Guards)
+		route.Operations = slices.Clone(route.Operations)
 		listing[position] = route
 	}
 	return listing
@@ -262,6 +297,19 @@ func (routes *Routes) refuseTwice(method, path, inner string) {
 		"registered before as %q. chi serves only the later one, so "+
 		"the first would never run. Register each method and path once.",
 		method, path, earlier))
+}
+
+// onlyMark is the one mark a route was given, or the zero Mark, which
+// names nothing. It panics before anything is registered, so a refused
+// route is neither listed nor served.
+func onlyMark(method string, path Path, marks []route.Mark) route.Mark {
+	if len(marks) > 1 {
+		panic(fmt.Sprintf(msgTwoMarks, method, path))
+	}
+	if len(marks) == 0 {
+		return route.Mark{}
+	}
+	return marks[0]
 }
 
 func (routes *Routes) record(route Route) {

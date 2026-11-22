@@ -50,3 +50,14 @@ func FormatUnmounted(unmounted []string) string {
 	}
 	return fmt.Sprintf(unmountedActions, names.String())
 }
+
+// FormatUnmarked is what --check says when an app that declares
+// operations has routes with no mark. Each is named by its method and
+// path, as paritytest names it.
+func FormatUnmarked(routes []action.Route) string {
+	var lines strings.Builder
+	for _, route := range routes {
+		fmt.Fprintf(&lines, "\t%s %s\n", route.Method, route.Path)
+	}
+	return fmt.Sprintf(unmarkedRoutes, lines.String())
+}
