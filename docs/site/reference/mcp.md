@@ -35,6 +35,13 @@ handshake. `Instructions` follows the framework's own instructions to
 the agent. `MaxResult` caps one tool result in bytes; zero or less means
 2 MiB.
 
+`Served` returns the descriptors `New` took, in order. It returns an error
+when its handler is not a value `New` returned.
+
+```go
+func Served(handler http.Handler) ([]op.Descriptor, error)
+```
+
 `New` returns an error when:
 
 - `Ctx` or `Authorize` is nil, or `Gate.Validate` fails;

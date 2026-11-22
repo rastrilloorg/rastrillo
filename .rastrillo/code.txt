@@ -205,7 +205,6 @@ names api/tree.go tree.handle/c 1
 names api/tree.go tree.handle/r 1
 names api/tree.go tree.handle/t 1
 names api/tree.go tree.handle/w 1
-names api/tree.go tree.matches/p 1
 names api/tree.go tree.matches/r 1
 names api/tree.go tree.matches/t 1
 columns api/tree_test.go 03d9d53ab319 1

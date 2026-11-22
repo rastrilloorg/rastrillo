@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
@@ -97,7 +98,29 @@ func New(config Config, descriptors ...op.Descriptor) (http.Handler, error) {
 	if _, err := served.build(listing{served: served}); err != nil {
 		return nil, err
 	}
-	return served.gate.Wrap(refusingStreams(served)), nil
+	return endpoint{
+		Handler:     served.gate.Wrap(refusingStreams(served)),
+		descriptors: slices.Clone(descriptors),
+	}, nil
+}
+
+// endpoint is the handler New returns. It keeps the descriptors so that
+// Served can say what the door offers.
+type endpoint struct {
+	http.Handler
+	descriptors []op.Descriptor
+}
+
+// Served returns the descriptors mcp.New took, in order: the inventory a
+// parity check compares with the declared operations. It errors when
+// handler is not a value New returned.
+func Served(handler http.Handler) ([]op.Descriptor, error) {
+	served, isEndpoint := handler.(endpoint)
+	if !isEndpoint {
+		return nil, fmt.Errorf("mcp: Served needs the handler mcp.New "+
+			"returned, not a %T", handler)
+	}
+	return slices.Clone(served.descriptors), nil
 }
 
 // gateMaxResponse is what the gate means by a MaxResponse of zero.

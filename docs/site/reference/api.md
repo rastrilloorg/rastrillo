@@ -136,6 +136,20 @@ A read served by POST takes a read-only token. Only a route from
 `Operations` can be one: a POST route you build yourself must be
 `Write`.
 
+## Served
+
+```go
+func Served(handler http.Handler) ([]Route, error)
+```
+
+`Served` returns the routes `New` registered in `handler`, in order,
+with `Handle` nil. It returns an error when `handler` is not a value
+`New` returned.
+
+Every answer to a request that matches one of the routes carries
+`Rastrillo-Operation: <Op.ID>`, a 401 or a 405 for another method
+included. A request that matches no route has no such header.
+
 ## Errors
 
 ```go
