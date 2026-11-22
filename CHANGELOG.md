@@ -10,6 +10,8 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+## v0.43.2
+
 ### Added
 
 - `api.Config.MaxResponse` sets the response size limit, and `Config.Gate`
