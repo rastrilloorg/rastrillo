@@ -146,8 +146,9 @@ with `Handle` nil. It returns an error when `handler` is not a value
 `New` returned.
 
 Every answer to a request that matches one of the routes carries
-`Rastrillo-Operation: <Op.ID>`, a 401 or a 405 for another method
-included. A request that matches no route has no such header.
+`Rastrillo-Operation: <Op.ID>`, a 401 included. A 405 for another
+method matched no route, so it has no such header. Requests that match
+no route have no header either.
 
 ## Errors
 

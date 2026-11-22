@@ -787,9 +787,10 @@ Expected: PASS, with every existing tree test still passing.
   - `func Served(handler http.Handler) ([]op.Descriptor, error)` in
     `mcp`, the same for `mcp.New`.
   - The tree sets `Rastrillo-Operation: <Op.ID>` before `gate.serve`,
-    when `matches(request)` finds a route. So a 401, a 405 for another
-    method and every refusal carry it, and an outer catch-all can't fake
-    a match.
+    when `matches(request)` finds a route. So a 401 and every refusal
+    carry it, and an outer catch-all can't fake a match. (Ruled at the
+    final review: the header names only a route that matched, so a 405
+    for another method carries none; the API reference says so.)
 
 - [ ] **Step 1: Stubs.** Both `Served` functions return `nil, nil`.
 - [ ] **Step 2: Write the tests**

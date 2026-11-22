@@ -240,9 +240,9 @@ func Served(handler http.Handler) ([]Route, error) {
 }
 
 func (t *tree) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// Before the gate, so a 401, a 405 for another method and every
-	// refusal carry it. Only a request that matches a registered
-	// route gets it, so an outer catch-all can't fake a match.
+	// Before the gate, so a 401 and every refusal carry it. Only a
+	// request that matches a registered route gets it, so an outer
+	// catch-all can't fake a match; a 405 matched none, so has none.
 	if route, found := t.matched(r); found {
 		w.Header().Set(operationHeader, route.Op.ID)
 	}
