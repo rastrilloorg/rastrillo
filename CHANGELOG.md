@@ -29,6 +29,11 @@ reports off-scale gaps, text touching a control, and a heading further from
 its content than from the block before it. An app vendoring `tokens.css`
 takes the stack with `rastrillo doctor -fix`.
 
+## v0.44.1
+
+This release is v0.44.0 with the passkey registration fix below, and
+nothing else.
+
 ### Fixed
 
 - `register()` in `webauthn.mjs` now fetches the PRF output under the
