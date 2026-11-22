@@ -56,6 +56,25 @@ A time-limited database lock allows only one apply at a time, even when several 
 
 `Suspended` reports whether the last applied snapshot suspended the instance. Before any snapshot it is false. Pass it as `handoff.Config.Suspended`.
 
+## Keep emails out of the receiver's row
+
+The receiver keeps a copy of the last applied snapshot in its own row, `roster_state`, so it can repair the roster after a lost lease (see [Store](#store)). By default the copy includes each member's email and name.
+
+To keep emails and names out of the receiver's row, set `Config.RecordRolesOnly`:
+
+```go
+receiver, err := roster.New(roster.Config{
+	// ...
+	RecordRolesOnly: true,
+})
+```
+
+The row then holds only each member's subject and role. Your `Store` still gets every field. To avoid storing the email, drop it in your `Store` too. Set the option in every process that shares the database: a receiver without it writes emails into the row again.
+
+A repair from such a row restores who belongs and each member's role. It keeps the email and name your `Store` already has. A member added back by the repair has no email or name until the next snapshot. Any email or name changed by the stale apply also remains until that snapshot. The repaired row contains no emails, even if this receiver does not set `RecordRolesOnly`.
+
+If the row already holds emails, it is rewritten without them the next time a snapshot is applied. To rewrite the row immediately, have the root send the current snapshot again. This removes emails from the row. The old bytes can remain in the database file, its write-ahead log and any existing backups.
+
 ## Custom origin
 
 A snapshot can carry the account's custom origin, such as `https://blog.example.org`. The receiver stores it with the sequence. `Origin` returns the stored origin, or `""` when the instance serves on its own host. `StoredOrigin` reads the same value from the database before any receiver exists, which is what boot needs: see [`instance.ServingOrigin`](/docs/reference/instance).

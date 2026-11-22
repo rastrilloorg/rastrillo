@@ -16,6 +16,10 @@ backwards from commits is a guess wearing a date.
 - A call is signed under its own context, `rastrillo/rootcall/v1`. A handoff assertion or roster snapshot signed by the same root key is not accepted as a call, and a call is not accepted as either.
 - Use `handofftest.Root.Call` to sign a call as the fake root in tests.
 
+### Added: a roster row without emails
+
+- Set `roster.Config.RecordRolesOnly` to keep members' emails and names out of the receiver's own row, `roster_state.members`. It then holds only subjects and roles. Set it if your instance's database must not hold an email address. Your `Store` still gets every field. The default is unchanged. See [Keep emails out of the receiver's row](/docs/reference/roster).
+
 ## v0.43.2
 
 ### Added

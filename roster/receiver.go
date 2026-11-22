@@ -13,7 +13,6 @@ import (
 
 	"amadan.net/rastrillo/rastrillo/basepath"
 	"amadan.net/rastrillo/rastrillo/migrate"
-	json "github.com/go-json-experiment/json"
 )
 
 // Path is where the root app posts snapshots.
@@ -49,6 +48,11 @@ type Config struct {
 	// OnOrigin runs after a snapshot that changes the origin has been
 	// applied and answered (origin.go).
 	OnOrigin func(previous, next string)
+
+	// RecordRolesOnly keeps members' emails and names out of the
+	// receiver's own row, which then holds subjects and roles only
+	// (record.go). The Store still gets every field.
+	RecordRolesOnly bool
 }
 
 // Receiver applies signed snapshots to the app's Store.
@@ -60,6 +64,8 @@ type Receiver struct {
 	now      func() time.Time
 	logger   *slog.Logger
 	onOrigin func(previous, next string)
+
+	recordRolesOnly bool
 
 	// One apply at a time in this process. A lease row serialises other
 	// processes, and an apply that lost its lease repairs what it wrote.
@@ -106,6 +112,8 @@ func New(config Config) (*Receiver, error) {
 		now:      config.Now,
 		logger:   config.Logger,
 		onOrigin: config.OnOrigin,
+
+		recordRolesOnly: config.RecordRolesOnly,
 	}
 	if receiver.now == nil {
 		receiver.now = time.Now
@@ -221,11 +229,13 @@ func (receiver *Receiver) attempt(
 	if err != nil {
 		return "", err
 	}
-	target, outcome := snapshot, error(nil)
+	target, outcome, keepContact := snapshot, error(nil), false
 	if snapshot.Sequence < newest.Sequence {
-		target, outcome = newest, errSequenceMoved
+		target, outcome = newest.Snapshot, errSequenceMoved
+		keepContact = newest.contactless
 	}
-	err = receiver.syncMembers(ctx, target.Members)
+	target.Members, err = receiver.syncMembers(
+		ctx, target.Members, keepContact)
 	if err != nil {
 		// Even a failed sync may have written over a newer apply.
 		if lost := receiver.confirmLease(parent, lease); lost != nil {
@@ -233,7 +243,11 @@ func (receiver *Receiver) attempt(
 		}
 		return "", err
 	}
-	err = receiver.record(parent, lease, target)
+	// A repair from a roles-only row keeps it roles-only, whatever this
+	// receiver's setting: the contact syncMembers filled in is the Store's,
+	// not the root's, and recording it would make it look signed.
+	rolesOnly := receiver.recordRolesOnly || keepContact
+	err = receiver.record(parent, lease, target, rolesOnly)
 	if err != nil {
 		return "", err
 	}
@@ -245,9 +259,9 @@ func (receiver *Receiver) attempt(
 // while this apply still holds its lease: otherwise another apply may have
 // run alongside this one's Store writes, and the caller must repair.
 func (receiver *Receiver) record(
-	parent context.Context, lease int64, snapshot Snapshot,
+	parent context.Context, lease int64, snapshot Snapshot, rolesOnly bool,
 ) error {
-	members, err := json.Marshal(snapshot.Members)
+	members, err := recordedMembers(snapshot.Members, rolesOnly)
 	if err != nil {
 		return err
 	}
@@ -276,27 +290,43 @@ func (receiver *Receiver) record(
 	return errSequenceMoved
 }
 
+// syncMembers makes the Store hold members, and returns them as written.
+// keepContact keeps the email and name the Store has for each member,
+// because a roles-only record has none to restore.
 func (receiver *Receiver) syncMembers(
-	ctx context.Context, members []Member,
-) error {
+	ctx context.Context, members []Member, keepContact bool,
+) ([]Member, error) {
 	current, err := receiver.store.Members(ctx)
 	if err != nil {
-		return errStoreMembers
+		return nil, errStoreMembers
 	}
 	have := make(map[string]Member, len(current))
 	for _, member := range current {
 		have[member.Subject] = member
 	}
-	want := make(map[string]bool, len(members))
+	written := make([]Member, 0, len(members))
 	for _, member := range members {
-		want[member.Subject] = true
-		if existing, found := have[member.Subject]; found &&
-			existing == member {
+		existing, found := have[member.Subject]
+		if found && keepContact {
+			member.Email, member.Name = existing.Email, existing.Name
+		}
+		written = append(written, member)
+		if found && existing == member {
 			continue
 		}
 		if err := receiver.store.Put(ctx, member); err != nil {
-			return errStorePut
+			return nil, errStorePut
 		}
+	}
+	return written, receiver.removeMissing(ctx, have, written)
+}
+
+func (receiver *Receiver) removeMissing(
+	ctx context.Context, have map[string]Member, members []Member,
+) error {
+	want := make(map[string]bool, len(members))
+	for _, member := range members {
+		want[member.Subject] = true
 	}
 	for subject := range have {
 		if want[subject] {
@@ -307,31 +337,6 @@ func (receiver *Receiver) syncMembers(
 		}
 	}
 	return nil
-}
-
-// lastApplied is the recorded snapshot's sequence, state, members and
-// origin, or sequence 0 and no members before the first.
-func (receiver *Receiver) lastApplied(ctx context.Context) (Snapshot, error) {
-	var sequence int64
-	var state, members, origin string
-	err := receiver.db.QueryRowContext(ctx,
-		`SELECT sequence, state, members, origin
-		 FROM roster_state WHERE id = 1`,
-	).Scan(&sequence, &state, &members, &origin)
-	if errors.Is(err, sql.ErrNoRows) {
-		return Snapshot{State: Active, Members: []Member{}}, nil
-	}
-	if err != nil {
-		return Snapshot{}, err
-	}
-	applied := Snapshot{
-		Sequence: sequence, State: State(state), Origin: origin,
-	}
-	err = json.Unmarshal([]byte(members), &applied.Members)
-	if err != nil {
-		return Snapshot{}, err
-	}
-	return applied, nil
 }
 
 // Suspended reports whether the last applied snapshot suspended the
