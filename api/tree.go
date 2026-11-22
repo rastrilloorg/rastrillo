@@ -144,6 +144,9 @@ func New(cfg Config, routes ...Route) (http.Handler, error) {
 		patterns:  make(map[string]bool, len(routes)),
 		byPattern: make(map[string]Route, len(routes))}
 	for _, rt := range routes {
+		// The tree's own copy, so Served reports what was registered
+		// whatever the caller does with its bytes afterwards.
+		rt.Op = ownSchemas(rt.Op)
 		if err := t.add(rt); err != nil {
 			return nil, err
 		}
@@ -219,8 +222,9 @@ const operationHeader = "Rastrillo-Operation"
 
 // Served returns the routes api.New registered in handler, in order,
 // with Handle nil: the inventory a parity check compares with the
-// declared operations. It errors when handler is not a value New
-// returned.
+// declared operations. Each holds its own copy of the schemas, so a
+// caller can't change what the tree reports. It errors when handler is
+// not a value New returned.
 func Served(handler http.Handler) ([]Route, error) {
 	served, isTree := handler.(*tree)
 	if !isTree {
@@ -229,7 +233,7 @@ func Served(handler http.Handler) ([]Route, error) {
 	}
 	routes := make([]Route, len(served.routes))
 	for index, route := range served.routes {
-		route.Handle = nil
+		route.Handle, route.Op = nil, ownSchemas(route.Op)
 		routes[index] = route
 	}
 	return routes, nil

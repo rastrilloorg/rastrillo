@@ -28,12 +28,14 @@ const msgBadQuery = "Send each argument as name=value. " +
 func Operations(descriptors ...op.Descriptor) []Route {
 	routes := make([]Route, 0, len(descriptors))
 	for _, descriptor := range descriptors {
+		// Each its own copy of the schemas, so neither the caller's bytes
+		// nor the Route's can change how the door reads a query.
 		route := Route{
 			Method: http.MethodPost,
 			Pattern: "/api/v1/" +
 				strings.Replace(descriptor.ID, ".", "/", 1),
-			Op:         descriptor,
-			Handle:     door(descriptor),
+			Op:         ownSchemas(descriptor),
+			Handle:     door(ownSchemas(descriptor)),
 			readByPost: descriptor.Access == rastrillo.Read,
 		}
 		if descriptor.InQuery {
@@ -42,6 +44,13 @@ func Operations(descriptors ...op.Descriptor) []Route {
 		routes = append(routes, route)
 	}
 	return routes
+}
+
+// ownSchemas is descriptor with schema bytes no one else holds.
+func ownSchemas(descriptor op.Descriptor) op.Descriptor {
+	descriptor.Input = slices.Clone(descriptor.Input)
+	descriptor.Result = slices.Clone(descriptor.Result)
+	return descriptor
 }
 
 // door is a named operation's Handle. It runs op.Check itself, before
