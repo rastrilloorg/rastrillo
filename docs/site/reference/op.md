@@ -175,6 +175,7 @@ type Descriptor struct {
 	Confirm     string
 	Destructive bool
 	Idempotent  bool
+	InQuery     bool
 	Input       json.RawMessage
 	Result      json.RawMessage
 	Invoke      func(ctx context.Context, rc *rastrillo.Ctx, input json.RawMessage) (any, error)
@@ -184,8 +185,9 @@ type Descriptor struct {
 `Descriptor` names one operation for any transport. The embedded
 `rastrillo.Operation` gives its ID, resource, scope and access. `Exposed`
 says whether the resource is on the API. `Confirm` is the sentence an
-agent shows before a write. `Input` and `Result` are JSON Schema, and
-both are required. `Invoke` decodes `input` with the API door's rules and
+agent shows before a write. `InQuery` means the API serves the read at
+GET, with its input in the query string. `Input` and `Result` are JSON
+Schema, and both are required. `Invoke` decodes `input` with the API door's rules and
 calls the operation.
 
 `Destructive` means a call may change or remove what is already there;
@@ -201,7 +203,62 @@ type None struct{}
 ```
 
 `None` is the result of an operation that has nothing to return. Its
-result schema is `{"type":"null"}`.
+result schema is `{"type":"null"}`. As an input it is an empty object,
+for an operation that takes no arguments.
+
+## Define, Spec and Named
+
+```go
+type Spec struct {
+	Description string // first sentence is MCP's title
+	Confirm     string
+	Access      rastrillo.Access
+	Destructive bool
+	Idempotent  bool
+	Scoped      bool   // rows belong to one person: Check needs a subject
+	InQuery     bool   // a read the API serves at GET, input in the query
+	HumanOnly   string // why only a person may call it
+}
+
+type Named[In, Out any] struct {
+	Descriptor Descriptor
+}
+
+func Define[In, Out any](id string, spec Spec, run func(context.Context, *rastrillo.Ctx, In) (Out, error)) *Named[In, Out]
+
+func (named *Named[In, Out]) Call(ctx context.Context, rc *rastrillo.Ctx, input In) (Out, error)
+```
+
+`Define` declares a hand-written operation that the page, the API and
+MCP all serve from one function. The page calls `Call` with typed input.
+The API and MCP call `Descriptor.Invoke`, which decodes the JSON with
+`DecodeInput` into a fresh `In` and then calls `Call`. `Call` runs
+`Check` before `run`, so a caller who is refused never reaches it.
+
+```go
+var Publish = op.Define("posts.publish", op.Spec{
+	Description: "Publish a draft post.",
+	Access:      rastrillo.Write,
+	Scoped:      true,
+}, publish)
+```
+
+The descriptor's ID is `id`, its resource is the part before the dot,
+and `Exposed` is true. `Input` and `Result` are derived from `In` and
+`Out`. A result of `None` makes `Invoke` return nil.
+
+`Define` panics, as `regexp.MustCompile` does, when the declaration
+would fail at a door. It panics when:
+
+- the ID is not `<area>.<verb>` in lowercase letters, digits and
+  underscores, or its tool name `<area>_<verb>` is over 64 characters;
+- `Description` is empty, `Access` is not `rastrillo.Read` or
+  `rastrillo.Write`, or `run` is nil;
+- `In` is not a struct, or `Out` is not a struct or `None`;
+- a field's JSON name or type can't be described, or `CheckFlags`
+  refuses the flags;
+- `InQuery` is set on a write, or on an input with a field that is not a
+  string, number or bool.
 
 ## CheckFlags and FenceVerbs
 

@@ -224,12 +224,18 @@ func TestAnOutputNumberIsTheNumberItHolds(t *testing.T) {
 	}
 }
 
+// TestSchemaOfNoneIsNull only as a result: DecodeInput refuses null and
+// reads {} into a None, and MCP needs an object for a tool's input.
 func TestSchemaOfNoneIsNull(t *testing.T) {
-	for _, way := range []direction{input, output} {
-		got := mustSchema(t, reflect.TypeFor[None](), way)
-		if string(got) != `{"type":"null"}` {
-			t.Errorf("schema of None = %s, want {\"type\":\"null\"}", got)
-		}
+	got := mustSchema(t, reflect.TypeFor[None](), output)
+	if string(got) != `{"type":"null"}` {
+		t.Errorf("output schema of None = %s, want {\"type\":\"null\"}",
+			got)
+	}
+	got = mustSchema(t, reflect.TypeFor[None](), input)
+	want := `{"type":"object","properties":{},"additionalProperties":false}`
+	if string(got) != want {
+		t.Errorf("input schema of None = %s, want %s", got, want)
 	}
 }
 

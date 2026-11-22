@@ -19,3 +19,25 @@ const (
 	msgCycle = `type %s contains itself, ` +
 		`which a JSON Schema here can't describe. Break the cycle with an ID`
 )
+
+// Define's refusals. Define prefixes each but msgBadID with "op: <id>: ",
+// and msgBadID quotes the ID itself, because it may not be one.
+const (
+	msgBadID = `%q is not an operation name. Write it as <area>.<verb> ` +
+		`in lowercase letters, digits and underscores, such as posts.publish`
+	msgLongToolName = `its tool name %s is %d characters. ` +
+		`Keep <area>_<verb> to 64 or fewer`
+	msgNoDescription = `Description is empty. ` +
+		`Write one sentence that says what the operation does`
+	msgBadAccess = `set Spec.Access to rastrillo.Read or rastrillo.Write`
+	msgNilRun    = `the function is nil. ` +
+		`Pass the function that does the work`
+	msgInputNotStruct = `the input type %s must be a struct. ` +
+		`Use a struct for the input`
+	msgResultNotStruct = `the result type %s must be a struct or op.None. ` +
+		`Use op.None when there is nothing to return`
+	msgQueryWrite = `InQuery is only for reads. ` +
+		`Remove it, or set Access to rastrillo.Read`
+	msgQueryNotFlat = `InQuery needs every input field to be a string, ` +
+		`number or bool, but %s is not. Remove InQuery to take a JSON body`
+)

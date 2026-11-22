@@ -78,7 +78,6 @@ var fixed = map[reflect.Type]schema{
 			{"amount", typed("integer")}, {"currency", typed("string")}}},
 		{"required", []string{"amount"}},
 		{"additionalProperties", false}},
-	reflect.TypeFor[None]():                    typed("null"),
 	reflect.TypeFor[encodingjson.RawMessage](): {},
 	reflect.TypeFor[jsontext.Value]():          {},
 }
@@ -86,6 +85,7 @@ var fixed = map[reflect.Type]schema{
 var (
 	durationType = reflect.TypeFor[time.Duration]()
 	numberType   = reflect.TypeFor[encodingjson.Number]()
+	noneType     = reflect.TypeFor[None]()
 	optionalType = reflect.TypeFor[interface{ optional() }]()
 	nullableType = reflect.TypeFor[nullable]()
 )
@@ -133,6 +133,8 @@ func (walk *walk) describe(goType reflect.Type, at place) (schema, error) {
 		return known, nil
 	}
 	switch {
+	case goType == noneType && walk.way == output:
+		return typed("null"), nil
 	case goType == numberType && walk.way == output:
 		// api.Encode writes a Number as the number it holds.
 		return typed("number"), nil

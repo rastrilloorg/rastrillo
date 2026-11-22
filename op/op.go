@@ -112,6 +112,9 @@ type Descriptor struct {
 	// Idempotent means calling twice with the same input leaves the
 	// same state as calling once. MCP's idempotentHint.
 	Idempotent bool
+	// InQuery means the API serves this read at GET, with its input in
+	// the query string rather than a body.
+	InQuery bool
 	// Input and Result are JSON Schema. Both are required: api.New
 	// refuses a route whose descriptor leaves either empty, so a
 	// hand-written operation must describe itself too.
