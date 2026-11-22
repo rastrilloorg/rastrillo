@@ -10,6 +10,8 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+## v0.46.0
+
 With the new `oauth` package, a person can connect Claude Code, Codex,
 claude.ai or ChatGPT to an app with only its MCP address. It is an
 addition: an app that doesn't mount it sees no change.
