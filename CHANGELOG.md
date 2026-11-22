@@ -10,6 +10,12 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+## v0.44.0
+
+A root app can call its instances with `rootcall`, and `roster` can keep
+members' emails out of its own row with `Config.RecordRolesOnly`. Both are
+additions: an app that does not use them sees no change.
+
 ### Added: root calls
 
 - `rootcall` lets a root app call one of its instances, for example to push the account's plan or read its daily usage. The root signs each request with `rootcall.Caller.NewRequest`. On the instance, wrap the handler with `rootcall.New(...).Wrap(handler)`. It runs the handler only for a request signed for this instance, with this method, path, query and body. The call lives at most 120 seconds and can run the handler only once. Merge `rootcall.Schema` into `BootSchema`: it holds the IDs of calls already used. See [rootcall](/docs/reference/rootcall).
