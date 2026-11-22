@@ -215,9 +215,9 @@ page routes through a `route.Table`, and give each a mark:
 ```go
 router := chi.NewRouter()
 table := route.New(route.Chi(router))
-table.Handle("POST /posts/{id}/publish", app.publishPost,
+table.HandleFunc("POST /posts/{id}/publish", app.publishPost,
 	route.Operation(posts.Publish.Descriptor))
-table.Handle("GET /style.css", app.stylesheet,
+table.HandleFunc("GET /style.css", app.stylesheet,
 	route.PageOnly("the stylesheet"))
 ```
 
