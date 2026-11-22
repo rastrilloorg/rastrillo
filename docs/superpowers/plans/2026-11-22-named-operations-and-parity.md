@@ -276,6 +276,12 @@ string's constant. Skipped, with reasons:
   - [`msgNotListed`]: `%s isn't in the MCP tool list for Surface.Token. Check that Authorize allows that token every operation`
   - [`msgHumanListed`]: `%s is human-only, but the MCP tool list shows it`
   - [`msgHumanCallable`]: `%s is human-only, but %s answered an agent with %q, not human_only`
+  - [`msgUnrecorded`], added in Task 7 by Luna on 2026-11-22 for the
+    chi walk (the draft "%s %s is registered on the router directly, so
+    the route table has no mark for it. Register it through the table
+    with Handle, or with On for a sub-router" was cut to the action;
+    the closing period is dropped, as for its siblings):
+    `Register %s %s through the table with Handle, or use On to register a sub-router's routes`
 - **`paritytest.Run` failures:**
   - [`msgDoorsDiffer`]: `step %q: %s returned %s %v, but %s returned %s %v`
   - [`msgBodiesDiffer`]: `step %q: API returned body %v; MCP returned body %v`

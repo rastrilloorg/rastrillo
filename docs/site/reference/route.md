@@ -74,6 +74,28 @@ registered. Each call returns its own copy.
   ServeMux's `{$}` and a `{name...}` wildcard do count, because they
   change what the path matches.
 
+## Register page routes through a table
+
+Register every page route through a `Table` and mark it with its
+`route.Operation` or `route.PageOnly`.
+
+Use `On` instead of chi's `Mount` for sub-routers; routes mounted with
+`Mount` are not recorded by the table. Create the sub-router with chi's
+`Route`, pass it to `On`, then register its routes on the table `On`
+returns.
+
+To serve a whole handler under a prefix, such as a file server,
+register it with `Handle` and a wildcard pattern: `"GET /static/*"` on
+chi or `"GET /static/"` on a `ServeMux`. Mark it `PageOnly`.
+
+Set `Surface.Router` to the app's chi router so `paritytest.Routes` can
+find routes registered outside the table. A route registered directly
+on a `ServeMux` isn't seen.
+
+Mount the API tree and MCP endpoint directly on the router at
+`/api/v1/` and `/api/v1/mcp`. The walk skips routes under `/api/v1/`;
+other checks cover them.
+
 ## Mark
 
 ```go

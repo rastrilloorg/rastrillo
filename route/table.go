@@ -7,9 +7,13 @@ import (
 	"strings"
 )
 
-// Table registers routes through a Register and records each one. A
-// Table from On shares its record and its twice-check with the Table it
-// came from, so one List holds the whole app.
+// Table registers routes through a Register and records each route with
+// a mark. A table returned by On shares its record with the table it
+// came from, so List includes routes from the whole app.
+//
+// Register every page route through a Table. A route registered
+// directly on the router has no mark. paritytest finds it on a chi
+// router, but cannot find it on a ServeMux.
 type Table struct {
 	register Register
 	// prefix is where register's router is mounted, without a trailing
@@ -32,9 +36,10 @@ func New(register Register) *Table {
 	}
 }
 
-// On is a table for a router mounted at prefix inside this table's,
-// such as a chi sub-router from Route("/admin", ...). The prefix is
-// relative, as chi's Route is, so nested sub-routers nest their tables.
+// On returns a table for a sub-router mounted at prefix, such as a chi
+// sub-router created with Route("/admin", ...). Use it where you would
+// use Mount, then register the sub-router's routes on the table On
+// returns. For nested sub-routers, call On on the parent table.
 func (table *Table) On(register Register, prefix string) *Table {
 	return &Table{
 		register: register,

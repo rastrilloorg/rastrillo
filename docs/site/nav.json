@@ -189,6 +189,11 @@
           "blurb": "Register page routes on chi or ServeMux, each with its operation."
         },
         {
+          "slug": "reference/paritytest",
+          "label": "paritytest",
+          "blurb": "Check that pages, the API and MCP offer the same operations."
+        },
+        {
           "slug": "reference/apitoken",
           "label": "apitoken",
           "blurb": "Personal API tokens for agents: make, verify, list and revoke them."
