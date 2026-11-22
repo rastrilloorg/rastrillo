@@ -10,6 +10,25 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+### Added: Fiesta 1.6.0, the stack and the spacing gates
+
+Rastrillo pins Fiesta 1.6.0, so `tokens.css` carries `rst-stack`: a column
+that spaces a page's blocks by one table, by what each block is and what it
+follows (close under a heading, wider before a section, always clear above a
+row of buttons). `rst-section` marks a child that opens a section, and
+`rst-actions` is a wrapping row of buttons. Markup that doesn't use them
+renders as it did. Fiesta's DESIGN.md, "The stack", has the table.
+
+Two gates come with it, for an app's own checks. `go tool fiesta spacing
+internal/app/static` (after `go get -tool amadan.net/rastrillo/fiesta/cmd/fiesta`)
+refuses every margin, padding and gap that isn't a `var(--rst-sp-N)` step,
+with a `/* spacing-allow: why */` comment for the exceptions.
+`amadan.net/rastrillo/fiesta/check/rhythm` is an audit for a browser test:
+`chromedp.Evaluate(rhythm.Expression("main", rhythm.Options{}), &found)`
+reports off-scale gaps, text touching a control, and a heading further from
+its content than from the block before it. An app vendoring `tokens.css`
+takes the stack with `rastrillo doctor -fix`.
+
 ## v0.44.0
 
 A root app can call its instances with `rootcall`, and `roster` can keep
