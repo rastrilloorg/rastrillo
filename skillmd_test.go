@@ -301,8 +301,14 @@ const (
 	// field-number (the Fichas level-up spec rev 4, R2), which took it
 	// to 9,107; the ceiling is the next hundred. Raised on 2026-11-19
 	// for the smart door's four signin parts, each a one-line "Part of
-	// signin" entry, which took it to 9,441.
-	skillPartialsBudget = 9_500
+	// signin" entry, which took it to 9,441. Raised on 2026-11-22 for
+	// signin-secret-door, the authenticator and passphrase doors'
+	// shared part, which took it to 9,587. Raised on 2026-11-22 for
+	// signin-view and its title, its three pages and their brand
+	// column (the default sign-in's offer and add pages), and field's
+	// Minlength, which took it to 10,070. Raised on 2026-11-22 for the
+	// keys signin-options now lists, which took it to 10,109.
+	skillPartialsBudget = 10_200
 )
 
 // skillFiles are SKILL.md and every topic, by path.

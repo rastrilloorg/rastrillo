@@ -103,13 +103,17 @@ func TestKeymailServersMatchOneServerHoweverItIsSpelled(t *testing.T) {
 	}
 }
 
-func TestWithoutKeymailServersBothClientsAreToday(t *testing.T) {
-	a, _ := newTestAuth(t, nil)
-	if a.guard != nil || a.flow.Classifier.HTTP != nil || a.exchangeHTTP != nil {
-		t.Fatal("with no list, auth must leave both keymail clients as the library's defaults")
+func TestWithoutKeymailServersBothClientsDialPublicOnly(t *testing.T) {
+	auth, _ := newTestAuth(t, nil)
+	if auth.guard != nil || auth.flow.Classifier.HTTP == nil {
+		t.Fatal("with no list, auth must use the public-only client")
 	}
-	if k := a.flow.Keymail("keymail.test"); k.RedirectPath != callbackPath || k.HTTP != nil {
-		t.Fatalf("Keymail = %+v; RedirectPath must be callbackPath, set explicitly", k)
+	keymail := auth.flow.Keymail("keymail.test")
+	if keymail.RedirectPath != callbackPath {
+		t.Fatalf("RedirectPath = %q", keymail.RedirectPath)
+	}
+	if keymail.HTTP == nil || keymail.HTTP != auth.exchangeHTTP {
+		t.Fatal("the token exchange must use the public-only client")
 	}
 }
 

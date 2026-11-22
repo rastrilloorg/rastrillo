@@ -43,6 +43,7 @@ func applyMagicAuth(
 	edit.app()
 	edit.newFiles()
 	edit.layout()
+	edit.accountPage()
 	edit.main()
 	edit.harness()
 	edit.perf()
@@ -92,16 +93,18 @@ func (edit *magicAuth) filled(template string) string {
 }
 
 // schema: sessions before auth (auth's backfill reads the sessions
-// table), pow for the guard's nonces, then what was there. The example
-// model becomes owned, and its migration is what generate writes.
+// table), pow for the guard's nonces, the further ways' tables, then
+// what was there. The example model becomes owned, and its migration
+// is what generate writes.
 func (edit *magicAuth) schema() {
 	migrations := filepath.Join(edit.appDir, "migrations.go")
 	edit.swap(migrations,
 		"var BootSchema = migrate.Merge(apitoken.Schema, Schema)",
 		"var BootSchema = migrate.Merge(sessions.Schema, auth.Schema,\n"+
-			"\tpow.Schema, apitoken.Schema, Schema)")
+			"\tpow.Schema, passkey.Schema, totp.Schema, signin.Schema,\n"+
+			"\tapitoken.Schema, Schema)")
 	edit.importAfter(migrations, `"amadan.net/rastrillo/rastrillo/apitoken"`,
-		"auth", "pow", "sessions")
+		"auth", "passkey", "pow", "sessions", "signin", "totp")
 	edit.swap(filepath.Join(edit.appDir, "models.go"),
 		"// Never bind a request body onto a model; AGENTS.md says why.\n"+
 			"type Note struct {\n\tID        int64\n",
@@ -144,16 +147,18 @@ func (edit *magicAuth) app() {
 	edit.swap(app, "mcp: mcp}\n", "mcp: mcp}\n"+
 		"\tif err := app.startAuth(group, mailer); err != nil {\n"+
 		"\t\treturn nil, nil, err\n\t}\n")
-	edit.swap(app, "\tlive     *live.Hub\n}",
-		"\tlive     *live.Hub\n\tauth     *auth.Auth\n}")
+	edit.swap(app, "\tlive     *live.Hub\n}", "\tlive     *live.Hub\n"+
+		"\tauth     *auth.Auth\n\tsignins  *signin.Signins\n}")
 	edit.importAfter(app, `"amadan.net/rastrillo/rastrillo/action"`,
-		"auth", "background", "mail")
+		"auth", "background", "mail", "signin")
 	routes := filepath.Join(edit.appDir, "routes.go")
 	edit.swap(routes, `const homePage action.Path = "/"`,
 		`const homePage action.Path = "/"`+"\n"+
 			`const accountPage action.Path = "/account"`)
 	edit.swap(routes, "pages.Middleware)\n", "pages.Middleware)\n"+
 		"\t\tguarded.Guard(\"signedIn\", app.signedIn)\n"+
+		"\t\t// After a first link, the offer of a faster way in, once.\n"+
+		"\t\tguarded.Guard(\"signinGate\", app.signins.Gate)\n"+
 		"\t\tapp.mountAuth(guarded)\n")
 	stream := "\t\tguarded.Handle(http.MethodGet, livePage, " +
 		"app.live.Handler(), \"live\")\n"
@@ -202,6 +207,19 @@ func (edit *magicAuth) layout() {
 	}
 }
 
+// accountPage: /account renders the index with Address, and links to
+// Sign-in options there, the one place every shell draws, since the
+// stage shell has no account controls. Not under a base path, where
+// signin's routes are the hub's.
+func (edit *magicAuth) accountPage() {
+	edit.swap(filepath.Join(edit.appDir, "templates", "index.html"),
+		"this is a rastrillo app.</h1>\n", "this is a rastrillo app.</h1>\n"+
+			`{{if and (opt $ "Address") (not (opt $ "Base"))}}`+
+			`{{$L := localizer $}}<p><a href="/account/signin">`+
+			`{{T $L "rastrillo.ui.signin_options_heading"}}</a></p>{{end}}`+
+			"\n")
+}
+
 // schemeMenuEnd is where the layout's scheme menu block ends, or -1.
 func schemeMenuEnd(layout string) int {
 	at := strings.Index(layout, `{{block "scheme" .}}`)
@@ -219,11 +237,14 @@ func schemeMenuEnd(layout string) int {
 	return at + menu + end + len("{{end}}")
 }
 
-// accountControl is Sign in or Sign out. Under a base path the hub signs
-// people in and the plugins answer 404 here: a root-relative /signin
-// would leave the tenant for the product's own sign-in screen.
+// accountControl is Sign in, or Sign-in options and Sign out. Under a
+// base path the hub signs people in and the plugins answer 404 here: a
+// root-relative /signin would leave the tenant for the product's own
+// sign-in screen.
 const accountControl = `{{if not (opt $ "Base")}}{{$authL := localizer $}}` +
-	`{{if opt $ "SignedIn"}}<form method="post" action="/signout">` +
+	`{{if opt $ "SignedIn"}}<a href="/account/signin" rst-btn>` +
+	`{{T $authL "rastrillo.ui.signin_options_heading"}}</a>` +
+	`<form method="post" action="/signout">` +
 	`<button rst-btn>{{T $authL "rastrillo.ui.account_signout"}}</button>` +
 	`</form>{{else}}<a href="/signin" rst-btn>` +
 	`{{T $authL "rastrillo.ui.account_signin"}}</a>{{end}}{{end}}`
@@ -303,14 +324,14 @@ func (edit *magicAuth) agents() {
 	edit.swap(filepath.Join(edit.appDir, "tokens.go"),
 		"It needs sign-in, which a new\n// app does not have yet; "+
 			"AGENTS.md says how to mount it.",
-		"It needs *sessions.Sessions,\n// which this app's sign-in "+
-			"(auth.go) does not keep.")
+		"It needs *sessions.Sessions,\n// "+
+			"which this app's sign-in (auth.go) has: app.auth.Sessions().")
 	edit.swap(agents, "- Sign-in: `skill/signin.md`. With "+
 		"`*sessions.Sessions`, keep\n  `NewTokenPage(database, sessions)` "+
 		"on `App` and call\n  `app.tokens.Mount(guarded)` in `Routes`' "+
 		"page group.", "- More sign-in, such as 2FA: `skill/signin.md`. "+
-		"tokens.go's page\n  needs `*sessions.Sessions`, which this sign-in "+
-		"does not keep.")
+		"tokens.go's page\n  needs `*sessions.Sessions`: "+
+		"`app.auth.Sessions()`.")
 	edit.swap(agents, "\n## Layout", "\n"+fmt.Sprintf(signinSection,
 		"`", edit.pkg, edit.env)+"\n\n## Layout")
 }
@@ -319,13 +340,17 @@ func (edit *magicAuth) agents() {
 const signinSection = `## Sign-in
 
 This app signs people in by emailed link (%[1]srastrillo/auth%[1]s, ui's
-sign-in screen on the stage shell), in %[1]sinternal/%[2]s/auth.go%[1]s.
+sign-in screen on the stage shell) and by the passkey, authenticator
+app or passphrase they add after (%[1]srastrillo/signin%[1]s), in
+%[1]sinternal/%[2]s/auth.go%[1]s.
 Owned rows carry %[1]sOwner string%[1]s, the signed-in address, never
 %[1]ssessions.UserID%[1]s (it reads (0, false) here). Owned pages go in
 the %[1]sowned%[1]s group in %[1]sRoutes%[1]s; tests sign in with
 %[1]ssignIn(t, handler, box, address)%[1]s. Set %[1]s%[3]s_SMTP_HOST%[1]s
 and %[1]s%[3]s_SMTP_FROM%[1]s to send mail, or links are logged. Off
-CARLOS, set %[1]s%[3]s_INSTANCE_KEY%[1]s to keep links across restarts.`
+CARLOS, set %[1]s%[3]s_INSTANCE_KEY%[1]s to keep links working across
+restarts; it also keeps authenticator apps working, so without it that
+way is off.`
 
 // formatGo puts the imports the edits added where gofmt would, so the
 // new app's own fmt-check passes.

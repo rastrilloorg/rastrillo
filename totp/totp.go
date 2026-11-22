@@ -2,9 +2,11 @@
 // time-based one-time passwords, the six digits every authenticator
 // app produces — on the same two seams the passkey package uses: at
 // sign-in it completes secondfactor's pending half-session, and at
-// step-up it makes a valid-but-stale session fresh again. It never
-// signs anybody in from nothing: SignIn demands a live half-session,
-// StepUp demands a session.
+// step-up it makes a valid-but-stale session fresh again. Its own
+// handlers never sign anybody in from nothing: SignIn demands a live
+// half-session, StepUp demands a session. The signin package does
+// sign people in by address and code, through Check and behind its
+// own limiter.
 //
 // It is the factor for the person without a passkey-capable device,
 // and the one whose proof is a plain form field: every endpoint here
@@ -56,6 +58,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"amadan.net/rastrillo/rastrillo/crypto"
 )
 
 // Method is the sessions.Session.Method a step-up mints, and the
@@ -165,4 +169,27 @@ func keyURI(issuer, account, key string) string {
 	q.Set("digits", strconv.Itoa(digits))
 	q.Set("period", strconv.Itoa(int(period/time.Second)))
 	return "otpauth://totp/" + url.PathEscape(issuer+":"+account) + "?" + q.Encode()
+}
+
+// NewDecoy seals a secret nobody holds, for CheckDecoy. Make one at
+// boot and keep it.
+func (handlers *Handlers) NewDecoy() ([]byte, error) {
+	secret, err := newSecret()
+	if err != nil {
+		return nil, err
+	}
+	return crypto.SealSym(handlers.cfg.Key, secret)
+}
+
+// CheckDecoy does the work Check does for an enrolled subject, against
+// decoy, and matches nothing. A caller that signs in by address runs it
+// for a subject with no authenticator, so an unknown address takes as
+// long as a wrong code and the time says nothing about who enrolled.
+func (handlers *Handlers) CheckDecoy(decoy []byte, submitted string) error {
+	secret, err := crypto.OpenSym(handlers.cfg.Key, decoy)
+	if err != nil {
+		return err
+	}
+	match(secret, submitted, time.Now(), 0)
+	return nil
 }

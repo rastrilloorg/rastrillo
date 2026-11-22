@@ -40,7 +40,18 @@ const standalone = "scheme-menu/standalone"
 // differsFromFiesta names the example states a partial renders
 // differently on purpose, each with its reason. An entry that no
 // longer differs fails, so the map cannot outlive its reasons.
-var differsFromFiesta = map[string]string{}
+var differsFromFiesta = map[string]string{
+	"signin/coming-back-with-keymail":          keymailInvisible,
+	"signin/on-the-way-to-keymail":             keymailInvisible,
+	"signin/when-keymail-could-not-confirm-it": keymailInvisible,
+}
+
+// keymailInvisible is why the three Keymail sign-in states differ:
+// the default-signin spec keeps Keymail out of what people read, and
+// Fiesta's pinned examples still name it until its next release.
+const keymailInvisible = "Keymail stays invisible on the sign-in " +
+	"screen (default-signin spec); Fiesta's example updates on its " +
+	"next release"
 
 func TestEveryPartialMatchesItsFiestaExample(t *testing.T) {
 	seed := newSeedRender(t)

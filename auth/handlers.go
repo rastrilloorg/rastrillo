@@ -11,7 +11,6 @@ import (
 
 	"amadan.net/rastrillo/rastrillo/basepath"
 	"amadan.net/rastrillo/rastrillo/clientip"
-	"amadan.net/rastrillo/rastrillo/lastsignin"
 	"amadan.net/rastrillo/rastrillo/pow"
 	"amadan.net/rastrillo/rastrillo/sessions"
 )
@@ -330,18 +329,18 @@ func (a *Auth) Callback(w http.ResponseWriter, r *http.Request) {
 		a.redirect(w, r, a.signinAgain(r, "?err=expired"+again))
 		return
 	case errors.Is(err, signin.ErrAddressMismatch):
-		// Keymail's identity service is deliberately anonymous: the
-		// gesture proves some passkey was verified in this browser, and
-		// only the address comparison ties it to the address the flow
+		// Keymail's identity service is anonymous: only the address
+		// comparison ties the verified passkey to the address the flow
 		// started for. A mismatch is a hard stop, not a retry.
-		http.Error(w, "Keymail returned a different address from the one you entered.", http.StatusForbidden)
+		http.Error(w, "This sign-in used a different email address. Try again.",
+			http.StatusForbidden)
 		return
 	case err != nil:
 		a.logError("rastrillo/auth: keymail callback", err)
 		a.redirect(w, r, a.signinAgain(r, "?force=1&err=keymail"+again))
 		return
 	}
-	a.admit(w, r, id)
+	a.Admit(w, r, id, "")
 }
 
 // Verify is the magic-link landing, and it answers on two methods —
@@ -393,7 +392,7 @@ func (a *Auth) redeem(w http.ResponseWriter, r *http.Request) {
 		a.redirect(w, r, a.signinAgain(r, "?err=expired"))
 		return
 	}
-	a.admit(w, r, id)
+	a.Admit(w, r, id, "")
 }
 
 // Signout is POST /signout: revoke the session row (real revocation —
@@ -478,75 +477,6 @@ func (a *Auth) Refresh(w http.ResponseWriter, r *http.Request) {
 	a.sessions.Refresh(w, r)
 }
 
-// admit runs the admission gate, offers the session to the
-// SecondFactor hook (which may trade it for a pending half-session
-// and take over the response), and otherwise mints it and lands on
-// return_to — Begin's own cookie if this request carries none itself
-// — falling back to SignedInPath.
-func (a *Auth) admit(w http.ResponseWriter, r *http.Request, id Identity) {
-	// A first factor has verified, so this browser's attempt is over
-	// whether or not the address is admitted. Left behind, it would keep
-	// prefilling the form with an address already proved (round 3,
-	// finding 25).
-	a.jar.EndAttempt(w)
-	// The kept destination goes onto this request's own form, where
-	// sessions.SafeReturn and secondfactor.Hold already look, so the
-	// SecondFactor hook and the redirect at the end agree on it without
-	// either knowing the cookie exists. Spent here, admitted or not: the
-	// attempt it belonged to is over.
-	if _, err := r.Cookie(a.returnCookie()); err == nil {
-		to := a.keptReturnTo(r)
-		a.clearCookie(w, a.returnCookie())
-		_ = r.ParseForm()
-		if to != "" && r.Form.Get("return_to") == "" {
-			r.Form.Set("return_to", to)
-		}
-	}
-	if a.cfg.Authorize != nil && !a.cfg.Authorize(id.Address) {
-		a.refuseAdmission(w, r, id)
-		return
-	}
-	subject, err := a.subjectFor(r.Context(), id.Address)
-	if errors.Is(err, sessions.ErrNoUser) {
-		a.refuseAdmission(w, r, id)
-		return
-	}
-	if err != nil {
-		a.logError("rastrillo/auth: subject for address", err)
-		http.Error(w, "sign-in failed", http.StatusInternalServerError)
-		return
-	}
-	// The address, never the subject: SubjectFor may make subjects
-	// opaque, and the screen shows this address back. Before the
-	// SecondFactor hook because nothing after it knows the address —
-	// Gate.Complete holds only the subject — so a sign-in held for a
-	// second factor is remembered too. The record says which door this
-	// browser used, never that the person got in.
-	a.jar.Remember(w, lastsignin.Record{Method: string(id.Method), Address: id.Address})
-	sess := sessions.Session{
-		Subject:  subject,
-		Method:   string(id.Method),
-		AuthTime: id.AuthTime,
-	}
-	if a.cfg.SecondFactor != nil {
-		done, err := a.cfg.SecondFactor(w, r, sess)
-		if err != nil {
-			a.cfg.Logger.Error("rastrillo/auth: second factor", "err", err)
-			http.Error(w, "sign-in failed", http.StatusInternalServerError)
-			return
-		}
-		if done {
-			return
-		}
-	}
-	if err := a.sessions.SignIn(w, r, sess); err != nil {
-		a.logError("rastrillo/auth: store session", err)
-		http.Error(w, "sign-in failed", http.StatusInternalServerError)
-		return
-	}
-	a.redirect(w, r, sessions.SafeReturn(r, a.cfg.SignedInPath))
-}
-
 // identityFrom converts a resolved sessions.Session to this plugin's
 // Identity view of it.
 func identityFrom(s sessions.Session) Identity {
@@ -597,9 +527,9 @@ func (a *Auth) RequireSession(next http.Handler) http.Handler {
 }
 
 // RequireFreshSession is RequireSession plus step-up: the credential
-// must have been verified within maxAge (keymail's auth_time when the
-// deployment reports one, else the session's own minting time — see
-// sessions.Fresh). A stale-but-valid page request redirects to the
+// must have been verified within maxAge (the AuthTime Admit stamped,
+// keymail's own auth_time, or with none the session's minting time —
+// see sessions.Fresh). A stale-but-valid page request redirects to the
 // sign-in page with reauth=1 so it can say "confirm it's you";
 // re-verifying rotates the session fresh. Against a keymail deployment
 // that advertises reauth, signin sends prompt=login, so the ceremony

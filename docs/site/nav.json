@@ -54,6 +54,11 @@
           "blurb": "The email-and-password plugin: its two callbacks, and its shared rate limit."
         },
         {
+          "slug": "signin",
+          "label": "The default sign-in",
+          "blurb": "Email link first, then a passkey, authenticator app or passphrase, with the last-used way remembered."
+        },
+        {
           "slug": "magic-links",
           "label": "Magic links",
           "blurb": "Passwordless sign-in by emailed link, and the sessions.UserID trap that comes with it."
@@ -452,6 +457,11 @@
           "slug": "reference/sessions",
           "label": "sessions",
           "blurb": "Session rows, cookies, the three middlewares, and SafeReturn."
+        },
+        {
+          "slug": "reference/signin",
+          "label": "signin",
+          "blurb": "One call assembles the default sign-in, required sign-up steps, the gate, the offer and the Sign-in options page."
         },
         {
           "slug": "reference/table",

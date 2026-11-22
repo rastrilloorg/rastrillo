@@ -33,23 +33,27 @@ var taken = strings.Fields(`
 	action address answer append askForLink assets background base
 	basepath body bool boot box budget bytes catalog chi chromedp client
 	closeAll code confirm confirmPattern context cookie csrf ctx database
-	db dbtest err error exitOnError filepath form formPattern genlocales
+	db dbtest err error everyWay exitOnError filepath form formPattern
+	genlocales
 	get getAs got group handler harness hashedStylesheet href html http
 	hub
 	httptest index io json len library link linkPattern logger mail
-	mailer main method migrate modeldiff mux name newApp newAppWithMail
-	nil ok
+	mailer main method migrate modeldiff mux name navigateAs newApp
+	newAppWithMail
+	nil ok opener
 	options origin originFrom os outbox page path perftest post postOver
 	powtest rastrillo recorder regexp request response rig router routes
 	schema send servingOptions sessions signedInTokenPage signIn
 	signInOver signins signinStore skip slog started staticDir step
 	string strings suite sync t target template TestAPIAnswersInJSON
 	TestBareAssetNameStaysFresh TestBrowserWalk
-	TestErrorPageRendersFrameworkPartial
+	TestErrorPageRendersFrameworkPartial TestFirstLinkSignInShowsTheOffer
 	TestIndexLinksFingerprintedStylesheet TestIndexRenders testing
-	TestMain TestMenuRenders TestModelsMatchMigrations testOrigin
+	TestMain TestMenuRenders TestModelsMatchMigrations
+	TestNoInstanceKeyLeavesTheAuthenticatorOff testOrigin
 	TestOverviewRenders TestPerfBoot TestPerfScreens
-	TestSignInByEmailedLink TestTokenPageShowsANewTokenOnce
+	TestSignInByEmailedLink TestSigninOffersEveryWay
+	TestTokenPageShowsANewTokenOnce
 	TestUnknownPathIs404 TestVendoredAssetsMatchTheLibrary time title
 	token tokenPattern ui url variable vendored vendoredIsMine
 	vendoredTheme year

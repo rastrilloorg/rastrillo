@@ -83,6 +83,12 @@ same-site `return_to` or `Config.SignedInPath`.
 
 `Config.Remember` takes `auth`'s `RememberJar()`. With it, a verified discover assertion ends the sign-in screen's attempt and remembers passkey as this browser's way in, with no address.
 
+`RegisterJS()` is the script for a page that adds a passkey: it runs
+`RegisterBegin` and `RegisterFinish` and goes to the answer's `"to"`
+only after a successful one, or, when either answers 401, to the
+sign-in page its `"reauth"` names. It imports `JS()` as `./signin.mjs`, so
+serve the two side by side under those names.
+
 ## The inventory
 
 ```go

@@ -11,6 +11,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"net/http/httptest"
 	"path/filepath"
 	"testing"
 
@@ -54,6 +55,7 @@ func TestSignOutWorksWithScriptsOff(t *testing.T) {
 	// Signed in through the real screen and link, in process, presenting
 	// the browser's origin, then handed to the browser as its cookie.
 	session := signIn(t, fromOrigin(app, rig.Origin), box, "ada@example.com")
+	notNow(t, app, rig.Origin, session)
 	rig.Run(
 		call(emulation.SetScriptExecutionDisabled,
 			emulation.SetScriptExecutionDisabledParams{Value: true}),
@@ -92,6 +94,24 @@ func TestSignOutWorksWithScriptsOff(t *testing.T) {
 	if offers != "Sign in" {
 		t.Errorf("signed out, the card offers %q; want Sign in alone",
 			offers)
+	}
+}
+
+// notNow answers the offer of a faster way in, which the app sends a
+// first sign-in by link to, so the browser lands on the home page.
+func notNow(
+	t *testing.T, app http.Handler, origin string, session *http.Cookie,
+) {
+	t.Helper()
+	request := httptest.NewRequest(http.MethodPost, "/signin/faster/later",
+		nil)
+	request.Header.Set("Origin", origin)
+	request.AddCookie(session)
+	recorder := httptest.NewRecorder()
+	app.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusSeeOther {
+		t.Fatalf("Not now = %d, want 303:\n%s", recorder.Code,
+			recorder.Body)
 	}
 }
 

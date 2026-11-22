@@ -160,4 +160,69 @@ func TestSignInByEmailedLink(t *testing.T) {
 		t.Fatalf("signed-in /account = %d, want 200 with a sign-out form:\n%s",
 			recorder.Code, recorder.Body)
 	}
+	// In the page itself, since the stage shell has no account controls.
+	if !strings.Contains(recorder.Body.String(),
+		`<p><a href="/account/signin">`) {
+		t.Errorf("signed-in /account has no Sign-in options link:\n%s",
+			recorder.Body)
+	}
+}
+
+// navigateAs is getAs as a page navigation, which the gate may redirect.
+func navigateAs(
+	t *testing.T, handler http.Handler, target string, cookie *http.Cookie,
+) *httptest.ResponseRecorder {
+	t.Helper()
+	request := httptest.NewRequest(http.MethodGet, target, nil)
+	request.Header.Set("Sec-Fetch-Mode", "navigate")
+	request.AddCookie(cookie)
+	recorder := httptest.NewRecorder()
+	handler.ServeHTTP(recorder, request)
+	return recorder
+}
+
+// The chooser, opened from each way, offers the next: every way is on.
+func TestSigninOffersEveryWay(t *testing.T) {
+	t.Parallel()
+	handler := newApp(t)
+	everyWay := []string{"email", "passkey", "authenticator", "passphrase"}
+	for index, name := range everyWay {
+		opener := everyWay[(index+1)%len(everyWay)]
+		page := get(t, handler, "/signin?ways=1&way="+opener).Body.String()
+		if !strings.Contains(page, `href="/signin?way=`+name+`"`) {
+			t.Errorf("the chooser from %s lacks %s:\n%s", opener, name, page)
+		}
+	}
+}
+
+// A first sign-in by link leads on to the offer of a faster way in.
+func TestFirstLinkSignInShowsTheOffer(t *testing.T) {
+	t.Parallel()
+	handler, box := newAppWithMail(t)
+	cookie := signIn(t, handler, box, "ada@example.com")
+	recorder := navigateAs(t, handler, "/account", cookie)
+	href := recorder.Header().Get("Location")
+	if recorder.Code != http.StatusSeeOther ||
+		!strings.HasPrefix(href, "/signin/faster") {
+		t.Fatalf("/account = %d to %q, want the offer", recorder.Code, href)
+	}
+	page := navigateAs(t, handler, href, cookie).Body.String()
+	for _, name := range []string{"passkey", "authenticator", "passphrase"} {
+		if !strings.Contains(page, `href="/signin/add/`+name) {
+			t.Errorf("the offer lacks %s:\n%s", name, page)
+		}
+	}
+}
+
+// A key made up at each start would strand every authenticator, so
+// without one that way is off. Not parallel: it changes the variable
+// the other tests' apps read.
+func TestNoInstanceKeyLeavesTheAuthenticatorOff(t *testing.T) {
+	t.Setenv("__ENV___INSTANCE_KEY", "")
+	t.Setenv("CARLOS_INSTANCE_KEY", "")
+	page := get(t, newApp(t), "/signin?ways=1&way=email").Body.String()
+	if strings.Contains(page, "way=authenticator") ||
+		!strings.Contains(page, `href="/signin?way=passkey"`) {
+		t.Errorf("with no instance key the chooser offers:\n%s", page)
+	}
 }

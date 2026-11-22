@@ -358,7 +358,10 @@ func a11yTargets() []a11yTarget {
 		{"day/en date and time", page("day", "en", "date-and-time"), "the heaviest page in the tree and the one nearest the byte budget: whatever is added to the gallery next is most likely to be added here"},
 		{"day/en route", page("day", "en", "route"), "the shortest of the six, and the only one whose samples are whole responses rather than pieces of one"},
 		{"day/en formats", page("day", "en", "formats"), "the eleven data-format samples: the only page carrying <address>, <abbr>, <data> and <output>, four elements no partial emits and none of the other pages can scan"},
-		{"day/en screens", page("day", "en", "screens"), "the sign-in screens: the shipped partial in ten states in stage frames, and the two examples it does not ship — the only page carrying a password field"},
+		{"day/en screens", page("day", "en", "screens"),
+			"the sign-in screens: the shipped partial in its states in " +
+				"stage frames, and the two examples it does not ship, " +
+				"the only page carrying a password field"},
 		{"day/en shells", page("day", "en", "shells"), "the five page frames, each framed at full page size"},
 		// The two colour ends, on the page that carries the most colour:
 		// the display vocabulary, painted in the theme.
@@ -804,7 +807,9 @@ func pickPreviewFrames(t *testing.T, bctx context.Context, kind string) []previe
 		// page's own count, so a frame that stopped rendering is a
 		// failure here and not a smaller scan.
 		if len(got.Frames) != len(screenDocs()) {
-			t.Fatalf("expected the ten sign-in states and two examples (%d frames), picked %d", len(screenDocs()), len(got.Frames))
+			t.Fatalf("expected every sign-in state and the two "+
+				"examples (%d frames), picked %d", len(screenDocs()),
+				len(got.Frames))
 		}
 		return got.Frames
 	}
@@ -1509,7 +1514,7 @@ func oneWayMatrix() map[string]auth.SigninState {
 // (so the passkey door shows as it would once revealed) in the same
 // stage frame the gallery uses, served beside the gallery tree so they
 // load its tokens.css and themes. They are not gallery pages: the
-// Screens page shows ten states to stay inside its byte budget, and the
+// Screens page shows ten of them to stay inside its byte budget, and the
 // other eleven would exist only for this scan.
 //
 // Without the backdrop, on purpose. Over the art axe cannot compute the

@@ -18,70 +18,72 @@ import (
 	"amadan.net/rastrillo/rastrillo/auth"
 	"amadan.net/rastrillo/rastrillo/background"
 	"amadan.net/rastrillo/rastrillo/carlos"
+	"amadan.net/rastrillo/rastrillo/crypto"
 	"amadan.net/rastrillo/rastrillo/locales"
 	"amadan.net/rastrillo/rastrillo/mail"
 	"amadan.net/rastrillo/rastrillo/pow"
 	"amadan.net/rastrillo/rastrillo/scope"
+	"amadan.net/rastrillo/rastrillo/signin"
 	"amadan.net/rastrillo/rastrillo/ui"
 
 	genlocales "__NAME__/gen/locales"
 	"__NAME__/internal/__PKG__/icons"
 )
 
-// Sign-in by emailed link, on ui's sign-in screen: nobody chooses or
-// stores a password. docs/site/magic-links.md has the whole story.
+// Sign-in by emailed link on ui's one-way screen, and by a passkey, an
+// authenticator app or a passphrase added after the first link: nobody
+// has to keep a password. docs/site/magic-links.md has the whole story.
 
 const signinPage action.Path = "/signin"
+
+const keyVariable = "__ENV___INSTANCE_KEY"
 
 // powAssets serves pow's scripts from the module, never a copy: a copy
 // drifting from the Go verifier fails silently.
 var powAssets = rastrillo.NewAssets(pow.Assets())
 
-// startAuth builds sign-in, and sweeps spent challenges and expired
-// links on the background group, which shutdown stops.
+// startAuth builds sign-in behind a proof-of-work guard, so a scripted
+// flood costs work and the mailer is no open relay, and sweeps on the
+// background group, which shutdown stops.
 func (app *App) startAuth(
 	group *background.Group, mailer mail.Sender,
 ) error {
-	signins, guard, err := app.newAuth(mailer)
+	if signinPagesErr != nil {
+		return signinPagesErr
+	}
+	key, ephemeral, err := instanceKey()
+	if err != nil {
+		return err
+	}
+	writer, err := app.database.G.DB()
+	if err != nil {
+		return err
+	}
+	guard, err := newGuard(writer, key)
+	if err != nil {
+		return err
+	}
+	app.auth, err = app.newAuth(writer, key, guard, mailer)
+	if err != nil {
+		return err
+	}
+	app.signins, err = app.newSignins(writer, key, guard, ephemeral)
 	if err != nil {
 		return err
 	}
 	group.Loop(context.Background(), 10*time.Minute, func() {
-		if err := guard.Sweep(time.Now()); err != nil {
-			app.logger.Warn("sweep spent sign-in challenges", "err", err)
-		}
-		if err := signins.Sweep(time.Now()); err != nil {
-			app.logger.Warn("sweep expired sign-in links", "err", err)
-		}
+		app.sweep(guard, time.Now())
 	})
-	app.auth = signins
 	return nil
 }
 
-// newAuth puts a proof-of-work guard in front of sign-in, so a scripted
-// flood of requests costs work and the mailer is no open relay.
-func (app *App) newAuth(mailer mail.Sender) (*auth.Auth, *pow.Guard, error) {
-	if signinPagesErr != nil {
-		return nil, nil, signinPagesErr
-	}
-	key, err := instanceKey()
-	if err != nil {
-		return nil, nil, err
-	}
-	writer, err := app.database.G.DB()
-	if err != nil {
-		return nil, nil, err
-	}
-	guard, err := newGuard(writer, key)
-	if err != nil {
-		return nil, nil, err
-	}
-	signins, err := auth.New(auth.Config{
+func (app *App) newAuth(
+	writer *sql.DB, key string, guard *pow.Guard, mailer mail.Sender,
+) (*auth.Auth, error) {
+	return auth.New(auth.Config{
 		DB: writer, Origin: app.origin, InstanceKey: key, Proof: guard,
 		Mailer: mailer, SigninPath: string(signinPage), SigninScreen: true,
-		// No keymail partners: every address gets a link, and no server
-		// is dialed, such as one an anonymous visitor's domain names.
-		KeymailServers: []string{},
+		SigninOneWay: true,
 		// A link opens the sign-in screen with a button, so a mail
 		// scanner that fetches the link spends nothing.
 		RenderConfirm: func(response http.ResponseWriter,
@@ -89,19 +91,53 @@ func (app *App) newAuth(mailer mail.Sender) (*auth.Auth, *pow.Guard, error) {
 			app.signinScreen(response, request)
 		},
 	})
-	return signins, guard, err
+}
+
+// newSignins adds the ways in beyond the link. Authenticator secrets
+// are sealed under the instance key, so a key made up for this run
+// leaves that way off: the next start could not read them.
+func (app *App) newSignins(
+	writer *sql.DB, key string, guard *pow.Guard, ephemeral bool,
+) (*signin.Signins, error) {
+	ways := signin.Passkey | signin.Authenticator | signin.Passphrase
+	if ephemeral {
+		ways &^= signin.Authenticator
+		app.logger.Warn("sign-in by authenticator app is off: set " +
+			keyVariable + " so its secrets survive a restart")
+	}
+	sealing := crypto.Derive([]byte(key), "rastrillo/signin/totp/v1")
+	return signin.New(signin.Config{
+		Auth: app.auth, Sessions: app.auth.Sessions(), DB: writer,
+		Origin: app.origin, Key: [32]byte(sealing), Proof: guard,
+		Ways: ways, Render: app.renderSignin, Logger: app.logger,
+		Issuer: "__NAME__",
+	})
+}
+
+// sweep forgets spent challenges, expired links and misses too old to
+// count against anyone.
+func (app *App) sweep(guard *pow.Guard, now time.Time) {
+	if err := guard.Sweep(now); err != nil {
+		app.logger.Warn("sweep spent sign-in challenges", "err", err)
+	}
+	if err := app.auth.Sweep(now); err != nil {
+		app.logger.Warn("sweep expired sign-in links", "err", err)
+	}
+	if err := app.signins.Sweep(now); err != nil {
+		app.logger.Warn("sweep old sign-in misses", "err", err)
+	}
 }
 
 // instanceKey seals challenges and pending sign-ins: CARLOS's key, else
-// the variable's, else a random one for this run. Never a fixed key:
-// anyone who reads it can forge a sign-in.
-func instanceKey() (string, error) {
-	const variable = "__ENV___INSTANCE_KEY"
-	key, err := carlos.InstanceKey(os.Getenv(variable))
+// the variable's, else a random one for this run, which is ephemeral.
+// Never a fixed key: anyone who reads it can forge a sign-in.
+func instanceKey() (key string, ephemeral bool, err error) {
+	key, err = carlos.InstanceKey(os.Getenv(keyVariable))
 	if errors.Is(err, carlos.ErrNotOnCarlos) {
-		return randomKey()
+		key, err = randomKey()
+		return key, true, err
 	}
-	return key, err // ErrNoInstanceKey: on CARLOS with no key, never start
+	return key, false, err // ErrNoInstanceKey: on CARLOS, never start
 }
 
 func newGuard(writer *sql.DB, key string) (*pow.Guard, error) {
@@ -117,23 +153,24 @@ func newGuard(writer *sql.DB, key string) (*pow.Guard, error) {
 // mountAuth registers sign-in. Verify answers GET and POST: GET draws
 // the button and spends nothing, POST redeems the link.
 func (app *App) mountAuth(routes *action.Routes) {
-	signins := app.auth
+	links := app.auth
 	routes.Handle("GET", signinPage, http.HandlerFunc(app.signinScreen),
 		"signinScreen")
-	routes.Handle("POST", signinPage, http.HandlerFunc(signins.Begin),
+	routes.Handle("POST", signinPage, http.HandlerFunc(links.Begin),
 		"beginSignin")
-	routes.Handle("POST", "/signin/forget", http.HandlerFunc(signins.Forget),
+	routes.Handle("POST", "/signin/forget", http.HandlerFunc(links.Forget),
 		"forgetAddress")
 	routes.Handle("GET", "/auth/callback",
-		http.HandlerFunc(signins.Callback), "keymailCallback")
-	routes.Handle("GET", "/auth/verify", http.HandlerFunc(signins.Verify),
+		http.HandlerFunc(links.Callback), "keymailCallback")
+	routes.Handle("GET", "/auth/verify", http.HandlerFunc(links.Verify),
 		"showLink")
-	routes.Handle("POST", "/auth/verify", http.HandlerFunc(signins.Verify),
+	routes.Handle("POST", "/auth/verify", http.HandlerFunc(links.Verify),
 		"redeemLink")
-	routes.Handle("POST", "/signout", http.HandlerFunc(signins.Signout),
+	routes.Handle("POST", "/signout", http.HandlerFunc(links.Signout),
 		"signout")
 	routes.Mount("/pow", http.StripPrefix("/pow/", powAssets.Handler()),
 		"pow")
+	app.signins.Mount(routes)
 }
 
 // signinPages draws the sign-in screen on the stage shell, a set of its
@@ -146,10 +183,10 @@ func newSigninPages() (*ui.Pages, error) {
 	if err != nil {
 		return nil, err
 	}
-	signin := ui.PageFile{Path: "templates/signin.html"}
+	screen := ui.PageFile{Path: "templates/signin.html"}
 	return ui.NewPages(ui.PagesConfig{
 		App: appFS, Layout: "templates/stage.html",
-		Pages: map[string]ui.PageFile{"signin": signin}, Locale: config,
+		Pages: map[string]ui.PageFile{"signin": screen}, Locale: config,
 		Assets: assets,
 		Funcs: template.FuncMap{"icon": icons.Icon, "iconAssets": icons.Assets,
 			"asset": assets.Path},
@@ -160,13 +197,24 @@ func (app *App) signinScreen(
 	response http.ResponseWriter, request *http.Request,
 ) {
 	state := app.auth.SigninState(request)
+	app.signins.Fill(&state)
 	app.auth.PrepareSigninResponse(response, state)
-	err := signinPages.Execute(response, "signin", map[string]any{
+	app.renderSignin(response, request, signin.View{Signin: &state})
+}
+
+// renderSignin is signin's Render as well as the screen's, so the offer,
+// the add pages and Sign-in options sit on the same stage shell.
+func (app *App) renderSignin(
+	response http.ResponseWriter, request *http.Request, view signin.View,
+) {
+	data := map[string]any{
 		"L":      signinPages.LocalizerFor(request),
 		"Scheme": rastrillo.SchemeFrom(request),
-		"Signin": state,
+		"View":   view,
 		"Brand":  map[string]any{"Name": "__NAME__"},
-	})
+	}
+	err := signinPages.Render(response, request, view.Status, "signin",
+		func(bool) (any, error) { return data, nil })
 	if err != nil {
 		http.Error(response, "Something went wrong.",
 			http.StatusInternalServerError)

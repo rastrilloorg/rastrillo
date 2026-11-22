@@ -225,10 +225,24 @@ error-page    field-url        page-header      signin-app-problem
               form-error                        signin-forget-way
                                                 signin-glyph
                                                 signin-one-way
+                                                signin-secret-door
+                                                signin-view
+                                                signin-view-title
+                                                signin-offer
+                                                signin-add
+                                                signin-options
+                                                signin-brand
 ```
 
-`signin-one-way`, `signin-app-problem`, `signin-forget-way` and
-`signin-glyph` are parts of `signin`. Call `signin`, not them.
+`signin-one-way`, `signin-secret-door`, `signin-app-problem`,
+`signin-forget-way` and `signin-glyph` are parts of `signin`. Call
+`signin`, not them.
+
+`signin-view` draws every page the `signin` package hands an app, the
+sign-in screen among them, and `signin-view-title` is its title. An app
+that uses the package calls those two and none of the others:
+`signin-offer`, `signin-add` and `signin-options` are its pages, and
+`signin-brand` is their brand column.
 
 `locale-menu` is the language switcher; see
 [Localization](/docs/localization). `scheme-menu` is the colour-scheme

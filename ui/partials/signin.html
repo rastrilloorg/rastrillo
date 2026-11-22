@@ -27,13 +27,16 @@
      With State.OneWay (auth's Config.SigninOneWay) the door offers one
      way in, then "Other ways to sign in", the chooser page (State.Step
      "ways"). State.Federated, set by the page, is a federated door
-     there, and State.AppProblem, set by the page, is a problem only the
-     app can name; both are plain data, drawn by these templates.
+     there, State.Authenticator and State.Passphrase, set by the page,
+     are the secret doors, and State.AppProblem, set by the page, is a
+     problem only the app can name; all are plain data, drawn by these
+     templates.
 
-     State.Proof, when set, is rendered on the one Begin form this state
-     shows: its fields, its attributes, a disabled submit the module
-     enables, the status line and a <noscript> line, and the module once.
-     The Forget form carries none of it.
+     State.Proof, when set, is rendered on the one form this state shows
+     that begins a sign-in (Begin's, or a secret door's): its fields,
+     its attributes, a disabled submit the module enables, the status
+     line and a <noscript> line, and the module once. The Forget form
+     carries none of it.
 
      The passkey door loads its own module, State.Passkey.ScriptURL
      (passkey.JS(), served by the app), and only when it renders: every
@@ -72,10 +75,9 @@
 {{with $s.ReturnTo}}<input type="hidden" name="return_to" value="{{.}}">
 {{end}}<input type="hidden" name="address" value="{{$s.Remembered.Address}}">
 <input type="hidden" name="expect" value="keymail">
-<button rst-btn="primary block" type="submit" aria-describedby="rst-signin-remembered"{{if eq $focus "onetap"}} autofocus{{end}}{{if $gated}} disabled data-pow-submit{{end}}>{{T $L "rastrillo.ui.signin_to_keymail"}}</button>
+<button rst-btn="primary block" type="submit"{{if eq $focus "onetap"}} autofocus{{end}}{{if $gated}} disabled data-pow-submit{{end}}><span>{{Tbdi $L "rastrillo.ui.signin_continue_as" "address" $s.Remembered.Address}}</span></button>
 {{if $gated}}{{$proof.StatusLine (T $L "rastrillo.ui.pow_status")}}<noscript><p>{{T $L "rastrillo.ui.pow_noscript"}}</p></noscript>
-{{end}}<p rst-signin-remembered id="rst-signin-remembered">{{Tbdi $L "rastrillo.ui.signin_remembered_as" "address" $s.Remembered.Address}}</p>
-</form>
+{{end}}</form>
 {{else if eq $door "link"}}<form rst-signin-form method="post" action="{{$s.BeginPath}}"{{with $proof}} {{.Attrs}}{{end}}>{{with $proof}}{{.Fields}}{{end}}
 {{with $s.ReturnTo}}<input type="hidden" name="return_to" value="{{.}}">
 {{end}}<input type="hidden" name="address" value="{{$s.Remembered.Address}}">
@@ -129,7 +131,7 @@
 {{else}}<h1 id="rst-signin-heading">{{Tf $L "rastrillo.ui.signin_heading" "name" .Name}}</h1>
 {{end}}{{if and $s.Problem (ne $s.Problem "address")}}{{$tone := "negative"}}{{if eq $s.Problem "reauth"}}{{$tone = "info"}}{{end}}{{template "callout" (dict "L" $L "ID" "rst-signin-problem" "Tone" $tone "Body" (T $L (printf "rastrillo.ui.signin_problem_%s" $s.Problem)) "Focus" (and (eq $focus "callout") (ne $s.Problem "reauth")))}}
 {{end}}{{template "signin-app-problem" (dict "L" $L "State" $s "Focus" $focus)}}{{if eq $door "ways"}}<div rst-signin-ways>
-{{range $s.Ways}}<a rst-btn="block" href="{{.Href}}">{{if eq .Way "email"}}{{template "signin-glyph" (dict "L" $L "Glyph" "mail")}}<span>{{T $L "rastrillo.ui.signin_way_email"}}{{with .Detail}} <bdi>{{.}}</bdi>{{end}}</span>{{else if eq .Way "passkey"}}{{template "signin-glyph" (dict "L" $L "Glyph" "key")}}<span>{{T $L "rastrillo.ui.signin_passkey"}}</span>{{else}}{{.Icon}}<span>{{.Label}}</span>{{end}}{{template "signin-glyph" (dict "L" $L "Glyph" "next")}}</a>
+{{range $s.Ways}}<a rst-btn="block" href="{{.Href}}">{{if eq .Way "email"}}{{template "signin-glyph" (dict "L" $L "Glyph" "mail")}}<span>{{T $L "rastrillo.ui.signin_way_email"}}{{with .Detail}} <bdi>{{.}}</bdi>{{end}}</span>{{else if eq .Way "passkey"}}{{template "signin-glyph" (dict "L" $L "Glyph" "key")}}<span>{{T $L "rastrillo.ui.signin_passkey"}}</span>{{else if eq .Way "authenticator"}}{{template "signin-glyph" (dict "L" $L "Glyph" "shield")}}<span>{{T $L "rastrillo.ui.signin_way_authenticator"}}</span>{{else if eq .Way "passphrase"}}{{template "signin-glyph" (dict "L" $L "Glyph" "lock")}}<span>{{T $L "rastrillo.ui.signin_way_passphrase"}}</span>{{else}}{{.Icon}}<span>{{.Label}}</span>{{end}}{{template "signin-glyph" (dict "L" $L "Glyph" "next")}}</a>
 {{end}}{{if $s.Remembered}}<form rst-signin-form method="post" action="{{$s.ForgetPath}}">{{with $s.ReturnTo}}<input type="hidden" name="return_to" value="{{.}}">
 {{end}}{{template "signin-forget-way" (dict "L" $L "State" $s)}}<button rst-btn="block" type="submit">{{template "signin-glyph" (dict "L" $L "Glyph" "at")}}<span>{{T $L "rastrillo.ui.signin_different"}}</span>{{template "signin-glyph" (dict "L" $L "Glyph" "next")}}</button></form>
 {{end}}</div>
@@ -144,15 +146,14 @@
 </div>
 {{if not $preview}}<noscript><p>{{T $L "rastrillo.ui.signin_passkey_noscript"}}</p></noscript>
 <script type="module" src="{{$s.Passkey.ScriptURL}}"></script>
-{{end}}{{else if eq $door "keymail"}}<form rst-signin-form method="post" action="{{$s.BeginPath}}"{{with $proof}} {{.Attrs}}{{end}}>{{with $proof}}{{.Fields}}{{end}}
+{{end}}{{else if eq $door "authenticator"}}{{template "signin-secret-door" (dict "L" $L "State" $s "Door" $s.Authenticator "Focus" $focus "Proof" $proof "Gated" $gated "ID" "rst-signin-code" "Name" "code" "Type" "text" "Inputmode" "numeric" "Autocomplete" "one-time-code" "Label" (T $L "rastrillo.ui.signin_code"))}}{{else if eq $door "passphrase"}}{{template "signin-secret-door" (dict "L" $L "State" $s "Door" $s.Passphrase "Focus" $focus "Proof" $proof "Gated" $gated "ID" "rst-signin-passphrase" "Name" "passphrase" "Type" "password" "Autocomplete" "current-password" "Label" (T $L "rastrillo.ui.signin_passphrase"))}}{{else if eq $door "keymail"}}<form rst-signin-form method="post" action="{{$s.BeginPath}}"{{with $proof}} {{.Attrs}}{{end}}>{{with $proof}}{{.Fields}}{{end}}
 {{with $s.ReturnTo}}<input type="hidden" name="return_to" value="{{.}}">
 {{end}}{{if or $s.Reauth (eq $s.Problem "reauth")}}<input type="hidden" name="reauth" value="1">
 {{end}}<input type="hidden" name="address" value="{{$s.Remembered.Address}}">
 <input type="hidden" name="expect" value="keymail">
-<button rst-btn="primary block" type="submit" aria-describedby="rst-signin-remembered"{{if eq $focus "onetap"}} autofocus{{end}}{{if $gated}} disabled data-pow-submit{{end}}>{{T $L "rastrillo.ui.signin_to_keymail"}}</button>
+<button rst-btn="primary block" type="submit"{{if eq $focus "onetap"}} autofocus{{end}}{{if $gated}} disabled data-pow-submit{{end}}>{{template "signin-glyph" (dict "L" $L "Glyph" "mail")}}<span>{{Tbdi $L "rastrillo.ui.signin_continue_as" "address" $s.Remembered.Address}}</span></button>
 {{if $gated}}{{$proof.StatusLine (T $L "rastrillo.ui.pow_status")}}<noscript><p>{{T $L "rastrillo.ui.pow_noscript"}}</p></noscript>
-{{end}}<p rst-signin-remembered id="rst-signin-remembered">{{Tbdi $L "rastrillo.ui.signin_remembered_as" "address" $s.Remembered.Address}}</p>
-</form>
+{{end}}</form>
 {{else if eq $door "link"}}<form rst-signin-form method="post" action="{{$s.BeginPath}}"{{with $proof}} {{.Attrs}}{{end}}>{{with $proof}}{{.Fields}}{{end}}
 {{with $s.ReturnTo}}<input type="hidden" name="return_to" value="{{.}}">
 {{end}}{{if or $s.Reauth (eq $s.Problem "reauth")}}<input type="hidden" name="reauth" value="1">
@@ -175,7 +176,26 @@
 {{end}}{{end}}{{if ne $door "ways"}}{{if $s.Ways}}<a rst-btn="ghost" href="{{$s.WaysHref}}"><span>{{T $L "rastrillo.ui.signin_ways"}}</span>{{template "signin-glyph" (dict "L" $L "Glyph" "next")}}</a>
 {{else if or (eq $door "keymail") (eq $door "link")}}<form rst-signin-form method="post" action="{{$s.ForgetPath}}">{{with $s.ReturnTo}}<input type="hidden" name="return_to" value="{{.}}">
 {{end}}{{template "signin-forget-way" (dict "L" $L "State" $s)}}<button rst-btn="ghost" type="submit"><span>{{T $L "rastrillo.ui.signin_different"}}</span>{{template "signin-glyph" (dict "L" $L "Glyph" "next")}}</button></form>
-{{end}}{{end}}{{if and $gated (or (eq $door "ask") (eq $door "keymail") (eq $door "link")) (not $preview)}}{{$proof.Script}}{{end}}{{end}}
+{{end}}{{end}}{{if and $gated (or (eq $door "ask") (eq $door "keymail") (eq $door "link") (eq $door "authenticator") (eq $door "passphrase")) (not $preview)}}{{$proof.Script}}{{end}}{{end}}
+{{/* signin-secret-door — part of signin. It draws the authenticator
+     and passphrase doors, which differ only in the secret's field: the
+     address, prefilled from this browser and marked username so a
+     password manager pairs it with the secret, then the secret, posted
+     to the door's Path with the page's proof of work. "Email me a
+     sign-in link instead" opens the email way, the way back in for a
+     lost phone or a forgotten passphrase. Keys: L, State, Door (the
+     auth.SecretDoor), Focus, Proof, Gated, and the secret field's ID,
+     Name, Type, Autocomplete, Label and optional Inputmode. */}}
+{{define "signin-secret-door"}}{{$L := localizer $}}{{$s := .State}}{{$proof := .Proof}}<form rst-signin-form method="post" action="{{.Door.Path}}"{{with $proof}} {{.Attrs}}{{end}}>{{with $proof}}{{.Fields}}{{end}}
+{{with $s.ReturnTo}}<input type="hidden" name="return_to" value="{{.}}">
+{{end}}{{if or $s.Reauth (eq $s.Problem "reauth")}}<input type="hidden" name="reauth" value="1">
+{{end}}{{template "field" (dict "L" $L "ID" "rst-signin-email" "Name" "address" "Label" (T $L "rastrillo.ui.signin_email") "Type" "email" "Autocomplete" "username" "Required" true "Value" $s.Address "Autofocus" (eq .Focus "field"))}}
+{{template "field" (dict "L" $L "ID" .ID "Name" .Name "Label" .Label "Type" .Type "Inputmode" (opt . "Inputmode") "Autocomplete" .Autocomplete "Required" true "Autofocus" (eq .Focus "secret"))}}
+<button rst-btn="primary block" type="submit"{{if .Gated}} disabled data-pow-submit{{end}}>{{T $L "rastrillo.ui.signin_code_submit"}}</button>
+{{if .Gated}}{{$proof.StatusLine (T $L "rastrillo.ui.pow_status")}}<noscript><p>{{T $L "rastrillo.ui.pow_noscript"}}</p></noscript>
+{{end}}</form>
+<a rst-btn="ghost" href="{{$s.EmailHref}}"><span>{{T $L "rastrillo.ui.signin_email_instead"}}</span>{{template "signin-glyph" (dict "L" $L "Glyph" "next")}}</a>
+{{end}}
 {{/* signin-app-problem — part of signin. It draws State.AppProblem as
      the page's problem, where auth's own problem does not already take
      the place. */}}
@@ -188,9 +208,10 @@
 {{if or .State.Reauth (eq .State.Problem "reauth")}}<input type="hidden" name="reauth" value="1">
 {{end}}{{end}}
 {{/* signin-glyph — part of signin. It draws one of the door's
-     one-colour glyphs ("next", "back", "mail", "key" or "at") in
+     one-colour glyphs ("next", "back", "mail", "key", "at", "shield" or
+     "lock") in
      currentColor, hidden from assistive technology because the text
      beside each says what it is. Inline, so the door makes no request
      and draws no late icon. They are Lucide's (ISC), as the shipped
      icon set is. */}}
-{{define "signin-glyph"}}<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">{{$glyph := .Glyph}}{{if eq $glyph "next"}}<path d="m9 18 6-6-6-6"/>{{else if eq $glyph "back"}}<path d="m15 18-6-6 6-6"/>{{else if eq $glyph "mail"}}<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>{{else if eq $glyph "key"}}<path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/>{{else if eq $glyph "at"}}<circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8"/>{{end}}</svg>{{end}}
+{{define "signin-glyph"}}<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">{{$glyph := .Glyph}}{{if eq $glyph "next"}}<path d="m9 18 6-6-6-6"/>{{else if eq $glyph "back"}}<path d="m15 18-6-6 6-6"/>{{else if eq $glyph "mail"}}<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>{{else if eq $glyph "key"}}<path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/>{{else if eq $glyph "at"}}<circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8"/>{{else if eq $glyph "shield"}}<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>{{else if eq $glyph "lock"}}<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>{{end}}</svg>{{end}}

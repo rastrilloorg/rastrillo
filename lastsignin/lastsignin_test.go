@@ -240,3 +240,28 @@ func TestRememberCarriesNoAddressOver(t *testing.T) {
 			got, res, oficina)
 	}
 }
+
+func TestRemembersTOTPAndPassphrase(t *testing.T) {
+	jar := newJar(t, On, nil)
+	for _, method := range []string{MethodTOTP, MethodPassphrase} {
+		rec := Record{Method: method, Address: "ada@example.com"}
+		response := httptest.NewRecorder()
+		jar.Remember(response, rec)
+		got, result := jar.Read(carrying(response))
+		if result != Valid || got != rec {
+			t.Errorf("Remember(%+v) then Read = %+v, %v", rec, got, result)
+		}
+		for _, bad := range []Record{
+			{Method: method},
+			{Method: method, Address: "ada@example.com",
+				Provider: ProviderOficina},
+		} {
+			response := httptest.NewRecorder()
+			jar.Remember(response, bad)
+			headers := response.Header().Values("Set-Cookie")
+			if len(headers) != 0 {
+				t.Errorf("Remember(%+v) wrote %v", bad, headers)
+			}
+		}
+	}
+}

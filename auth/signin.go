@@ -46,6 +46,12 @@ const (
 	// ProblemCheck: the front door refused the submission. The page
 	// shows it on the ask step with a recovery challenge.
 	ProblemCheck SigninProblem = "check"
+	// A wrong code, a wrong passphrase, and an address resting after too
+	// many of either, from the secret doors, which draw them on
+	// themselves (keepsSecretDoor).
+	ProblemCode       SigninProblem = "code"
+	ProblemPassphrase SigninProblem = "passphrase"
+	ProblemPaused     SigninProblem = "paused"
 )
 
 // SigninState is everything ui's signin partial needs, as plain data.
@@ -113,9 +119,12 @@ type SigninState struct {
 	// Reauth is a step-up, kept apart from Problem because an error
 	// replaces the reauth problem; ChooseWay reads it.
 	Reauth bool
-	// Federated is set by the page, like Passkey: nil means no
-	// federated door. Only the one-way screen draws it.
-	Federated *FederatedDoor
+	// Federated, Authenticator and Passphrase are set by the page, like
+	// Passkey: nil means the app offers no such way in. Only the
+	// one-way screen draws them.
+	Federated     *FederatedDoor
+	Authenticator *SecretDoor
+	Passphrase    *SecretDoor
 	// AppProblem is set by the page for a problem only the app can
 	// name, such as its refusal of a verified address.
 	AppProblem *AppProblem
@@ -132,24 +141,6 @@ type Remembered struct {
 	Method   string
 	Address  string
 	Provider string
-}
-
-// PasskeyDoor is where the app mounted passkey discovery (BeginPath,
-// FinishPath), where it serves webauthn.JS() (ModuleURL, the WebAuthn
-// helper) and passkey.JS() (ScriptURL, the door's own script, which the
-// partial loads only when it renders the door), and
-// passkey.Config.LegacyRPID, if any.
-type PasskeyDoor struct {
-	BeginPath, FinishPath string
-	// ModuleURL must be an absolute path ("/static/webauthn.mjs"), not a
-	// relative one. The door's script import()s it, and import() resolves
-	// "./x.mjs" against the importing module's own URL, not the page's,
-	// and refuses "static/x.mjs" as a bare specifier: either way the
-	// import fails and the button stays hidden on every page, with no
-	// error anyone sees.
-	ModuleURL  string
-	ScriptURL  string
-	LegacyRPID string
 }
 
 // advisoryOnce makes the screen-off advisory fire once per process, as
@@ -260,6 +251,8 @@ func outcome(q url.Values, remembered bool) (SigninStep, SigninProblem) {
 		return StepAsk, ProblemKeymail
 	case "check":
 		return StepAsk, ProblemCheck
+	case "code", "passphrase", "paused":
+		return StepAsk, SigninProblem(q.Get("err"))
 	case "1":
 		return StepAsk, ProblemGeneric
 	}
@@ -338,9 +331,10 @@ func (s SigninState) PasskeyFinish() string {
 // Door is which way in the page offers, derived here rather than in the
 // template so the rules are Go and tested: "sent", "continue" and
 // "confirm" for those steps; "ask" for any error problem, so the visitor
-// can correct what they typed; for Returning, the remembered method's
-// one-tap — "keymail", "link", or "passkey" when the app wired a passkey
-// door — and "ask" otherwise.
+// can correct what they typed, except a secret door's own problem,
+// which keeps its door; on the one-way screen, oneWayDoor's answer; for
+// Returning, the remembered method's one-tap — "keymail", "link", or
+// "passkey" when the app wired a passkey door — and "ask" otherwise.
 func (s SigninState) Door() string {
 	switch s.Step {
 	case StepSent:
@@ -350,8 +344,8 @@ func (s SigninState) Door() string {
 	case StepConfirm:
 		return "confirm"
 	}
-	if s.Problem != ProblemNone && s.Problem != ProblemReauth ||
-		s.AppProblem != nil && s.AppProblem.Ask {
+	if s.Problem != ProblemNone && s.Problem != ProblemReauth &&
+		!s.keepsSecretDoor() || s.AppProblem != nil && s.AppProblem.Ask {
 		return "ask"
 	}
 	if s.OneWay {
@@ -379,7 +373,9 @@ func (s SigninState) Door() string {
 // callout for any other error; the one-tap for a keymail or link
 // Returning door, and Confirm's Sign in button, which is the only thing
 // a person who just opened their link came to press; the email field for Ask; nothing for the passkey door,
-// Sent and Continue, whose new title is the announcement.
+// Sent and Continue, whose new title is the announcement; on a secret
+// door, the code or passphrase ("secret") when the address is already
+// filled in, and the email field when it is not.
 func (s SigninState) Focus() string {
 	switch {
 	case s.Problem == ProblemAddress:
@@ -392,6 +388,11 @@ func (s SigninState) Focus() string {
 	case "keymail", "link", "confirm", "federated":
 		return "onetap"
 	case "ask":
+		return "field"
+	case "authenticator", "passphrase":
+		if s.Address != "" {
+			return "secret"
+		}
 		return "field"
 	}
 	return ""

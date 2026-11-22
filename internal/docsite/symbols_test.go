@@ -71,6 +71,7 @@ var referencePages = map[string]string{
 	"vectors":       "reference/vectors",
 	"harness":       "reference/harness",
 	"lastsignin":    "reference/lastsignin",
+	"signin":        "reference/signin",
 	"op":            "reference/op",
 	"pdf":           "reference/pdf",
 	"api":           "reference/api",

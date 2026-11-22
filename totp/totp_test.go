@@ -329,3 +329,53 @@ func TestNewValidatesConfig(t *testing.T) {
 		t.Fatalf("SignIn with no Gate: %d, want 403", w.Code)
 	}
 }
+
+func TestCheckSpendsTheStep(t *testing.T) {
+	env := newEnv(t)
+	key := enrol(t, env, "alice@example.com")
+	// The next step: confirming the scan spent the current one.
+	code, _ := totp.Code(key, time.Now().Add(period))
+	if ok, err := env.h.Check("alice@example.com", code); err != nil || !ok {
+		t.Fatalf("Check with a fresh code = %v, %v; want true", ok, err)
+	}
+	if ok, err := env.h.Check("alice@example.com", code); err != nil || ok {
+		t.Fatalf("Check with the same code again = %v, %v; want false", ok, err)
+	}
+}
+
+func TestCheckRefusesUnconfirmed(t *testing.T) {
+	env := newEnv(t)
+	en, err := env.h.Begin("alice@example.com", "alice@example.com")
+	if err != nil {
+		t.Fatal(err)
+	}
+	code, _ := totp.Code(en.Key, time.Now())
+	ok, err := env.h.Check("alice@example.com", code)
+	if err != nil || ok {
+		t.Fatalf("Check on an unconfirmed secret = %v, %v; want false",
+			ok, err)
+	}
+}
+
+func TestCheckUnknownSubject(t *testing.T) {
+	env := newEnv(t)
+	ok, err := env.h.Check("nobody@example.com", "123456")
+	if err != nil || ok {
+		t.Fatalf("Check for an unknown subject = %v, %v; want false, nil",
+			ok, err)
+	}
+}
+
+func TestCheckDecoyOpensItsSecretAndNeverMatches(t *testing.T) {
+	env := newEnv(t)
+	decoy, err := env.h.NewDecoy()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := env.h.CheckDecoy(decoy, "123456"); err != nil {
+		t.Fatalf("CheckDecoy on its own decoy: %v", err)
+	}
+	if err := env.h.CheckDecoy([]byte("not sealed"), "123456"); err == nil {
+		t.Fatal("CheckDecoy opened a secret that was never sealed")
+	}
+}

@@ -308,15 +308,17 @@ func TestRequireFreshSessionStepUp(t *testing.T) {
 		return rec, admitted
 	}
 
-	// A magic-link session has no auth_time; its minting moment stands
-	// in, and it was minted just now.
+	// Redeeming the link stamped its auth_time just now.
 	if _, admitted := drive("GET"); !admitted {
 		t.Fatal("just-verified session refused by a 5m freshness gate")
 	}
 
-	// Backdate the row: the same session goes stale and step-up kicks in.
+	// Backdate the gesture: the same session goes stale and step-up
+	// kicks in.
 	old := time.Now().Add(-time.Hour).UTC().Format(time.RFC3339)
-	if _, err := a.cfg.DB.Exec(`UPDATE sessions SET created_at = ?`, old); err != nil {
+	_, err := a.cfg.DB.Exec(
+		`UPDATE sessions SET auth_time = ?, created_at = ?`, old, old)
+	if err != nil {
 		t.Fatal(err)
 	}
 	rec, admitted := drive("GET")

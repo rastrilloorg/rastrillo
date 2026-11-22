@@ -7,6 +7,12 @@ completed by an assertion before a session exists. It is one of two
 factors the [second-factor gate](/docs/second-factors) knows; the
 other is an [authenticator app](/docs/second-factors#totp).
 
+In a new app you do not wire any of this. The
+[default sign-in](/docs/signin) builds `passkey` for you, offers a
+passkey after the first emailed link, and mounts the discover pair as
+the passkey door on the sign-in screen. This page is for adding
+passkeys to an app you already have, and for what they may do.
+
 ## What a passkey is allowed to do
 
 A passkey can sign someone in on its own, through the discover endpoints. A passkey that checked the person with a PIN, a fingerprint or a face has already proved who they are and what they hold, and asking for an emailed link as well adds work and no safety.

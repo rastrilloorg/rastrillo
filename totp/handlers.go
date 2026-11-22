@@ -192,6 +192,15 @@ func (h *Handlers) Confirm(subject, submitted string) (bool, error) {
 	return err == nil, err
 }
 
+// Check spends subject's current code for a caller that signs the
+// person in itself (the signin package, by address and code). true
+// means a live step was spent, so the same code never works twice;
+// it has no budget of its own, so the caller must bring a limiter.
+func (h *Handlers) Check(subject, submitted string) (bool, error) {
+	step, err := h.verify(subject, submitted, true)
+	return step >= 0, err
+}
+
 // Disable removes subject's authenticator, confirmed or not. From a
 // page behind sessions.RequireFresh, like every change to how an
 // account is entered.
