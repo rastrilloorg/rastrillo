@@ -12,9 +12,8 @@ backwards from commits is a guess wearing a date.
 
 ## v0.44.1
 
-A patch for apps on v0.44.0. This release is v0.44.0 plus one fix to
-`webauthn.mjs`, and nothing else. Nothing that landed on main after
-v0.44.0 is in it.
+This release is v0.44.0 with the passkey registration fix below, and
+nothing else.
 
 ### Fixed
 
