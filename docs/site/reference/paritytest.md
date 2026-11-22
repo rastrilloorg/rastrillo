@@ -112,3 +112,76 @@ a refusal, so the two doors' answers compare directly. `Status` is the
 HTTP status. MCP answers a refused tool call with 200, so compare
 `Kind`, not `Status`. `Body` is a success's JSON object, and nil for
 anything else.
+
+## Scenarios and Run
+
+```go
+type Fixture interface {
+	Surface() Surface
+	Token(t testing.TB, person string) string
+	Page(t testing.TB, person string, step Step) Outcome
+	State(t testing.TB) any
+}
+
+type Step struct {
+	Name      string
+	Person    string
+	Operation op.Descriptor
+	Input     map[string]any
+}
+
+type Scenario struct {
+	Fresh func(t testing.TB) Fixture
+	Steps []Step
+}
+
+func Run(t testing.TB, scenario Scenario)
+```
+
+`Run` checks that a person on the app's pages and their agent on the
+API or MCP get the same result for the same steps. It builds three
+fresh fixtures with `Fresh`, one for each door, and does every step on
+each:
+
+- the page fixture through `Page`, as the step's person;
+- the API fixture with `CallAPI`, and the MCP fixture with `CallTool`,
+  each with `Token(person)`.
+
+After each step, `Run` fails when:
+
+- the API's or MCP's `Kind` or `Fields` differ from the page's;
+- the API's `Body` differs from MCP's;
+- the API's or MCP's `State` starts to differ from the page's. A state
+  that differs is reported once, at the step where it starts.
+
+A step that calls a human-only operation fails, and runs on no door,
+because the doors answer it differently by design. `Routes` checks
+human-only operations.
+
+`Run` reports every problem with `t.Errorf` and never stops early.
+
+```go
+func TestNotesScenario(t *testing.T) {
+	paritytest.Run(t, paritytest.Scenario{
+		Fresh: func(t testing.TB) paritytest.Fixture {
+			return newNotesFixture(t)
+		},
+		Steps: []paritytest.Step{
+			{Name: "a creates Hello", Person: "a",
+				Operation: notes.Create.Descriptor,
+				Input:     map[string]any{"title": "Hello"}},
+			{Name: "a creates nothing", Person: "a",
+				Operation: notes.Create.Descriptor,
+				Input:     map[string]any{}},
+			{Name: "a lists", Person: "a",
+				Operation: notes.List.Descriptor},
+		},
+	})
+}
+```
+
+`Page` drives the app's own page for the step, such as a form post,
+and reads its answer as an `Outcome`: the `Kind`, and for `invalid`
+the fields under their wire names (`api.FieldName`). `Body` may be nil,
+because a page answers with HTML. `State` returns what the app has
+stored, without ids and times, which differ between fresh fixtures.

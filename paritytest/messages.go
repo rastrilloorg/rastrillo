@@ -32,3 +32,14 @@ const (
 	msgUnrecorded = `Register %s %s through the table with Handle, ` +
 		`or use On to register a sub-router's routes`
 )
+
+// Run's failures.
+const (
+	msgDoorsDiffer  = `step %q: %s returned %s %v, but %s returned %s %v`
+	msgBodiesDiffer = `step %q: API returned body %v; ` +
+		`MCP returned body %v`
+	msgStateDiffers = `after step %q: %s left state %v; ` +
+		`%s left state %v`
+	msgScenarioHumanOnly = `step %q calls human-only %s. ` +
+		`Test it with paritytest.Routes`
+)
