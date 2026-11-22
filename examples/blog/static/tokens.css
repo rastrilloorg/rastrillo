@@ -2476,6 +2476,90 @@ small.rst-field__hint, small[rst-field-hint] { display: block; font-size: var(--
    and every caller writes by hand, is rst-form-bar now. */
 .rst-form-foot, [rst-form-foot] { display: flex; gap: var(--rst-sp-3); margin-block-start: var(--rst-sp-3); }
 
+/* ── stack: a page's vertical rhythm ──────────────────────────────────
+   The blocks a screen is written in, a heading, a paragraph, a hint, a
+   card, a row of buttons, are spaced by the stack they sit in and by
+   nothing else. Hand-rolled margins gave every screen its own rhythm:
+   a heading further from its own text than from the section before
+   it, a hint resting on the button under it. So a stack is a flex
+   column, where no margin collapses, every child's own block margins
+   are zeroed, and the space before each child is read off one table
+   by what it is and what it follows (DESIGN.md, "Spacing"):
+
+     after a heading (h1 to h6)               --rst-sp-2
+     before an actions row, a button          --rst-sp-4
+     a label or hint, then its input, or an
+       input, then its hint                   --rst-sp-2
+     before h1, h2 or a section, or after
+       the page header                        --rst-sp-5
+     before h3 to h6                          --rst-sp-4
+     anything else                            --rst-sp-3
+
+   Higher in the table wins. Each relation sets its own custom property
+   on the child, and the one margin rule reads them in the table's
+   order through var() fallbacks, so which rule wins is written in one
+   place rather than left to specificity. Every child resets all five
+   first, so a nested stack's child never inherits its parent's answer.
+   rst-section marks a child that opens a new section; a section that
+   holds blocks of its own is a stack too, <section rst-stack
+   rst-section>.
+
+   The column's gap is the table's smallest step, --rst-sp-2, and a
+   child's block-start margin is the rest of its answer. The gap is
+   the floor: it falls only between children that are drawn, so a
+   [hidden] child, which a sibling selector cannot see past, costs the
+   block after it its relation but never leaves it touching. A hidden
+   input, a form's CSRF field, is passed over the same way, so the
+   first block after one still opens the stack flush. */
+.rst-stack, [rst-stack] { display: flex; flex-direction: column; gap: var(--rst-sp-2); }
+.rst-stack > :not([hidden]), [rst-stack] > :not([hidden]) {
+  --rst-stack-actions: initial;
+  --rst-stack-heading: initial;
+  --rst-stack-control: initial;
+  --rst-stack-section: initial;
+  --rst-stack-sub: initial;
+  margin-block: 0;
+}
+.rst-stack > :not([hidden], [type="hidden"]) + :not([hidden]), [rst-stack] > :not([hidden], [type="hidden"]) + :not([hidden]) {
+  margin-block-start: calc(var(--rst-stack-heading, var(--rst-stack-actions, var(--rst-stack-control, var(--rst-stack-section, var(--rst-stack-sub, var(--rst-sp-3)))))) - var(--rst-sp-2));
+}
+/* A column stretches its children across; a button or a picture keeps
+   its own width. */
+.rst-stack > button, [rst-stack] > button, .rst-stack > .rst-btn, [rst-stack] > [rst-btn], .rst-stack > img, [rst-stack] > img { align-self: flex-start; }
+.rst-stack > :not([hidden], [type="hidden"]) + h3, [rst-stack] > :not([hidden], [type="hidden"]) + h3,
+.rst-stack > :not([hidden], [type="hidden"]) + h4, [rst-stack] > :not([hidden], [type="hidden"]) + h4,
+.rst-stack > :not([hidden], [type="hidden"]) + h5, [rst-stack] > :not([hidden], [type="hidden"]) + h5,
+.rst-stack > :not([hidden], [type="hidden"]) + h6, [rst-stack] > :not([hidden], [type="hidden"]) + h6 { --rst-stack-sub: var(--rst-sp-4); }
+.rst-stack > :not([hidden], [type="hidden"]) + h1, [rst-stack] > :not([hidden], [type="hidden"]) + h1,
+.rst-stack > :not([hidden], [type="hidden"]) + h2, [rst-stack] > :not([hidden], [type="hidden"]) + h2,
+.rst-stack > :not([hidden], [type="hidden"]) + .rst-section, [rst-stack] > :not([hidden], [type="hidden"]) + [rst-section],
+.rst-stack > .rst-page-header + :not([hidden]), [rst-stack] > [rst-page-header] + :not([hidden]) { --rst-stack-section: var(--rst-sp-5); }
+.rst-stack > label + input:not([hidden]), [rst-stack] > label + input:not([hidden]),
+.rst-stack > label + select:not([hidden]), [rst-stack] > label + select:not([hidden]),
+.rst-stack > label + textarea:not([hidden]), [rst-stack] > label + textarea:not([hidden]),
+.rst-stack > .rst-field__help + input:not([hidden]), [rst-stack] > [rst-field-help] + input:not([hidden]),
+.rst-stack > .rst-field__help + select:not([hidden]), [rst-stack] > [rst-field-help] + select:not([hidden]),
+.rst-stack > .rst-field__help + textarea:not([hidden]), [rst-stack] > [rst-field-help] + textarea:not([hidden]),
+.rst-stack > input + .rst-field__help, [rst-stack] > input + [rst-field-help],
+.rst-stack > select + .rst-field__help, [rst-stack] > select + [rst-field-help],
+.rst-stack > textarea + .rst-field__help, [rst-stack] > textarea + [rst-field-help] { --rst-stack-control: var(--rst-sp-2); }
+.rst-stack > h1 + :not([hidden]), [rst-stack] > h1 + :not([hidden]),
+.rst-stack > h2 + :not([hidden]), [rst-stack] > h2 + :not([hidden]),
+.rst-stack > h3 + :not([hidden]), [rst-stack] > h3 + :not([hidden]),
+.rst-stack > h4 + :not([hidden]), [rst-stack] > h4 + :not([hidden]),
+.rst-stack > h5 + :not([hidden]), [rst-stack] > h5 + :not([hidden]),
+.rst-stack > h6 + :not([hidden]), [rst-stack] > h6 + :not([hidden]) { --rst-stack-heading: var(--rst-sp-2); }
+.rst-stack > :not([hidden], [type="hidden"]) + .rst-actions, [rst-stack] > :not([hidden], [type="hidden"]) + [rst-actions],
+.rst-stack > :not([hidden], [type="hidden"]) + .rst-form-foot, [rst-stack] > :not([hidden], [type="hidden"]) + [rst-form-foot],
+.rst-stack > :not([hidden], [type="hidden"]) + .rst-form-actions, [rst-stack] > :not([hidden], [type="hidden"]) + [rst-form-actions],
+.rst-stack > :not([hidden], [type="hidden"]) + button, [rst-stack] > :not([hidden], [type="hidden"]) + button,
+.rst-stack > :not([hidden], [type="hidden"]) + .rst-btn, [rst-stack] > :not([hidden], [type="hidden"]) + [rst-btn] { --rst-stack-actions: var(--rst-sp-4); }
+/* The actions row: buttons, links styled as buttons, and the one-button
+   forms a POST action needs, side by side and wrapping on a phone. A
+   form stays a box (display: contents would make it one no driver can
+   see), and a one-button form is as wide as its button. */
+.rst-actions, [rst-actions] { align-items: center; display: flex; flex-wrap: wrap; gap: var(--rst-sp-2); }
+
 @media (prefers-reduced-motion: reduce) {
   .rst-switch__track, [rst-switch-track], .rst-switch[data-rst-settle] .rst-switch__track, [rst-switch][data-rst-settle] [rst-switch-track], .rst-tblock > .rst-tblock__head[data-rst-settle] > .rst-switch__track, [rst-tblock] > [rst-tblock-head][data-rst-settle] > [rst-switch-track] { transition: none; }
 }

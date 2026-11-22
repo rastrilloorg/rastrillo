@@ -205,6 +205,31 @@ const extraFixture = `
   <form><button class="rst-btn rst-btn--block" type="submit">
   <span>Use a different email</span></button></form>
   </div></div></section>
+  <!-- The stack (Fiesta 1.6), which no partial draws: every relation
+       of its table, a section that is a stack itself, an actions row,
+       and a hidden input passed over. -->
+  <form class="rst-stack">
+  <input type="hidden" name="csrf" value="x">
+  <header class="rst-page-header"><div class="rst-page-header__titles">
+  <h1>Settings</h1></div></header>
+  <p>After the header.</p><h2>A section</h2><p>Its text.</p>
+  <h3>A sub-heading</h3>
+  <label for="fx-stack-name">Name</label>
+  <input id="fx-stack-name" type="text">
+  <p class="rst-field__help">Shown on your profile.</p>
+  <select aria-label="Role"><option>One</option></select>
+  <p>Then text.</p>
+  <div class="rst-actions"><button class="rst-btn" type="button">Save</button>
+  <a class="rst-btn" href="#">Cancel</a></div>
+  <button class="rst-btn" type="button">Alone</button>
+  <section class="rst-stack rst-section"><h2>Nested</h2><p>Its first.</p>
+  <p>Its second.</p></section>
+  <div class="rst-form-foot">
+  <button class="rst-btn" type="submit">Done</button></div>
+  <div class="rst-form-actions">
+  <button class="rst-btn" type="submit">Done</button></div>
+  <p hidden>Hidden.</p>
+  </form>
   <!-- The provider stack no partial renders: the gallery's social
        sign-in screen is the only markup that uses it. -->
   <div class="rst-signin__providers"><form><button class="rst-btn rst-btn--block" type="submit">Google</button></form><form><button class="rst-btn rst-btn--block" type="submit">Apple</button></form><a href="#">Use your email instead</a></div>
