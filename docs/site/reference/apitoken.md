@@ -25,6 +25,7 @@ type Config struct {
 	DB      *sql.DB
 	Prefix  string // ^[a-z][a-z0-9]{0,15}$
 	Allowed func(ctx context.Context, subject string) (bool, error)
+	Grant   func(ctx context.Context, connection string, access rastrillo.Access) (*rastrillo.Grant, error)
 	Now     func() time.Time
 }
 func DerivePrefix(appName string) string
@@ -37,6 +38,19 @@ stops working.
 Set `Allowed` to refuse tokens whose owner can no longer use the app,
 such as a suspended account. With no `Allowed`, every owner is allowed.
 
+`Grant` authorizes OAuth connection tokens, which the `oauth` package
+mints with `MintInput.Connection`. `Verify` and `Recheck` call it for
+each such token, with the token's own access, and store its result in
+`Actor.Grant`; `Actor.Session` becomes `oauth:` plus the connection. An
+error wrapping `api.ErrUnauthorized` refuses the token; any other error
+is a 503. If `Grant` is nil, connection tokens are refused. `List`
+omits connection tokens. `RevokeConnection` revokes all tokens for a
+connection and refuses an empty connection. Personal tokens have an
+empty connection.
+`ConnectionOf` returns the connection a token belongs to, or "" for a
+personal token, even when the token is revoked or expired. A token that
+isn't this store's, or whose secret is wrong, is `sql.ErrNoRows`.
+
 Merge `Schema` into your boot set. It adds one table, `api_tokens`.
 
 ## Making and managing tokens
@@ -48,8 +62,13 @@ type MintInput struct {
 	ForSelf bool          // a token for the person, not an agent
 	Access  rastrillo.Access
 	TTL     time.Duration // 0 means never
+	// Connection is the OAuth connection the token belongs to; only
+	// the oauth package sets it.
+	Connection string
 }
 func ValidAgentName(name string) (string, bool)
+func (s *Store) RevokeConnection(ctx context.Context, connection string) error
+func (s *Store) ConnectionOf(ctx context.Context, token string) (string, error)
 
 func (s *Store) List(ctx context.Context, subject string) ([]Token, error)
 func (s *Store) Revoke(ctx context.Context, subject, id string) error

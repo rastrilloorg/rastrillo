@@ -10,6 +10,16 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+With the new `oauth` package, a person can connect Claude Code, Codex,
+claude.ai or ChatGPT to an app with only its MCP address. It is an
+addition: an app that doesn't mount it sees no change.
+
+### Added: OAuth for agents
+
+- `oauth` makes the app its own OAuth authorization server, as the MCP authorization specification (2026-07-28) describes. A client finds it from a 401. The person signs in and approves on the app's own page, and the client keeps and renews its own token. Merge `oauth.Schema` into `BootSchema`, build the server with `oauth.New`, then register its `Routes` or call `Mount`. List a person's connections with `Server.Connections`, and end one with `Server.End`. See [oauth](/docs/reference/oauth).
+- `apitoken` gains connection tokens, which belong to an OAuth connection. Set `Config.Grant` to the server's `Grant`; without it, every connection token is refused. A connection token's actor carries a `Grant` and the session `oauth:<connection ID>`. `List` leaves connection tokens out, `RevokeConnection` revokes a connection's tokens, and `ConnectionOf` names a token's connection. `apitoken.Schema` gains a migration that adds the `connection` column, and it applies with your boot set.
+- `api` gains `Challenge`, on `Config` and `Gate`. When it is set, a 401's `WWW-Authenticate` points the client at the app's OAuth metadata. The zero value keeps the bare `Bearer`. When a verifier sets a session for an actor with a `Grant` and the request sends no `Agent-Session`, the gate now keeps it, so an OAuth client's writes pass `RequireAgentSession`.
+
 ## v0.45.0
 
 ### Added: a default sign-in for new apps

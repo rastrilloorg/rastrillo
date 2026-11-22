@@ -8,6 +8,7 @@ import (
 	"amadan.net/rastrillo/rastrillo/blobs"
 	"amadan.net/rastrillo/rastrillo/eventlog"
 	"amadan.net/rastrillo/rastrillo/migrate"
+	"amadan.net/rastrillo/rastrillo/oauth"
 	"amadan.net/rastrillo/rastrillo/passkey"
 	"amadan.net/rastrillo/rastrillo/secondfactor"
 	"amadan.net/rastrillo/rastrillo/sessions"
@@ -60,6 +61,7 @@ import (
 // means revert the edit, and adding a table means adding a 0002_.
 var frozenChecksums = map[string]string{
 	"apitoken/0001_init":              "f09c819c69b01989cab02e40920b3bdb35c0ec550a600e32f430adc752fb29be",
+	"apitoken/0002_connection":        "d0aaf1200a834bd567ea8d765d95cd0a8b532668ef98ddf201f6a435aa7ed515",
 	"sessions/0001_init":              "50bbfc92cfcc708b09b672b71f24da789ae6065f426c9db7af61befa90098bbb",
 	"auth/0001_init":                  "3f6bf7e80d71e5d008fc56284e1342a28eecff1dc1da67cc5353bee4fd41a76a",
 	"auth/0002_sessions_backfill":     "90798138a17a2f5d3f89ea4591985fdd53e9144c63040ae59d45ad6ca6a01a98",
@@ -73,6 +75,7 @@ var frozenChecksums = map[string]string{
 	// frozen by the same rule; the ledger simply cannot see it.
 	"secondfactor/0002_adopt_passkey": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
 	"totp/0001_init":                  "4a473153c05278f96b8f55a8612acdd84576f46788d0f2d7406a56fdbb2d62bd",
+	"oauth/0001_init":                 "6385b7b2fa2505327462bdcc1099abd2befb0385281070bb4ffc50fc84eb16dd",
 	// Re-pinned once before any release, when review added the attempt
 	// column: no deployed ledger holds the earlier value.
 	"signin/0001_init": "54bd5d7a79daf05ac3787b78c9ac8ae7" +
@@ -84,6 +87,7 @@ func TestFrameworkMigrationsAreFrozen(t *testing.T) {
 	for _, s := range []*migrate.Set{
 		sessions.Schema, auth.Schema, blobs.Schema, eventlog.Schema, eventlog.MoneySchema,
 		passkey.Schema, secondfactor.Schema, totp.Schema, apitoken.Schema,
+		oauth.Schema,
 		signin.Schema,
 	} {
 		for _, m := range s.All() {

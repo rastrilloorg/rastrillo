@@ -399,6 +399,11 @@
           "blurb": "Sign in with Microsoft Entra ID or Google Workspace: the verification core and the HTTP flow."
         },
         {
+          "slug": "reference/oauth",
+          "label": "oauth",
+          "blurb": "Agents connect by the MCP address alone: the app's own authorization server and approval page."
+        },
+        {
           "slug": "reference/password",
           "label": "password",
           "blurb": "The email-and-password plugin: config, handlers, hashing, rate limit."

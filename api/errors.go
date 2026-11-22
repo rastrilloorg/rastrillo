@@ -153,7 +153,7 @@ func WriteError(w http.ResponseWriter, status int, e Error) {
 func Refuse(w http.ResponseWriter, r *http.Request, err error) {
 	status, refused := Refusal(r, err)
 	if status == http.StatusUnauthorized {
-		w.Header().Set("WWW-Authenticate", "Bearer")
+		w.Header().Set("WWW-Authenticate", challengeFrom(r).header())
 	}
 	WriteError(w, status, refused)
 }

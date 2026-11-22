@@ -26,6 +26,15 @@ type Config struct {
 	// suspended or deleted account is refused even with a live token.
 	// Nil allows everyone. An error answers 503, not 401.
 	Allowed func(ctx context.Context, subject string) (bool, error)
+	// Grant says what a connection's token may do, given the token's
+	// own access, and is called on every check of a token that has a
+	// connection. An error wrapping api.ErrUnauthorized refuses the
+	// token, as when the connection has ended; any other error answers
+	// 503. Nil refuses every connection token, so a store the oauth
+	// package is not wired to fails closed.
+	Grant func(
+		ctx context.Context, connection string, access rastrillo.Access,
+	) (*rastrillo.Grant, error)
 	// Now is the clock. Default time.Now.
 	Now func() time.Time
 }
@@ -61,6 +70,9 @@ type MintInput struct {
 	Access rastrillo.Access
 	// TTL is how long the token lives. 0 means it never expires.
 	TTL time.Duration
+	// Connection is the OAuth connection the token belongs to. Only the
+	// oauth package sets it. It needs an Agent and refuses ForSelf.
+	Connection string
 }
 
 // Store mints, verifies and revokes tokens. Build one per process.
@@ -133,6 +145,10 @@ func (s *Store) Mint(ctx context.Context, subject string, in MintInput) (string,
 	if in.TTL < 0 {
 		return "", Token{}, errors.New("rastrillo/apitoken: Mint TTL is negative; use 0 for never")
 	}
+	if in.Connection != "" && in.ForSelf {
+		return "", Token{}, errors.New("rastrillo/apitoken: Mint has a " +
+			"connection and ForSelf; a connection's token is for an agent")
+	}
 	agent := ""
 	if in.ForSelf {
 		if in.Agent != "" {
@@ -144,28 +160,45 @@ func (s *Store) Mint(ctx context.Context, subject string, in MintInput) (string,
 			return "", Token{}, errors.New("rastrillo/apitoken: Mint needs an agent name of 1 to 40 letters, digits, spaces, hyphens and dots, or ForSelf")
 		}
 	}
-	id, err := random(idLen)
-	if err != nil {
-		return "", Token{}, err
-	}
-	secret, err := random(secretLen)
+	id, secret, err := newCredential()
 	if err != nil {
 		return "", Token{}, err
 	}
 	hash := sha256.Sum256([]byte(secret))
 	t := Token{ID: id, Subject: subject, Agent: agent, Access: in.Access, CreatedAt: s.now()}
 	var expires any
-	if in.TTL > 0 {
-		e := t.CreatedAt.Add(in.TTL)
-		t.ExpiresAt = &e
-		expires = formatTime(e)
+	if t.ExpiresAt = expiry(t.CreatedAt, in.TTL); t.ExpiresAt != nil {
+		expires = formatTime(*t.ExpiresAt)
 	}
-	if _, err := s.cfg.DB.ExecContext(ctx,
-		`INSERT INTO api_tokens (id, subject, agent, access, secret_hash, created_at, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-		id, subject, agent, in.Access.String(), hash[:], formatTime(t.CreatedAt), expires); err != nil {
+	if _, err := s.cfg.DB.ExecContext(ctx, `INSERT INTO api_tokens
+		 (id, subject, agent, access, secret_hash, created_at, expires_at,
+		  connection) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+		id, subject, agent, in.Access.String(), hash[:],
+		formatTime(t.CreatedAt), expires, in.Connection); err != nil {
 		return "", Token{}, fmt.Errorf("rastrillo/apitoken: Mint: %w", err)
 	}
 	return s.cfg.Prefix + "_" + id + "_" + secret, t, nil
+}
+
+// newCredential makes a token's random id and secret.
+func newCredential() (id, secret string, err error) {
+	if id, err = random(idLen); err != nil {
+		return "", "", err
+	}
+	if secret, err = random(secretLen); err != nil {
+		return "", "", err
+	}
+	return id, secret, nil
+}
+
+// expiry is when a token made at created with ttl expires: nil, never,
+// for a ttl of 0.
+func expiry(created time.Time, ttl time.Duration) *time.Time {
+	if ttl <= 0 {
+		return nil
+	}
+	expires := created.Add(ttl)
+	return &expires
 }
 
 // Verify implements api.Verifier: it turns the request's bearer token
@@ -213,11 +246,14 @@ func (s *Store) Verify(ctx context.Context, r *http.Request) (rastrillo.Actor, e
 }
 
 // List returns every token subject owns, newest first, including
-// revoked and expired ones: RevokedAt and ExpiresAt say which.
+// revoked and expired ones: RevokedAt and ExpiresAt say which. It leaves
+// out the hourly tokens of OAuth connections: the page lists the
+// connections themselves.
 func (s *Store) List(ctx context.Context, subject string) ([]Token, error) {
 	rows, err := s.cfg.DB.QueryContext(ctx,
 		`SELECT id, agent, access, created_at, last_used, expires_at, revoked_at FROM api_tokens
-		 WHERE subject = ? ORDER BY created_at DESC, id DESC`, subject)
+		 WHERE subject = ? AND connection = ''
+		 ORDER BY created_at DESC, id DESC`, subject)
 	if err != nil {
 		return nil, fmt.Errorf("rastrillo/apitoken: List: %w", err)
 	}
@@ -302,4 +338,19 @@ func (s *Store) revoke(ctx context.Context, query string, args ...any) (int64, e
 		return 0, fmt.Errorf("rastrillo/apitoken: revoke: %w", err)
 	}
 	return res.RowsAffected()
+}
+
+// RevokeConnection ends every live token of an OAuth connection. An
+// empty connection is refused: every personal token has it.
+func (store *Store) RevokeConnection(
+	ctx context.Context, connection string,
+) error {
+	if connection == "" {
+		return errors.New("rastrillo/apitoken: RevokeConnection " +
+			"needs a connection")
+	}
+	_, err := store.revoke(ctx, `UPDATE api_tokens SET revoked_at = ?
+		 WHERE connection = ? AND revoked_at IS NULL`,
+		formatTime(store.now()), connection)
+	return err
 }

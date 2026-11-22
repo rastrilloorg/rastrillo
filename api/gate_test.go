@@ -144,6 +144,7 @@ func TestConfigGateCopiesFields(t *testing.T) {
 		After:               []func(http.Handler) http.Handler{passThrough},
 		RequireAgentSession: true,
 		Redact:              strings.ToUpper,
+		Challenge:           testChallenge,
 	}
 	gate := reflect.ValueOf(configuration.Gate())
 	source := reflect.ValueOf(configuration)
@@ -402,5 +403,156 @@ func TestAHumanOnlyRouteRefusesBeforeTheBodyIsRead(t *testing.T) {
 	}
 	if handled != 0 {
 		t.Fatalf("Handle ran %d times, want 0", handled)
+	}
+}
+
+var testChallenge = Challenge{
+	ResourceMetadata: "https://a.test/.well-known/" +
+		"oauth-protected-resource/api/v1",
+	Scope: "read write",
+}
+
+const testChallengeHeader = `Bearer resource_metadata="` +
+	`https://a.test/.well-known/oauth-protected-resource/api/v1", ` +
+	`scope="read write"`
+
+func TestChallengeOnUnauthorized(t *testing.T) {
+	gate := config().Gate()
+	gate.Challenge = testChallenge
+	recorder := serve(gate.Wrap(gateHandler(gate)),
+		http.MethodPost, "/", "", "")
+	if recorder.Code != http.StatusUnauthorized {
+		t.Fatalf("status = %d, want 401", recorder.Code)
+	}
+	got := recorder.Header().Get("WWW-Authenticate")
+	if got != testChallengeHeader {
+		t.Errorf("WWW-Authenticate = %q, want %q", got, testChallengeHeader)
+	}
+
+	bare := config().Gate()
+	recorder = serve(bare.Wrap(gateHandler(bare)), http.MethodPost, "/", "", "")
+	if got := recorder.Header().Get("WWW-Authenticate"); got != "Bearer" {
+		t.Errorf("without a challenge, WWW-Authenticate = %q, want Bearer",
+			got)
+	}
+}
+
+func TestChallengeThroughTree(t *testing.T) {
+	configuration := config()
+	configuration.Challenge = testChallenge
+	tree := mustNew(t, configuration, getThing(ok))
+	recorder := serve(tree, http.MethodGet, "/api/v1/things/1", "", "")
+	if recorder.Code != http.StatusUnauthorized {
+		t.Fatalf("status = %d, want 401", recorder.Code)
+	}
+	got := recorder.Header().Get("WWW-Authenticate")
+	if got != testChallengeHeader {
+		t.Errorf("WWW-Authenticate = %q, want %q", got, testChallengeHeader)
+	}
+}
+
+func TestValidateRefusesUnquotableChallenge(t *testing.T) {
+	for _, value := range []string{"a\"b", "a\nb", "a\\b", "a\x7fb"} {
+		for _, challenge := range []Challenge{
+			{ResourceMetadata: value}, {Scope: value},
+		} {
+			gate := config().Gate()
+			gate.Challenge = challenge
+			if gate.Validate() == nil {
+				t.Errorf("Validate accepted %+v", challenge)
+			}
+		}
+	}
+	gate := config().Gate()
+	gate.Challenge = testChallenge
+	if err := gate.Validate(); err != nil {
+		t.Errorf("Validate refused a plain challenge: %v", err)
+	}
+}
+
+// A header carries printable ASCII only, and %q would escape the rest
+// into something no client reads back as the URL it was given.
+func TestValidateRefusesNonASCIIChallenge(t *testing.T) {
+	for _, value := range []string{"a b", "a​b", "café"} {
+		for _, challenge := range []Challenge{
+			{ResourceMetadata: value, Scope: "read"},
+			{ResourceMetadata: testChallenge.ResourceMetadata, Scope: value},
+		} {
+			gate := config().Gate()
+			gate.Challenge = challenge
+			if gate.Validate() == nil {
+				t.Errorf("Validate accepted %+q", challenge)
+			}
+		}
+	}
+}
+
+// A challenge with a scope and no metadata URL would send
+// resource_metadata="", which points a client nowhere.
+func TestValidateRefusesHalfSetChallenge(t *testing.T) {
+	gate := config().Gate()
+	gate.Challenge = Challenge{Scope: "read write"}
+	if gate.Validate() == nil {
+		t.Error("Validate accepted a challenge with no ResourceMetadata")
+	}
+}
+
+// grantVerifier answers every request as an agent that carries a
+// grant (or not), with a session of its own.
+func grantVerifier(grant *rastrillo.Grant) fakeVerifier {
+	actor := rastrillo.Actor{
+		Subject: "paul", Agent: "Claude", Credential: "oauth000000a",
+		Access: rastrillo.Write, Session: "oauth:c1", Grant: grant,
+	}
+	return fakeVerifier{tokens: map[string]rastrillo.Actor{"t": actor}}
+}
+
+func sessionOf(t *testing.T, gate Gate, header ...string) (int, string) {
+	t.Helper()
+	var session string
+	handler := http.HandlerFunc(func(
+		response http.ResponseWriter, request *http.Request,
+	) {
+		actor, _ := rastrillo.ActorFromContext(request.Context())
+		session = actor.Session
+		if err := gate.Admit(actor, writeThing); err != nil {
+			Refuse(response, request, err)
+			return
+		}
+		Write(response, http.StatusCreated, struct{}{})
+	})
+	recorder := serve(
+		gate.Wrap(handler), http.MethodPost, "/", "t", "", header...)
+	return recorder.Code, session
+}
+
+func TestGrantActorKeepsVerifierSession(t *testing.T) {
+	gate := Gate{
+		Verify:              grantVerifier(&rastrillo.Grant{ID: "g1"}),
+		RequireAgentSession: true,
+		Logger:              slog.New(slog.DiscardHandler),
+	}
+	status, session := sessionOf(t, gate)
+	if status != http.StatusCreated || session != "oauth:c1" {
+		t.Errorf("no header: status %d, session %q; want 201, oauth:c1",
+			status, session)
+	}
+	status, session = sessionOf(t, gate, "Agent-Session", "s9")
+	if status != http.StatusCreated || session != "s9" {
+		t.Errorf("with header: status %d, session %q; want 201, s9",
+			status, session)
+	}
+}
+
+func TestPersonalAgentStillNeedsHeader(t *testing.T) {
+	gate := Gate{
+		Verify:              grantVerifier(nil),
+		RequireAgentSession: true,
+		Logger:              slog.New(slog.DiscardHandler),
+	}
+	status, session := sessionOf(t, gate)
+	if status != http.StatusUnprocessableEntity || session != "" {
+		t.Errorf("status %d, session %q; want 422 and no session",
+			status, session)
 	}
 }

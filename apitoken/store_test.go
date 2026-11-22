@@ -623,3 +623,231 @@ func TestRecheckRefusesWhatVerifyRefuses(t *testing.T) {
 	allowed = false
 	refused("Allowed false", secret)
 }
+
+func connected(connection string) apitoken.MintInput {
+	in := claude
+	in.Connection = connection
+	return in
+}
+
+type grantFunc = func(
+	context.Context, string, rastrillo.Access,
+) (*rastrillo.Grant, error)
+
+// grantHook grants every connection, with the token's access as its
+// one scope.
+func grantHook() grantFunc {
+	return func(
+		_ context.Context, connection string, access rastrillo.Access,
+	) (*rastrillo.Grant, error) {
+		return &rastrillo.Grant{
+			ID: "g-" + connection, Scopes: []string{access.String()},
+		}, nil
+	}
+}
+
+func TestMintForConnection(t *testing.T) {
+	store, _, _ := newStore(t,
+		func(config *apitoken.Config) { config.Grant = grantHook() })
+	secret, _ := mint(t, store, "alice", connected("c1"))
+	actor, err := verify(store, bearer(secret))
+	if err != nil {
+		t.Fatalf("Verify: %v", err)
+	}
+	if actor.Grant == nil || actor.Grant.ID != "g-c1" ||
+		len(actor.Grant.Scopes) != 1 ||
+		actor.Grant.Scopes[0] != claude.Access.String() {
+		t.Errorf("Grant = %+v, want the hook's grant for c1 with the "+
+			"token's access", actor.Grant)
+	}
+	if actor.Session != "oauth:c1" {
+		t.Errorf("Session = %q, want oauth:c1", actor.Session)
+	}
+	if actor.Subject != "alice" || actor.Agent != "Claude" {
+		t.Errorf("actor = %+v", actor)
+	}
+	if _, err := store.Recheck(context.Background(), bearer(secret),
+		rastrillo.Actor{}); err != nil {
+		t.Errorf("Recheck: %v", err)
+	}
+}
+
+func TestMintForConnectionNeedsAnAgent(t *testing.T) {
+	store, _, _ := newStore(t, nil)
+	_, _, err := store.Mint(context.Background(), "alice", apitoken.MintInput{
+		Connection: "c1", ForSelf: true, Access: rastrillo.Read})
+	if err == nil {
+		t.Error("Mint with a connection and ForSelf succeeded")
+	}
+	_, _, err = store.Mint(context.Background(), "alice", apitoken.MintInput{
+		Connection: "c1", Access: rastrillo.Read})
+	if err == nil {
+		t.Error("Mint with a connection and no agent succeeded")
+	}
+}
+
+func TestConnectionEndedRefusesToken(t *testing.T) {
+	ended := fmt.Errorf("ended: %w", api.ErrUnauthorized)
+	store, _, _ := newStore(t, func(config *apitoken.Config) {
+		config.Grant = func(
+			context.Context, string, rastrillo.Access,
+		) (*rastrillo.Grant, error) {
+			return nil, ended
+		}
+	})
+	secret, _ := mint(t, store, "alice", connected("c1"))
+	if _, err := verify(store, bearer(secret)); !errors.Is(err,
+		api.ErrUnauthorized) {
+		t.Errorf("Verify = %v, want ErrUnauthorized", err)
+	}
+	_, err := store.Recheck(context.Background(), bearer(secret),
+		rastrillo.Actor{})
+	if !errors.Is(err, api.ErrUnauthorized) {
+		t.Errorf("Recheck = %v, want ErrUnauthorized", err)
+	}
+}
+
+func TestConnectionHookFailureIsUnavailable(t *testing.T) {
+	store, _, _ := newStore(t, func(config *apitoken.Config) {
+		config.Grant = func(
+			context.Context, string, rastrillo.Access,
+		) (*rastrillo.Grant, error) {
+			return nil, errors.New("database down")
+		}
+	})
+	secret, _ := mint(t, store, "alice", connected("c1"))
+	if _, err := verify(store, bearer(secret)); !errors.Is(err,
+		api.ErrUnavailable) {
+		t.Errorf("Verify = %v, want ErrUnavailable", err)
+	}
+}
+
+// A hook that answers no grant and no error has broken its contract;
+// the token is not refused as if the connection ended.
+func TestConnectionHookWithNoGrantIsUnavailable(t *testing.T) {
+	store, _, _ := newStore(t, func(config *apitoken.Config) {
+		config.Grant = func(
+			context.Context, string, rastrillo.Access,
+		) (*rastrillo.Grant, error) {
+			return nil, nil
+		}
+	})
+	secret, _ := mint(t, store, "alice", connected("c1"))
+	_, err := verify(store, bearer(secret))
+	if !errors.Is(err, api.ErrUnavailable) {
+		t.Errorf("Verify = %v, want ErrUnavailable", err)
+	}
+}
+
+// A personal token's actor has no grant and no session of its own,
+// even with the hook set.
+func TestPersonalTokenHasNoGrantOrSession(t *testing.T) {
+	store, _, _ := newStore(t, func(config *apitoken.Config) {
+		config.Grant = grantHook()
+	})
+	secret, _ := mint(t, store, "alice", claude)
+	actor, err := verify(store, bearer(secret))
+	if err != nil || actor.Grant != nil || actor.Session != "" {
+		t.Errorf("actor %+v, %v; want no grant and no session", actor, err)
+	}
+}
+
+func TestConnectionWithoutHookRefused(t *testing.T) {
+	store, _, _ := newStore(t, nil)
+	secret, _ := mint(t, store, "alice", connected("c1"))
+	_, err := verify(store, bearer(secret))
+	if !errors.Is(err, api.ErrUnauthorized) {
+		t.Errorf("Verify = %v, want ErrUnauthorized", err)
+	}
+}
+
+func TestListOmitsConnectionTokens(t *testing.T) {
+	store, _, _ := newStore(t, func(config *apitoken.Config) {
+		config.Grant = grantHook()
+	})
+	_, personal := mint(t, store, "alice", claude)
+	mint(t, store, "alice", connected("c1"))
+	got, err := store.List(context.Background(), "alice")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 1 || got[0].ID != personal.ID {
+		t.Errorf("List = %+v, want only the personal token", got)
+	}
+}
+
+func TestRevokeConnection(t *testing.T) {
+	store, _, _ := newStore(t, func(config *apitoken.Config) {
+		config.Grant = grantHook()
+	})
+	a1, _ := mint(t, store, "alice", connected("c1"))
+	a2, _ := mint(t, store, "alice", connected("c1"))
+	otherSecret, _ := mint(t, store, "alice", connected("c2"))
+	if err := store.RevokeConnection(context.Background(), "c1"); err != nil {
+		t.Fatal(err)
+	}
+	for _, secret := range []string{a1, a2} {
+		if _, err := verify(store, bearer(secret)); !errors.Is(err,
+			api.ErrUnauthorized) {
+			t.Errorf("c1 token: Verify = %v, want ErrUnauthorized", err)
+		}
+	}
+	if _, err := verify(store, bearer(otherSecret)); err != nil {
+		t.Errorf("c2 token: Verify = %v, want success", err)
+	}
+}
+
+// Every personal token has the empty connection, so revoking "" must
+// be refused rather than revoke them all, across every subject.
+func TestRevokeConnectionRefusesEmpty(t *testing.T) {
+	store, _, _ := newStore(t, nil)
+	alice, _ := mint(t, store, "alice", claude)
+	bob, _ := mint(t, store, "bob", claude)
+	err := store.RevokeConnection(context.Background(), "")
+	if err == nil {
+		t.Error(`RevokeConnection("") succeeded`)
+	}
+	for _, secret := range []string{alice, bob} {
+		if _, err := verify(store, bearer(secret)); err != nil {
+			t.Errorf("personal token after RevokeConnection(\"\"): %v", err)
+		}
+	}
+}
+
+func TestConnectionOf(t *testing.T) {
+	ctx := context.Background()
+	store, db, _ := newStore(t, func(config *apitoken.Config) {
+		config.Grant = grantHook()
+	})
+	linked, _ := mint(t, store, "alice", connected("c1"))
+	personal, _ := mint(t, store, "alice", claude)
+	if got, err := store.ConnectionOf(ctx, linked); err != nil || got != "c1" {
+		t.Errorf("linked: %q, %v; want c1", got, err)
+	}
+	if got, err := store.ConnectionOf(ctx, personal); err != nil || got != "" {
+		t.Errorf("personal: %q, %v; want none", got, err)
+	}
+	// A dead token still names its connection.
+	if err := store.RevokeConnection(ctx, "c1"); err != nil {
+		t.Fatal(err)
+	}
+	if got, err := store.ConnectionOf(ctx, linked); err != nil || got != "c1" {
+		t.Errorf("revoked: %q, %v; want c1", got, err)
+	}
+	match := grammar.FindStringSubmatch(linked)
+	wrong := "tickets_" + match[1] + "_" + strings.Repeat("A", 43)
+	for _, token := range []string{
+		wrong, "tickets_AAAAAAAAAAAA_" + strings.Repeat("A", 43),
+		"other_" + match[1] + "_" + match[2], "nonsense", "",
+	} {
+		_, err := store.ConnectionOf(ctx, token)
+		if !errors.Is(err, sql.ErrNoRows) {
+			t.Errorf("%q: %v, want sql.ErrNoRows", token, err)
+		}
+	}
+	db.Close()
+	_, err := store.ConnectionOf(ctx, linked)
+	if err == nil || errors.Is(err, sql.ErrNoRows) {
+		t.Errorf("closed DB: %v, want a storage error", err)
+	}
+}

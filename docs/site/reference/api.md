@@ -23,6 +23,7 @@ type Config struct {
 	After               []func(http.Handler) http.Handler
 	RequireAgentSession bool
 	Redact              func(string) string
+	Challenge           Challenge
 }
 
 type Route struct {
@@ -196,6 +197,11 @@ type Gate struct {
 	Before, After       []func(http.Handler) http.Handler
 	RequireAgentSession bool
 	Redact              func(string) string
+	Challenge           Challenge
+}
+
+type Challenge struct {
+	ResourceMetadata, Scope string
 }
 
 func (g Gate) Validate() error
@@ -206,9 +212,26 @@ func (g Gate) Admit(actor rastrillo.Actor, operation rastrillo.Operation) error
 `Gate` is the request pipeline the tree and [mcp](/docs/reference/mcp)
 share. `Config.Gate` copies it out of a tree's `Config`.
 
+`Challenge` sets the `WWW-Authenticate` header on 401 responses. When
+set, the header is
+`Bearer resource_metadata="<ResourceMetadata>", scope="<Scope>"`. If both
+fields are empty, the header contains only `Bearer`. The tree and `Wrap`
+use this value to set the header. With [oauth](/docs/reference/oauth),
+`Server.Challenge("/api/v1")` is the tree's value and
+`Server.Challenge("/api/v1/mcp")` is MCP's, so each door points
+clients at its own metadata.
+
+If `Verify` returns an actor with a `Grant` and the request has no
+`Agent-Session` header, the gate uses the `Session` set by the
+verifier. If the request includes that header, its value takes
+precedence.
+Without a `Grant`, the gate uses only the header value.
+
 `Validate` reports a gate that would fail on its first request: no
-`Verify`, or a nil `Before` or `After`. `New` and `mcp.New` call it.
-Call it yourself before `Wrap`, which doesn't.
+`Verify`, a nil `Before` or `After`, a `Challenge` with no
+`ResourceMetadata`, or a `Challenge` field containing a character
+that is not printable ASCII, a double quote, or a backslash. `New` and
+`mcp.New` call it. Call it yourself before `Wrap`, which doesn't.
 
 `Wrap` runs a handler behind the gate: `Before`, `Verify`, the agent
 headers, `After`, panic recovery, redacted logging, and the answer held
@@ -326,7 +349,8 @@ an error, such as `rate_limited` from a rate limiter.
 `Conflict.Message` as the message. An `op.Invalid` with `AsSent` set
 keeps its field names as the client sent them; `op.DecodeInput` sets
 it. `ErrUnauthorized` is 401 with
-`WWW-Authenticate: Bearer`, and `ErrUnavailable` is 503. Any other error
+`WWW-Authenticate: Bearer`, or the value configured in the gate's
+`Challenge` when set, and `ErrUnavailable` is 503. Any other error
 is a 500: the error text goes to the log under a fresh ref, and the
 response carries only the ref. `op.Forbidden.Reason` is logged and never
 sent. `op.HumanOnly` is 403 `human_only`. Both doors log it at Info after

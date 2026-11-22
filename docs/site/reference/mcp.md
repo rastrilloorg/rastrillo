@@ -57,7 +57,10 @@ func Served(handler http.Handler) ([]op.Descriptor, error)
 
 The handler runs every request behind `Gate.Wrap`, so a missing or bad
 token gets the API's 401 or 503, and every answer has
-`Cache-Control: no-store`. Then:
+`Cache-Control: no-store`. The 401's `WWW-Authenticate` is
+`Gate.Challenge`. With [oauth](/docs/reference/oauth), set it to the
+server's `Challenge("/api/v1/mcp")` on a copy of the tree's gate, so
+the client finds the MCP door's own metadata. Then:
 
 - It answers only POST. Any other method, GET included, is 405 with
   `Allow: POST`. A batch is 400, and `subscriptions/listen` is 404,

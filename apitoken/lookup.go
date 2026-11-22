@@ -36,10 +36,10 @@ type lookedUp struct {
 
 // row is one api_tokens row as the database holds it.
 type row struct {
-	subject, agent, access string
-	hash                   []byte
-	lastUsed, expires      sql.NullString
-	revoked                sql.NullString
+	subject, agent, access, connection string
+	hash                               []byte
+	lastUsed, expires                  sql.NullString
+	revoked                            sql.NullString
 }
 
 // lookup is every check Verify and Recheck share, and it writes
@@ -71,6 +71,14 @@ func (store *Store) lookup(
 	actor := rastrillo.Actor{
 		Subject: stored.subject, Agent: stored.agent,
 		Credential: id, Access: access,
+	}
+	if stored.connection != "" {
+		grant, err := store.grant(ctx, id, stored.connection, access)
+		if err != nil {
+			return lookedUp{}, err
+		}
+		actor.Grant = grant
+		actor.Session = "oauth:" + stored.connection
 	}
 	return lookedUp{actor: actor, lastUsed: lastUsed, now: now}, nil
 }
@@ -137,10 +145,10 @@ func (store *Store) fetch(
 	var stored row
 	err := store.cfg.DB.QueryRowContext(ctx,
 		`SELECT subject, agent, access, secret_hash, last_used,
-		        expires_at, revoked_at
+		        expires_at, revoked_at, connection
 		 FROM api_tokens WHERE id = ?`, id).Scan(
 		&stored.subject, &stored.agent, &stored.access, &stored.hash,
-		&stored.lastUsed, &stored.expires, &stored.revoked)
+		&stored.lastUsed, &stored.expires, &stored.revoked, &stored.connection)
 	if errors.Is(err, sql.ErrNoRows) {
 		return row{}, fmt.Errorf(
 			"%w: no token %s", api.ErrUnauthorized, id)
@@ -181,4 +189,59 @@ func (store *Store) ownerAllowed(
 			api.ErrUnauthorized, id)
 	}
 	return nil
+}
+
+// grant asks Config.Grant what the token's connection allows. Without
+// the hook the token is refused: nothing could say the connection is
+// still alive.
+func (store *Store) grant(
+	ctx context.Context, id, connection string, access rastrillo.Access,
+) (*rastrillo.Grant, error) {
+	if store.cfg.Grant == nil {
+		return nil, fmt.Errorf("%w: %s belongs to a connection and "+
+			"Config.Grant is not set", api.ErrUnauthorized, id)
+	}
+	grant, err := store.cfg.Grant(ctx, connection, access)
+	if err == nil && grant == nil {
+		err = fmt.Errorf("%w: Grant(%s) returned no grant",
+			api.ErrUnavailable, connection)
+	}
+	if err != nil && !errors.Is(err, api.ErrUnauthorized) &&
+		!errors.Is(err, api.ErrUnavailable) {
+		err = fmt.Errorf("%w: apitoken: Grant(%s): %w",
+			api.ErrUnavailable, connection, err)
+	}
+	return grant, err
+}
+
+// ConnectionOf returns the OAuth connection token belongs to, or "" for
+// a personal token, so a client revoking an access token can end its
+// connection. It checks the secret but not revocation or expiry: a
+// dead token still names its connection, and ending one only removes
+// access. A token that is not this app's, is unknown, or has the
+// wrong secret is sql.ErrNoRows.
+func (store *Store) ConnectionOf(
+	ctx context.Context, token string,
+) (string, error) {
+	id, secret, ok := store.parse(token)
+	if !ok {
+		return "", sql.ErrNoRows
+	}
+	var hash []byte
+	var connection string
+	err := store.cfg.DB.QueryRowContext(ctx,
+		`SELECT secret_hash, connection FROM api_tokens WHERE id = ?`,
+		id).Scan(&hash, &connection)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", sql.ErrNoRows
+	}
+	if err != nil {
+		return "", fmt.Errorf("rastrillo/apitoken: ConnectionOf %s: %w",
+			id, err)
+	}
+	sum := sha256.Sum256([]byte(secret))
+	if subtle.ConstantTimeCompare(sum[:], hash) != 1 {
+		return "", sql.ErrNoRows
+	}
+	return connection, nil
 }

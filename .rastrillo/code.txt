@@ -567,8 +567,6 @@ columns apitoken/store.go 0f74ed53fb86 1
 columns apitoken/store.go 1757ce9555a6 1
 columns apitoken/store.go 1c410049fe7e 1
 columns apitoken/store.go 1cb094f7935c 1
-columns apitoken/store.go 350e4d6817d4 1
-columns apitoken/store.go 39c966f3596e 1
 columns apitoken/store.go 50dac1588dac 1
 columns apitoken/store.go 59d853b91dd1 1
 columns apitoken/store.go 5c39b1aa7bc5 1
@@ -594,7 +592,6 @@ func apitoken/store.go Store.Mint 42
 names apitoken/store.go Store.List/f 1
 names apitoken/store.go Store.List/s 1
 names apitoken/store.go Store.List/t 1
-names apitoken/store.go Store.Mint/e 1
 names apitoken/store.go Store.Mint/s 1
 names apitoken/store.go Store.Mint/t 1
 names apitoken/store.go Store.Revoke/n 1
@@ -13785,7 +13782,9 @@ columns migrate/frozen_checksums_test.go 27a742eb35e3 1
 columns migrate/frozen_checksums_test.go 2bd65ee2d2d1 1
 columns migrate/frozen_checksums_test.go 3c493d3949fe 1
 columns migrate/frozen_checksums_test.go 3f0142cd6a96 1
+columns migrate/frozen_checksums_test.go 53ac50326d15 1 a frozen migration checksum: 64 hex digits that gofmt aligns with the rest
 columns migrate/frozen_checksums_test.go 6664f72616f5 1
+columns migrate/frozen_checksums_test.go 704f71d7eeb0 1 a frozen migration checksum: 64 hex digits that gofmt aligns with the rest
 columns migrate/frozen_checksums_test.go 73ab703c135e 1
 columns migrate/frozen_checksums_test.go 7f0307ba4433 1
 columns migrate/frozen_checksums_test.go 863459788306 1
@@ -14009,6 +14008,7 @@ names nodetest/nodetest_test.go record/r 1
 names nodetest/nodetest_test.go recorder.Fatalf/r 1
 names nodetest/nodetest_test.go recorder.Helper/r 1
 names nodetest/nodetest_test.go recorder.Skipf/r 1
+columns oauth/metadata.go 160a6dbde453 1 a JSON tag: the MCP authorization spec names the field, and a tag cannot wrap
 columns objrec/dir.go 39e49e60f1aa 1
 columns objrec/dir.go 8c5d4fa52d3f 1
 columns objrec/dir.go a2e81de13779 1

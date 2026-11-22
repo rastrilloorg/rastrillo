@@ -57,6 +57,9 @@ type Config struct {
 	// Redact takes token-shaped text out of what the tree and Refuse
 	// log. (*apitoken.Store).Redact implements it. Nil redacts nothing.
 	Redact func(string) string
+	// Challenge is what a 401 tells a client about where to get a
+	// token. The zero value answers a bare Bearer.
+	Challenge Challenge
 }
 
 // Gate returns the pipeline half of the tree's Config. Config keeps its
@@ -72,6 +75,7 @@ func (configuration Config) Gate() Gate {
 		After:               configuration.After,
 		RequireAgentSession: configuration.RequireAgentSession,
 		Redact:              configuration.Redact,
+		Challenge:           configuration.Challenge,
 	}
 }
 

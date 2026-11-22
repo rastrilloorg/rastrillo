@@ -2,7 +2,7 @@
 
 An app's operations can also be MCP tools at `/api/v1/mcp`. Claude
 Code, Codex and other MCP clients connect with the same token they use
-for the [JSON API](/docs/api). They see one tool per operation and can
+for the [JSON API](/docs/api), or through [OAuth](#connecting). They see one tool per operation and can
 call those tools. Each call goes through the API's token check, policy
 and operation, so an agent can do nothing over MCP that its token
 couldn't do over the API.
@@ -51,8 +51,19 @@ tool name. The [mcp reference](/docs/reference/mcp) has the full list.
 
 ## Connecting
 
-Make a token on the app's token page, then give the client the endpoint
-and the token. In Claude Code:
+An app that mounts [oauth](/docs/reference/oauth) needs only its
+address. The client opens the person's browser at the app's approval
+page, then keeps and renews its own token:
+
+| Client | How it connects |
+|---|---|
+| Claude Code | `claude mcp add --transport http notes https://notes.example.com/api/v1/mcp`, then `/mcp` in a session to sign in |
+| Codex | `codex mcp add notes --url https://notes.example.com/api/v1/mcp`, then `codex mcp login notes` |
+| claude.ai | a custom connector with the address |
+| ChatGPT | a custom connector with the address |
+
+Without OAuth, make a token on the app's token page. Then give the
+client the endpoint and token. In Claude Code:
 
 ```sh
 claude mcp add --transport http notes https://notes.example.com/api/v1/mcp \
@@ -74,11 +85,13 @@ the agent still sees the write tools, but each write call is refused as
 `invalid`, with a message telling it to send the header. A read-only
 token sees no write tools, and its write call is refused as `forbidden`
 whether or not it sent the header. In Claude Code, add
-`--header "Agent-Session: <id>"`.
+`--header "Agent-Session: <id>"`. An OAuth client needs no header: its
+session is `oauth:<connection ID>`.
 
-ChatGPT and claude.ai connect through OAuth, which Rastrillo doesn't
-serve yet. A request with no token gets 401 with
-`WWW-Authenticate: Bearer`.
+claude.ai and ChatGPT can't send a token you give them, so they need
+OAuth. A request with no token gets 401. With OAuth mounted, its
+`WWW-Authenticate` header tells the client where to find the app's
+OAuth metadata; without OAuth, it is a bare `Bearer`.
 
 ## What an agent sees
 
@@ -279,7 +292,9 @@ never reads its `Teams` or `Scopes`, because what they mean is yours.
 Your `Authorize` checks the scope for each operation, `Invoke` checks a
 team the input names, and your guard checks it again as the answer goes
 out. A grant can only narrow what the person could already do.
-Rastrillo ships no verifier for grants yet.
+[oauth](/docs/reference/oauth) makes the app its own connection
+service, and its grants name only `read` and `write`. Rastrillo ships
+no verifier for another service's grants yet.
 
 ## What it doesn't serve
 
