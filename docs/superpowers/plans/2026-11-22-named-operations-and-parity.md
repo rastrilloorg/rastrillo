@@ -219,56 +219,65 @@ draft (with fixes, ten findings).
 
 ## Approved copy
 
-Drafts, to be replaced in Task 0. The name in brackets is each string's
-constant.
+Approved by Luna (gpt-6-luna) on 2026-11-22. The name in brackets is each
+string's constant. Skipped, with reasons:
+
+- `msgHumanListed`: Luna's "Remove it from the tool list" names a fix the
+  developer cannot make (`mcp.New` builds the list), so the draft stands.
+- `msgHumanCallable`: Luna's "Ask a person to use %s" drops the failure
+  (the door answered something other than `human_only`) and misdirects the
+  developer, so the draft stands.
+- `msgScenarioHumanOnly`: Luna's "Test this scenario with paritytest.Routes"
+  is wrong, because `Routes` tests the operation, not the scenario. Applied
+  with "it".
 
 - **`api` code `human_only`, 403** [`codes["human_only"]`]:
-  `Only a person can do this, in the app itself. Ask them to do it there.`
+  `A person must do this in the app. Ask them to do it there.`
 - **`op.Define` panics.** Each is prefixed `op: <id>: ` except
   `msgBadID`:
   - [`msgBadID`]: `%q is not an operation name. Write it as <area>.<verb> in lowercase letters, digits and underscores, such as posts.publish`
   - [`msgLongToolName`]: `its tool name %s is %d characters. Keep <area>_<verb> to 64 or fewer`
-  - [`msgNoDescription`]: `Description is empty. Say in one sentence what the operation does, for the agent reading the tool list`
+  - [`msgNoDescription`]: `Description is empty. Write one sentence that says what the operation does`
   - [`msgBadAccess`]: `set Spec.Access to rastrillo.Read or rastrillo.Write`
   - [`msgNilRun`]: `the function is nil. Pass the function that does the work`
-  - [`msgInputNotStruct`]: `the input type %s must be a struct, because an agent sends a JSON object`
-  - [`msgResultNotStruct`]: `the result type %s must be a struct, or op.None when there is nothing to return`
+  - [`msgInputNotStruct`]: `the input type %s must be a struct. Use a struct for the input`
+  - [`msgResultNotStruct`]: `the result type %s must be a struct or op.None. Use op.None when there is nothing to return`
   - [`msgQueryWrite`]: `InQuery is only for reads. Remove it, or set Access to rastrillo.Read`
   - [`msgQueryNotFlat`]: `InQuery needs every input field to be a string, number or bool, but %s is not. Remove InQuery to take a JSON body`
 - **`schemaFor` errors**, wrapped by the panic above:
   - [`msgUntagged`]: `field %s.%s has no JSON name. Tag it json:"%s"`
-  - [`msgWireName`]: `field %s.%s is %q on the wire. Name it %q, its name in snake_case, so a form error and an API error name the same field`
+  - [`msgWireName`]: `field %s.%s is %q on the wire. Use %q as its JSON name so errors use the same field name`
   - [`msgUnsupported`]: `field %s.%s is a %s, which JSON can't carry. Use a string, number, bool, struct, slice, or map with string keys`
-  - [`msgTagOption`]: `field %s.%s has the json option %q, which changes the wire. Use only omitzero, omitempty or inline`
+  - [`msgTagOption`]: `field %s.%s has unsupported json option %q. Use only omitzero, omitempty or inline`
   - [`msgPointerInput`]: `field %s.%s is a pointer in an input. Use op.Opt for a field that may be left out, or op.Nullable for one that may be null`
   - [`msgOptResult`]: `field %s.%s is an op.Opt or op.Nullable in a result. Use a pointer for a value that may be null`
   - [`msgCycle`]: `type %s contains itself, which a JSON Schema here can't describe. Break the cycle with an ID`
 - **`route` panics:**
   - [`msgNoMethod`]: `route: %q names no method. Write it as "POST /posts/{id}/publish"`
   - [`msgUnknownMethod`]: `route: %q: the method must be GET, POST, PUT, PATCH or DELETE`
-  - [`msgTwice`]: `route: %s %s is registered twice. Register each method and path once, because chi serves only the later one`
+  - [`msgTwice`]: `route: %s %s is registered twice. Register it once`
   - [`msgNoOperation`]: `route: Operation needs a declared operation. Pass its Descriptor, such as posts.Publish.Descriptor`
   - [`msgNoReason`]: `route: PageOnly needs a reason. Say why an agent has no use for this route, such as "the stylesheet"`
 - **`paritytest.Routes` failures:**
   - [`msgUnmarked`]: `%s %s names no operation and no page-only reason. Name its operation with route.Operation, or say why an agent has no use for it with route.PageOnly`
-  - [`msgUndeclared`]: `%s %s names %s, which Surface.Operations doesn't list. Add it there, to api.Operations and to mcp.New`
-  - [`msgListedTwice`]: `Surface.Operations lists %s twice`
-  - [`msgNoPage`]: `%s has no page. Give it a route, so a person can do what an agent can`
+  - [`msgUndeclared`]: `%s %s names %s, which Surface.Operations doesn't list. Add it to Surface.Operations, api.Operations and mcp.New`
+  - [`msgListedTwice`]: `Surface.Operations lists %s twice. Remove the duplicate`
+  - [`msgNoPage`]: `%s has no page. Add a page route for it`
   - [`msgMissing`]: `%s isn't served by %s. Pass its Descriptor to %s`
-  - [`msgUnexpected`]: `%s serves %s, which Surface.Operations doesn't list. Declare it and give it a page, or stop serving it`
+  - [`msgUnexpected`]: `%s serves %s, which Surface.Operations doesn't list. Add it to Surface.Operations and give it a page, or stop serving it`
   - [`msgDiffers`]: `%s serves %s as %+v, but it is declared as %+v. Pass the declared Descriptor`
-  - [`msgWrongOperation`]: `the API serves %s at %s %s, where %s belongs`
+  - [`msgWrongOperation`]: `the API serves %s at %s %s, where %s belongs. Move it to its declared route`
   - [`msgNotMounted`]: `%s %s answered %d with Rastrillo-Operation %q, not 401 with %q. Mount the API tree at /api/v1/, ahead of any catch-all`
   - [`msgNotListed`]: `%s isn't in the MCP tool list for Surface.Token. Check that Authorize allows that token every operation`
   - [`msgHumanListed`]: `%s is human-only, but the MCP tool list shows it`
   - [`msgHumanCallable`]: `%s is human-only, but %s answered an agent with %q, not human_only`
 - **`paritytest.Run` failures:**
-  - [`msgDoorsDiffer`]: `step %q: the %s ended %s %v and the %s ended %s %v`
-  - [`msgBodiesDiffer`]: `step %q: the API answered %v and MCP answered %v`
-  - [`msgStateDiffers`]: `after step %q, the %s left %v and the %s left %v`
-  - [`msgScenarioHumanOnly`]: `step %q calls %s, which is human-only, so the doors differ by design. Test it with paritytest.Routes`
+  - [`msgDoorsDiffer`]: `step %q: %s returned %s %v, but %s returned %s %v`
+  - [`msgBodiesDiffer`]: `step %q: API returned body %v; MCP returned body %v`
+  - [`msgStateDiffers`]: `after step %q: %s left state %v; %s left state %v`
+  - [`msgScenarioHumanOnly`]: `step %q calls human-only %s. Test it with paritytest.Routes`
 - **`rastrillo routes --check`** [`unmarkedRoutes`]:
-  `This app declares operations, so every route must name one or say why it has none. These routes don't:\n\n%s\nName each one's operation with route.Operation, or say why an agent has no use for it with route.PageOnly.`
+  `This app declares operations. Each route must name one or explain why it has none. These routes don't:\n\n%s\nUse route.Operation to name each route's operation. Use route.PageOnly for routes agents should not use.`
 
 ---
 
