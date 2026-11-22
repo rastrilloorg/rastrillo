@@ -111,7 +111,9 @@ runs.
 
 A POST takes its input as a JSON body:
 
-- With no body, it runs with `{}`.
+- With `Content-Length: 0`, it runs with `{}`. A body sent without a
+  length, such as a chunked one, is read as a body even when it is
+  empty.
 - A body needs `Content-Type: application/json`, or the answer is 415.
 - A body over the cap is 413.
 - Otherwise the body goes to `Invoke` as sent. A bad body gets the
@@ -123,7 +125,9 @@ parameter. A parameter whose input field is a number is sent as a
 number when it is a valid one, and one whose field is a bool as `true`
 or `false`. Everything else is a string. So `?limit=five`,
 `?limit=1&limit=2` and an unknown parameter are each 422, with `fields`
-naming that parameter, as they would be in a body.
+naming that parameter, as they would be in a body. A query string that
+does not parse, such as `?search=100%` or a pair with a `;`, is 422 with
+no `fields`.
 
 The answer is 200 with the result, 204 when the operation returns
 `op.None`, or the refusal its error maps to under [Errors](#errors).

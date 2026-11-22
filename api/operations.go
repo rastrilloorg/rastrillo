@@ -16,6 +16,11 @@ import (
 	"amadan.net/rastrillo/rastrillo/op"
 )
 
+// msgBadQuery is a GET's 422 when its query string does not parse. It
+// has no fields, because a pair that does not parse has no sure name.
+const msgBadQuery = "Send each argument as name=value. " +
+	"Percent-encode the name and value."
+
 // Operations builds the API door for named operations, one route each
 // at /api/v1/<area>/<verb>. A read declared InQuery is GET, with its
 // input in the query string; every other operation is POST, with its
@@ -80,7 +85,14 @@ func doorArguments(
 	descriptor op.Descriptor,
 ) ([]byte, bool) {
 	if descriptor.InQuery {
-		return queryArguments(request.URL.Query(), descriptor.Input), true
+		// ParseQuery, not URL.Query, which drops a pair it can't read and
+		// would run the operation without that argument.
+		query, err := url.ParseQuery(request.URL.RawQuery)
+		if err != nil {
+			invalid(response, msgBadQuery, nil)
+			return nil, false
+		}
+		return queryArguments(query, descriptor.Input), true
 	}
 	// No body is {}, as MCP treats absent arguments, so an operation
 	// whose inputs are all optional can be called with nothing to send.

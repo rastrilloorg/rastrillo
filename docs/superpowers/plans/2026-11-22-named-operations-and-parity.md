@@ -233,6 +233,11 @@ string's constant. Skipped, with reasons:
 
 - **`api` code `human_only`, 403** [`codes["human_only"]`]:
   `A person must do this in the app. Ask them to do it there.`
+- **`api` 422 `invalid` for a GET query that does not parse**
+  [`msgBadQuery`], added in Task 4's fix round by Luna on 2026-11-22
+  (the draft "The query string could not be read. Send each argument as
+  name=value, percent-encoded." could be read as encoding the `=` too):
+  `Send each argument as name=value. Percent-encode the name and value.`
 - **`op.Define` panics.** Each is prefixed `op: <id>: ` except
   `msgBadID`:
   - [`msgBadID`]: `%q is not an operation name. Write it as <area>.<verb> in lowercase letters, digits and underscores, such as posts.publish`

@@ -304,6 +304,38 @@ func TestQueryArgumentsAreRefusedByTheBodyRules(t *testing.T) {
 	})
 }
 
+// A pair url.Values would drop must not reach the operation as a call
+// without that argument.
+func TestAnUnreadableQueryIsRefusedBeforeInvoke(t *testing.T) {
+	var calls int
+	counted := notes().list.Descriptor
+	invoke := counted.Invoke
+	counted.Invoke = func(
+		ctx context.Context, rc *rastrillo.Ctx,
+		arguments encodingjson.RawMessage,
+	) (any, error) {
+		calls++
+		return invoke(ctx, rc, arguments)
+	}
+	tree := mustNew(t, config(), Operations(counted)...)
+	for _, query := range []string{"search=100%", "search=a;b"} {
+		t.Run(query, func(t *testing.T) {
+			recorder := serve(tree, http.MethodGet,
+				"/api/v1/notes/list?"+query, "agent-read", "")
+			assertCode(t, recorder,
+				http.StatusUnprocessableEntity, "invalid")
+			refused := decodeError(t, recorder)
+			if refused.Message != msgBadQuery || len(refused.Fields) != 0 {
+				t.Fatalf("answered %+v, want %q and no fields",
+					refused, msgBadQuery)
+			}
+		})
+	}
+	if calls != 0 {
+		t.Fatalf("Invoke ran %d times, want 0", calls)
+	}
+}
+
 func TestQueryArgumentsBuildOneObjectInKeyOrder(t *testing.T) {
 	schema := notes().list.Descriptor.Input
 	query := url.Values{

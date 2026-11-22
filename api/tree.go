@@ -186,7 +186,7 @@ func (t *tree) add(rt Route) error {
 	return nil
 }
 
-// accessFor is the Access route's method must declare, and whether the
+// accessFor is the Access a route's method must declare, and whether the
 // tree serves that method at all.
 func accessFor(route Route) (rastrillo.Access, bool) {
 	postedRead := route.Method == http.MethodPost &&
