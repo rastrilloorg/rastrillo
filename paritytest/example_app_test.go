@@ -84,6 +84,9 @@ type exampleOptions struct {
 	// webhookOnRouter registers POST /api/v1/webhooks/stripe on a chi
 	// router itself, under the API's prefix but outside both doors.
 	webhookOnRouter bool
+	// getOnMCP registers GET /api/v1/mcp on a chi router itself,
+	// beside MCP's own mount at that path.
+	getOnMCP bool
 	// humanOnlyElsewhere also serves the unsafe tokens.create at
 	// POST /api/v1/tokens/mint, beside the declared one at its route.
 	humanOnlyElsewhere bool
@@ -570,6 +573,9 @@ func (app *exampleApp) overChi(surface *Surface) *route.Table {
 	}
 	if app.options.webhookOnRouter {
 		router.Post("/api/v1/webhooks/stripe", plainPage)
+	}
+	if app.options.getOnMCP {
+		router.Get("/api/v1/mcp", plainPage)
 	}
 	surface.Handler, surface.Router = router, router
 	return table

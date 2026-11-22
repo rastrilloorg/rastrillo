@@ -212,6 +212,14 @@ func TestParityFailsARouteRegisteredDirectlyUnderTheAPIPrefix(
 		fmt.Sprintf(msgUnrecorded, "POST", "/api/v1/webhooks/stripe"))
 }
 
+// A route registered at a door's own path is not the door's mount, so
+// the walk still finds it.
+func TestParityFailsARouteRegisteredDirectlyAtTheMCPPath(t *testing.T) {
+	surface, _ := buildExample(t, "chi", exampleOptions{getOnMCP: true})
+	wantFailures(t, surface,
+		fmt.Sprintf(msgUnrecorded, "GET", "/api/v1/mcp"))
+}
+
 // Generated operations are gen/paritytest's to check, so serving one on
 // both doors and naming it from a page is no failure here.
 func TestParityLeavesGeneratedOperationsToGenParitytest(t *testing.T) {

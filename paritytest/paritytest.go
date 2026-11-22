@@ -6,7 +6,9 @@ package paritytest
 import (
 	"fmt"
 	"net/http"
+	"reflect"
 	"slices"
+	"sync"
 	"testing"
 
 	"github.com/go-chi/chi/v5"
@@ -111,14 +113,47 @@ func checkPages(
 
 // doorMounts are the paths chi's walk gives the two doors' mounts: the
 // API tree at /api/v1/ and MCP at /api/v1/mcp. Both are mounted on the
-// router directly, and their own checks cover them. Only these paths
-// are skipped, so a route registered directly anywhere else under
-// /api/v1/, such as a webhook, is still found.
+// router directly, and their own checks cover them. Only what Mount
+// registered at these paths is skipped, so a route registered directly
+// at one of them, or anywhere else under /api/v1/, is still found.
 var doorMounts = map[string]bool{
 	"/api/v1/*":     true,
 	"/api/v1/mcp":   true,
 	"/api/v1/mcp/":  true,
 	"/api/v1/mcp/*": true,
+}
+
+// mountCode is the code of the handler chi's Mount registers, read from
+// chi itself, so a chi release can't change it unseen. Every mount's
+// handler is a closure over the mounted one, so all share this code,
+// and a handler registered at a mount's path with Get or Handle has
+// other code. What a mount at a door's path serves is held to the door
+// by checkMounted and checkListed.
+var mountCode = sync.OnceValue(func() uintptr {
+	router := chi.NewRouter()
+	router.Mount("/", http.NotFoundHandler())
+	var code uintptr
+	_ = chi.Walk(router, func(_, _ string, handler http.Handler,
+		_ ...func(http.Handler) http.Handler) error {
+		code = codeOf(handler)
+		return nil
+	})
+	return code
+})
+
+// codeOf is a func handler's code, or 0 for any other handler.
+func codeOf(handler http.Handler) uintptr {
+	value := reflect.ValueOf(handler)
+	if value.Kind() != reflect.Func {
+		return 0
+	}
+	return value.Pointer()
+}
+
+// doorMount reports whether path and handler are what chi's Mount
+// registers for one of the doors.
+func doorMount(path string, handler http.Handler) bool {
+	return doorMounts[path] && codeOf(handler) == mountCode()
 }
 
 // checkRecorded walks a chi router for routes registered on it
@@ -136,8 +171,8 @@ func checkRecorded(t testing.TB, surface Surface) {
 	}
 	var failures []string
 	err := chi.Walk(surface.Router, func(method, path string,
-		_ http.Handler, _ ...func(http.Handler) http.Handler) error {
-		if !doorMounts[path] && !recorded[method+" "+path] {
+		handler http.Handler, _ ...func(http.Handler) http.Handler) error {
+		if !doorMount(path, handler) && !recorded[method+" "+path] {
 			failures = append(failures,
 				fmt.Sprintf(msgUnrecorded, method, path))
 		}

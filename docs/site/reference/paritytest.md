@@ -78,10 +78,11 @@ Import this package beside it under another name, such as
 `routeparity`.
 
 `Router` is the app's chi router. Leave it nil for a `ServeMux`, which
-can't be walked. The walk skips only the routes produced by the API
-tree and MCP mounts: `/api/v1/*`, `/api/v1/mcp`, `/api/v1/mcp/` and
-`/api/v1/mcp/*`. Register every other route under `/api/v1/` through
-the table.
+can't be walked. The walk skips only what chi's `Mount` registers for
+the API tree at `/api/v1/` and for MCP at `/api/v1/mcp`. A route
+registered directly at one of those paths, such as a GET at
+`/api/v1/mcp`, is still found. Register every other route under
+`/api/v1/` through the table.
 
 ## Calling the doors
 
