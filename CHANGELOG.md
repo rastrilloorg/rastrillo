@@ -10,6 +10,8 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+## v0.47.0
+
 **Upgrade order: sites first, then the root sends grants.** A receiver older than v0.47.0 refuses a roster snapshot that holds `grants`, and the root does not retry a refused snapshot. Release v0.47.0, deploy every hosted site on it, and only then let the root put grant IDs in snapshots. A snapshot with no grants is unchanged, so old sites still accept it.
 
 **`roster.Member` is no longer comparable with `==`.** It gained a `Grants` slice. Code that compares members with `==`, or uses one as a map key, no longer compiles. Compare the fields you need.
