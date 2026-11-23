@@ -13,6 +13,7 @@ import (
 
 	"amadan.net/rastrillo/rastrillo/assertion"
 	"amadan.net/rastrillo/rastrillo/crypto"
+	"amadan.net/rastrillo/rastrillo/granttoken"
 	"amadan.net/rastrillo/rastrillo/instance"
 	"amadan.net/rastrillo/rastrillo/rootcall"
 	"amadan.net/rastrillo/rastrillo/roster"
@@ -124,6 +125,27 @@ func (root *Root) RosterOrigin(
 	})
 	if err != nil {
 		t.Fatalf("handofftest: sign roster: %v", err)
+	}
+	return token
+}
+
+// GrantToken signs claims as this root, filling Version, Issuer, KeyID
+// and IssuedAt, and ExpiresAt as an hour from now when it is zero.
+func (root *Root) GrantToken(
+	t testing.TB, claims granttoken.Claims,
+) string {
+	t.Helper()
+	now := root.now()
+	claims.Version = 1
+	claims.Issuer = root.Origin
+	claims.KeyID = root.KeyID
+	claims.IssuedAt = now.Unix()
+	if claims.ExpiresAt == 0 {
+		claims.ExpiresAt = now.Add(time.Hour).Unix()
+	}
+	token, err := granttoken.Sign(root.Key, claims)
+	if err != nil {
+		t.Fatalf("handofftest: sign grant token: %v", err)
 	}
 	return token
 }

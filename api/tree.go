@@ -14,7 +14,8 @@ import (
 )
 
 // Verifier turns a request's credential into an Actor. apitoken.Store
-// implements it; OAuth grants will be a second implementation.
+// implements it for personal and OAuth tokens, and granttoken.Door for
+// grant tokens.
 //
 // When it cannot name an actor it returns an error wrapping
 // ErrUnauthorized (401) or ErrUnavailable (503). The actor it returns

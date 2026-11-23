@@ -9,18 +9,20 @@ import (
 )
 
 // recorded is the receiver's own row. Contactless means the row holds only
-// subjects and roles, as Config.RecordRolesOnly writes it, so a repair
-// from it must keep the email and name the Store already has.
+// subjects, roles and grant IDs, as Config.RecordRolesOnly writes it, so a
+// repair from it must keep the email and name the Store already has.
 type recorded struct {
 	Snapshot
 	contactless bool
 }
 
 // roleOnly is a member as Config.RecordRolesOnly records it: enough to
-// tell who to remove and what role each member has, and no contact.
+// tell who to remove, what role each member has and which grants are
+// active, and no contact.
 type roleOnly struct {
-	Subject string `json:"sub"`
-	Role    string `json:"role"`
+	Subject string   `json:"sub"`
+	Role    string   `json:"role"`
+	Grants  []string `json:"grants,omitempty"`
 }
 
 // recordedMembers is the members column. Unless rolesOnly it is the
@@ -31,7 +33,9 @@ func recordedMembers(members []Member, rolesOnly bool) ([]byte, error) {
 	}
 	stripped := make([]roleOnly, 0, len(members))
 	for _, member := range members {
-		stripped = append(stripped, roleOnly{member.Subject, member.Role})
+		stripped = append(stripped, roleOnly{
+			Subject: member.Subject, Role: member.Role, Grants: member.Grants,
+		})
 	}
 	return json.Marshal(stripped)
 }

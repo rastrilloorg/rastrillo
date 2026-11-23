@@ -3,6 +3,7 @@ package roster_test
 import (
 	"bytes"
 	"os"
+	"reflect"
 	"testing"
 	"time"
 
@@ -59,7 +60,7 @@ func TestRolesOnlyRecordsNoEmailOrName(t *testing.T) {
 		t.Fatalf("status = %d, want 204", code)
 	}
 	want := `[{"sub":"a","role":"owner"}]`
-	if got := fix.recordedMembers(t); got != want {
+	if got := fix.recordedMembers(t); !reflect.DeepEqual(got, want) {
 		t.Errorf("recorded members = %s, want %s", got, want)
 	}
 	for _, text := range []string{ownerA.Email, `"A"`} {
@@ -67,7 +68,7 @@ func TestRolesOnlyRecordsNoEmailOrName(t *testing.T) {
 			t.Errorf("the database file holds %s", text)
 		}
 	}
-	if fix.store.members["a"] != ownerA {
+	if !reflect.DeepEqual(fix.store.members["a"], ownerA) {
 		t.Errorf("store = %v, want the whole member", fix.store.members)
 	}
 }
@@ -78,7 +79,7 @@ func TestTheDefaultRecordsTheSnapshotAsSigned(t *testing.T) {
 		t.Fatalf("status = %d, want 204", code)
 	}
 	want := `[{"sub":"a","email":"a@example.com","name":"A","role":"owner"}]`
-	if got := fix.recordedMembers(t); got != want {
+	if got := fix.recordedMembers(t); !reflect.DeepEqual(got, want) {
 		t.Errorf("recorded members = %s, want %s", got, want)
 	}
 }
@@ -131,7 +132,7 @@ func TestRolesOnlyRepairKeepsTheStoresContact(t *testing.T) {
 	if got.Role != want.Role {
 		t.Errorf("role = %s, want owner: the stale write survived", got.Role)
 	}
-	if got != want {
+	if !reflect.DeepEqual(got, want) {
 		t.Errorf("store a = %+v, want %+v: the repair blanked contact",
 			got, want)
 	}
@@ -150,7 +151,7 @@ func TestRolesOnlyRepairFromAnOldRowRestoresEveryField(t *testing.T) {
 	if code := fix.post(fix.token(t, 3, roster.Active, demoted)); code != 409 {
 		t.Fatalf("status = %d, want 409", code)
 	}
-	if got := fix.store.members["a"]; got != ownerA {
+	if got := fix.store.members["a"]; !reflect.DeepEqual(got, ownerA) {
 		t.Errorf("store a = %+v, want %+v", got, ownerA)
 	}
 }
@@ -165,7 +166,7 @@ func TestRolesOnlyRepairAddsBackARemovedMemberWithoutContact(t *testing.T) {
 		t.Fatalf("status = %d, want 409", code)
 	}
 	bare := roster.Member{Subject: "a", Role: "owner"}
-	if got := fix.store.members["a"]; got != bare {
+	if got := fix.store.members["a"]; !reflect.DeepEqual(got, bare) {
 		t.Errorf("store a = %+v, want %+v", got, bare)
 	}
 	fix.now = epoch
@@ -173,7 +174,7 @@ func TestRolesOnlyRepairAddsBackARemovedMemberWithoutContact(t *testing.T) {
 	if code := fix.post(next); code != 204 {
 		t.Fatalf("next snapshot status = %d, want 204", code)
 	}
-	if got := fix.store.members["a"]; got != ownerA {
+	if got := fix.store.members["a"]; !reflect.DeepEqual(got, ownerA) {
 		t.Errorf("after the next snapshot a = %+v, want %+v", got, ownerA)
 	}
 }

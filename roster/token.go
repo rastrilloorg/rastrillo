@@ -1,7 +1,8 @@
 // Package roster signs whole-roster snapshots that a root app sends to the
 // instances living under it. A snapshot lists who belongs to one instance and
 // whether it is active. It carries no credentials: the receiver must still
-// check a session before serving private content.
+// check a session before serving private content. A member's grant IDs are
+// not credentials either, because only a signed grant token uses one.
 package roster
 
 import (
@@ -56,6 +57,11 @@ type Member struct {
 	Email   string `json:"email"`
 	Name    string `json:"name"`
 	Role    string `json:"role"`
+
+	// Grants are the IDs of the member's active agent grants. They are left
+	// out when empty, so a snapshot without grants signs the bytes that an
+	// older receiver, which refuses a field it does not know, accepts.
+	Grants []string `json:"grants,omitempty"`
 }
 
 // Snapshot is the complete roster, not a change to it, so a receiver that
@@ -239,16 +245,34 @@ func validate(snapshot Snapshot) error {
 		return ErrLifetime
 	}
 	seen := make(map[string]bool, len(snapshot.Members))
+	grants := map[string]bool{}
 	for _, member := range snapshot.Members {
 		if !wire.Identifier(member.Subject, 128) ||
 			!wire.Identifier(member.Role, 64) ||
 			len(member.Email) > 320 || len(member.Name) > 256 ||
-			seen[member.Subject] {
+			seen[member.Subject] || !validGrants(member.Grants, grants) {
 			return ErrClaims
 		}
 		seen[member.Subject] = true
 	}
 	return nil
+}
+
+const maxGrants = 64
+
+// validGrants records each ID in seen, which spans the whole snapshot: an ID
+// under two members would let one person's token pass for another's.
+func validGrants(grants []string, seen map[string]bool) bool {
+	if len(grants) > maxGrants {
+		return false
+	}
+	for _, grant := range grants {
+		if !wire.Identifier(grant, 64) || seen[grant] {
+			return false
+		}
+		seen[grant] = true
+	}
+	return true
 }
 
 // validOrigin is an empty origin, or https:// and a host with no port. A

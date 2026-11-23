@@ -50,8 +50,9 @@ type Config struct {
 	OnOrigin func(previous, next string)
 
 	// RecordRolesOnly keeps members' emails and names out of the
-	// receiver's own row, which then holds subjects and roles only
-	// (record.go). The Store still gets every field.
+	// receiver's own row, which then holds subjects, roles and grant
+	// IDs only, and keeps the grant IDs through a repair (record.go).
+	// The Store still gets every field.
 	RecordRolesOnly bool
 }
 
@@ -311,7 +312,7 @@ func (receiver *Receiver) syncMembers(
 			member.Email, member.Name = existing.Email, existing.Name
 		}
 		written = append(written, member)
-		if found && existing == member {
+		if found && sameMember(existing, member) {
 			continue
 		}
 		if err := receiver.store.Put(ctx, member); err != nil {
@@ -344,4 +345,12 @@ func (receiver *Receiver) removeMissing(
 func (receiver *Receiver) Suspended(ctx context.Context) (bool, error) {
 	applied, err := receiver.lastApplied(ctx)
 	return applied.State == Suspended, err
+}
+
+// sameMember leaves Grants out: the Store keeps none, so comparing them
+// would rewrite every member on each snapshot.
+func sameMember(existing, member Member) bool {
+	return existing.Subject == member.Subject &&
+		existing.Email == member.Email && existing.Name == member.Name &&
+		existing.Role == member.Role
 }

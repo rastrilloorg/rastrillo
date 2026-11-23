@@ -108,10 +108,13 @@ type Grant struct {
 //	user:<subject> token:<public id>
 //	agent:<agent> for user:<subject> token:<public id>
 //	agent:<agent> for user:<subject> token:<public id> grant:<grant id>
+//	agent:<agent> for user:<subject> grant:<grant id>
 //
 // The token's public ID is in it so that two tokens both named "Claude"
 // stay distinguishable, and the grant's so that an event can be traced
-// to the grant that was revoked. Nothing in this repo parses the string.
+// to the grant that was revoked. A grant token's credential is its
+// grant, so the ID is written once. Nothing in this repo parses the
+// string.
 func (a Actor) String() string {
 	if a.Subject == "" && a.Agent == "" && a.Credential == "" {
 		return "app"
@@ -120,7 +123,8 @@ func (a Actor) String() string {
 	if a.Agent != "" {
 		who = "agent:" + a.Agent + " for " + who
 	}
-	if a.Credential != "" {
+	grantToken := a.Grant != nil && a.Grant.ID == a.Credential
+	if a.Credential != "" && !grantToken {
 		who += " token:" + a.Credential
 	}
 	if a.Grant != nil {

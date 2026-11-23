@@ -106,6 +106,18 @@ func TestActorStringWithGrant(t *testing.T) {
 	}
 }
 
+// A grant token's credential is its grant, so the ID is named once.
+func TestActorStringGrantToken(t *testing.T) {
+	actor := Actor{
+		Subject: "s", Agent: "Claude", Credential: "g1",
+		Grant: &Grant{ID: "g1"},
+	}
+	want := "agent:Claude for user:s grant:g1"
+	if got := actor.String(); got != want {
+		t.Errorf("String() = %q, want %q", got, want)
+	}
+}
+
 func TestActorLogAttrsWithGrant(t *testing.T) {
 	keys := func(actor Actor) []string {
 		var got []string

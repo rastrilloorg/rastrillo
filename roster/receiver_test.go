@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -64,6 +65,8 @@ func (store *fakeStore) Members(context.Context) ([]roster.Member, error) {
 	}
 	var members []roster.Member
 	for _, member := range store.members {
+		// Patrix's store has no column for grants.
+		member.Grants = nil
 		members = append(members, member)
 	}
 	return members, nil
@@ -216,8 +219,9 @@ func TestReceiverAppliesASnapshot(t *testing.T) {
 	if code := fix.post(token); code != 204 {
 		t.Fatalf("status = %d, want 204", code)
 	}
-	if len(fix.store.members) != 2 || fix.store.members["c"] != editorC ||
-		fix.store.members["a"] != ownerA {
+	if len(fix.store.members) != 2 ||
+		!reflect.DeepEqual(fix.store.members["c"], editorC) ||
+		!reflect.DeepEqual(fix.store.members["a"], ownerA) {
 		t.Errorf("store = %v, want a and c", fix.store.members)
 	}
 	if strings.Join(fix.store.puts, ",") != "c" {
@@ -235,7 +239,7 @@ func TestReceiverRewritesAMemberWhoseDetailsChanged(t *testing.T) {
 	if code := fix.post(fix.token(t, 1, roster.Active, renamed)); code != 204 {
 		t.Fatalf("status = %d, want 204", code)
 	}
-	if fix.store.members["a"] != renamed {
+	if !reflect.DeepEqual(fix.store.members["a"], renamed) {
 		t.Errorf("member = %v, want %v", fix.store.members["a"], renamed)
 	}
 }
@@ -250,7 +254,8 @@ func TestReceiverRefusesAnOlderSequence(t *testing.T) {
 	if code := fix.post(older); code != 409 {
 		t.Fatalf("seq 1 status = %d, want 409", code)
 	}
-	if len(fix.store.members) != 1 || fix.store.members["a"] != ownerA {
+	if len(fix.store.members) != 1 ||
+		!reflect.DeepEqual(fix.store.members["a"], ownerA) {
 		t.Errorf("store = %v, want only a", fix.store.members)
 	}
 	if fix.storedSequence(t) != 2 {
@@ -346,7 +351,8 @@ func TestReceiverRetriesAfterAStoreFailure(t *testing.T) {
 	if code := fix.post(token); code != 204 {
 		t.Fatalf("retry status = %d, want 204", code)
 	}
-	if fix.store.members["a"] != ownerA || fix.storedSequence(t) != 1 {
+	if !reflect.DeepEqual(fix.store.members["a"], ownerA) ||
+		fix.storedSequence(t) != 1 {
 		t.Errorf("retry did not apply: %v", fix.store.members)
 	}
 }
@@ -512,7 +518,8 @@ func TestReceiverRepairsTheRosterAfterLosingItsLease(t *testing.T) {
 	if code := fix.post(fix.token(t, 3, roster.Active, renamed)); code != 409 {
 		t.Fatalf("status = %d, want 409", code)
 	}
-	if len(fix.store.members) != 1 || fix.store.members["b"] != memberB {
+	if len(fix.store.members) != 1 ||
+		!reflect.DeepEqual(fix.store.members["b"], memberB) {
 		t.Errorf("store = %v, want only b: the stale write survived",
 			fix.store.members)
 	}

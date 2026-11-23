@@ -314,6 +314,11 @@
           "blurb": "The SQLite dialector, and the double-registration panic it avoids."
         },
         {
+          "slug": "reference/granttoken",
+          "label": "granttoken",
+          "blurb": "Root-signed bearer tokens that let an agent act for one person on a hosted site."
+        },
+        {
           "slug": "reference/handoff",
           "label": "handoff",
           "blurb": "Sign members in to an instance by way of the root app."

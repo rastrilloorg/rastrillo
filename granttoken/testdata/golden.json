@@ -1,0 +1,17 @@
+{
+  "claims": {
+    "v": 1,
+    "iss": "https://root.example.com",
+    "aud": "https://acme.example.com",
+    "kid": "key_1",
+    "sub": "person_1",
+    "gid": "grant_1",
+    "agent": "Claude",
+    "access": "write",
+    "iat": 1700000000,
+    "exp": 1707776000
+  },
+  "now": 1700000000,
+  "publicKey": "BPeVZ5uO_m0R1DoOoNGTWnA7cBsnFRYxC52G-LTNqpIvBMVJWsHGlcX_b_U559gs5_Mp4Rcj7G46gjRjnmy4-7Q",
+  "token": "rastrillo_grant_eyJ2IjoxLCJpc3MiOiJodHRwczovL3Jvb3QuZXhhbXBsZS5jb20iLCJhdWQiOiJodHRwczovL2FjbWUuZXhhbXBsZS5jb20iLCJraWQiOiJrZXlfMSIsInN1YiI6InBlcnNvbl8xIiwiZ2lkIjoiZ3JhbnRfMSIsImFnZW50IjoiQ2xhdWRlIiwiYWNjZXNzIjoid3JpdGUiLCJpYXQiOjE3MDAwMDAwMDAsImV4cCI6MTcwNzc3NjAwMH0.z9KG9xG23H1PZGZxulAVz2EsHOAi9iz4pzC2o9zCs_Mxa6TD3pdIXqqdHJl6Xpd_jmR49cxBt0QE3COh77pBWA"
+}

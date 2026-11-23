@@ -1,6 +1,6 @@
 # 🤖 roster
 
-Use `roster` to keep an instance's member list in step with the root app. The root sends a signed snapshot of the whole roster, and the instance applies it to its own tables. A snapshot says who belongs and whether the instance is active. It carries no credentials, so a member still signs in through [`handoff`](/docs/reference/handoff).
+Use `roster` to keep an instance's member list in step with the root app. The root sends a signed snapshot of the whole roster, and the instance applies it to its own tables. A snapshot says who belongs and whether the instance is active. It carries no credentials, only the IDs of the agent grants each member holds, so a member still signs in through [`handoff`](/docs/reference/handoff).
 
 `amadan.net/rastrillo/rastrillo/roster`
 
@@ -69,9 +69,9 @@ receiver, err := roster.New(roster.Config{
 })
 ```
 
-The row then holds only each member's subject and role. Your `Store` still gets every field. To avoid storing the email, drop it in your `Store` too. Set the option in every process that shares the database: a receiver without it writes emails into the row again.
+The row then holds only each member's subject, role, and grant IDs. Your `Store` still gets every field. To avoid storing the email, drop it in your `Store` too. Set the option in every process that shares the database: a receiver without it writes emails into the row again.
 
-A repair from such a row restores who belongs and each member's role. It keeps the email and name your `Store` already has. A member added back by the repair has no email or name until the next snapshot. Any email or name changed by the stale apply also remains until that snapshot. The repaired row contains no emails, even if this receiver does not set `RecordRolesOnly`.
+Repairing from such a row restores the member list, each member's role, and each member's grant IDs, so revoked grants stay revoked. It keeps the email and name your `Store` already has. A member added back by the repair has no email or name until the next snapshot. Any email or name changed by the stale apply also remains until that snapshot. The repaired row contains no emails, even if this receiver does not set `RecordRolesOnly`.
 
 If the row already holds emails, it is rewritten without them the next time a snapshot is applied. To rewrite the row immediately, have the root send the current snapshot again. This removes emails from the row. The old bytes can remain in the database file, its write-ahead log and any existing backups.
 
@@ -113,6 +113,7 @@ const (
 
 type Member struct {
 	Subject, Email, Name, Role string
+	Grants                     []string `json:"grants,omitempty"`
 }
 
 type Snapshot struct {
@@ -133,6 +134,24 @@ func (v *Verifier) Verify(token string, now time.Time) (Snapshot, error)
 `Origin` is empty, or `https://` and a lower-case host with no port, path, query or user info. It cannot be the issuer's origin. `Sign` and `Verify` refuse anything else with `ErrClaims`. An empty `Origin` is left out of the token, so a snapshot without one has the same bytes as before. `Verify` refuses fields it does not know, so a receiver older than this field refuses a snapshot that sets it. Upgrade every instance before the root sends an origin.
 
 `Verify` checks the signature, issuer, audience and lifetime. It does not compare sequences; the receiver does.
+
+## Grants
+
+```go
+func (r *Receiver) GrantActive(ctx context.Context, subject, grant string) (bool, error)
+```
+
+`Member.Grants` lists the IDs of the agent grants a member holds. A grant token is valid only while its ID is in the latest snapshot, so ending a grant at the root cuts the agent off when the site applies the next snapshot. See [granttoken](/docs/reference/granttoken). Each ID is at most 64 characters, each member can hold at most 64 grants, and no ID can appear twice in one snapshot, even under two members. `GrantActive` reports whether the latest applied snapshot lists the grant under that subject on an active instance. It is false before any snapshot and while the instance is suspended.
+
+The `Store` keeps no grants. The receiver keeps them in its own row, and passes them to `Put` only when it has to write the member for another reason. A snapshot that changes only a member's grants does not call `Store.Put`.
+
+`Member` holds a slice, so it is no longer comparable with `==`. Compare the fields you need.
+
+A snapshot with no grants signs the same bytes as before. A receiver older than v0.47.0 refuses a snapshot that holds `grants`, and the root does not retry a refused snapshot. Upgrade in this order:
+
+1. Release Rastrillo v0.47.0.
+2. Deploy every hosted site on it.
+3. Only then let the root put grant IDs in snapshots.
 
 ## Errors
 

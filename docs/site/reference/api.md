@@ -85,6 +85,8 @@ A `Verifier` names the caller. When it cannot, wrap `ErrUnauthorized` or
 `ErrUnavailable` in the error it returns. The actor it returns must have
 a `Credential` and an `Access`, or the answer is 500.
 
+Rastrillo has two `Verifier`s for agents. `apitoken.Store` checks the app's own tokens, and `granttoken.Door` checks the root's grant tokens on a hosted site. `Door.Or` combines them into one. See [apitoken](/docs/reference/apitoken) and [granttoken](/docs/reference/granttoken).
+
 An agent may send `Agent-Session` and `Agent-Harness`. They are read only
 for an agent's token, and copied to `Actor.Session` and `Actor.Harness`.
 Each must be 200 bytes or fewer, with no control characters, or the

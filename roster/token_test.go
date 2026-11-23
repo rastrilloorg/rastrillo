@@ -27,8 +27,9 @@ func goodSnapshot() Snapshot {
 		KeyID: "key_1", Sequence: 7, IssuedAt: issuedAt,
 		ExpiresAt: issuedAt + 300, State: Active,
 		Members: []Member{
-			{"person_1", "ada@example.com", "Ada Lovelace", "owner"},
-			{"person_2", "", "", "member"},
+			{Subject: "person_1", Email: "ada@example.com",
+				Name: "Ada Lovelace", Role: "owner"},
+			{Subject: "person_2", Role: "member"},
 		},
 	}
 }

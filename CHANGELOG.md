@@ -10,6 +10,17 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+**Upgrade order: sites first, then the root sends grants.** A receiver older than v0.47.0 refuses a roster snapshot that holds `grants`, and the root does not retry a refused snapshot. Release v0.47.0, deploy every hosted site on it, and only then let the root put grant IDs in snapshots. A snapshot with no grants is unchanged, so old sites still accept it.
+
+**`roster.Member` is no longer comparable with `==`.** It gained a `Grants` slice. Code that compares members with `==`, or uses one as a map key, no longer compiles. Compare the fields you need.
+
+### Added: grant tokens
+
+- `granttoken` lets an agent act for one person on one hosted site. The root signs a bearer token that names the person, the agent, the site and read or write access. Build a verifier with `granttoken.NewVerifier`, make a door with `NewDoor`, and set `door.Or(tokens)` as `api.Config.Verify` and its `Redact` as `api.Config.Redact`. See [granttoken](/docs/reference/granttoken).
+- `roster.Member` gains `Grants`, the IDs of the grants a person holds, and `Receiver.GrantActive` says whether one is still listed. Ending a grant at the root cuts the agent off when the site applies the next snapshot. `Store.Put` is not called when only a member's grants change.
+- `Actor.String` shows a grant token's actor as `agent:<agent> for user:<sub> grant:<gid>`.
+- `handofftest.Root.GrantToken` signs a grant token for tests.
+
 ## v0.46.0
 
 With the new `oauth` package, a person can connect Claude Code, Codex,
