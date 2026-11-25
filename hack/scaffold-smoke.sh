@@ -48,6 +48,21 @@ go vet ./...
 # build and vet stayed green, because nothing ran it.
 make staticcheck
 make govulncheck
+# go fix and golangci-lint: green on the scaffold, red on an ignored
+# error, so a lane that quietly checks nothing cannot pass.
+make fix-check
+make lint
+printf 'package smokeapp\n\nimport "os"\n\nfunc leak() { os.Remove("x") }\n' \
+	>internal/smokeapp/leak.go
+if out=$(make lint 2>&1); then
+	echo "scaffold-smoke: make lint passed an unchecked error"
+	exit 1
+fi
+case "$out" in
+*'`os.Remove` is not checked (errcheck)'*) ;;
+*) echo "scaffold-smoke: make lint failed without errcheck's finding:"; echo "$out"; exit 1 ;;
+esac
+rm internal/smokeapp/leak.go
 # Before git init the app has no history, so gitleaks has nothing to scan
 # and says so. Then commit the scaffold and scan it for real: a fresh app
 # must not carry anything the default rules call a secret.

@@ -42,10 +42,14 @@ func TestNewScaffoldsCIAndManifest(t *testing.T) {
 		t.Fatalf("runNew: %v", err)
 	}
 
-	steps := []string{".amadan/ci", ".amadan/ci.d/10-vet", ".amadan/ci.d/15-budget", ".amadan/ci.d/20-fmt",
-		".amadan/ci.d/25-staticcheck", ".amadan/ci.d/26-govulncheck", ".amadan/ci.d/27-gitleaks",
-		".amadan/ci.d/30-test", ".amadan/ci.d/35-perf"}
-	for _, rel := range append([]string{"Makefile", "CLAUDE.md", "manifest/README.md", ".rastrillo/budgets.txt"}, steps...) {
+	steps := []string{".amadan/ci"}
+	for _, step := range strings.Fields("10-vet 15-budget 20-fmt 21-fix " +
+		"25-staticcheck 26-govulncheck 27-gitleaks 28-lint 30-test 35-perf") {
+		steps = append(steps, ".amadan/ci.d/"+step)
+	}
+	root := []string{"Makefile", "CLAUDE.md", "manifest/README.md",
+		".rastrillo/budgets.txt", ".golangci.yml"}
+	for _, rel := range append(root, steps...) {
 		if _, err := os.Stat(filepath.Join("demoapp", rel)); err != nil {
 			t.Errorf("scaffold missing %s: %v", rel, err)
 		}
@@ -87,6 +91,8 @@ func TestNewScaffoldsCIAndManifest(t *testing.T) {
 		}
 	}
 	for _, pin := range []string{
+		"github.com/golangci/golangci-lint/v2/cmd/golangci-lint@" +
+			golangciLintVersion,
 		"golang.org/x/vuln/cmd/govulncheck@" + govulncheckVersion,
 		"github.com/zricethezav/gitleaks/v8@" + gitleaksVersion,
 		"export GOTOOLCHAIN = " + goToolchain + "\n",
@@ -665,6 +671,15 @@ func TestGatePinsMatchRastrillosGate(t *testing.T) {
 // whole gate offline, returning the gate's output.
 func scaffoldGate(t *testing.T, args ...string) string {
 	t.Helper()
+	// make lint's golangci-lint is the one pin rastrillo's own gate does
+	// not run, so nothing else puts it in the cache read below. -n
+	// fetches its modules and builds nothing.
+	lint := "github.com/golangci/golangci-lint/v2/cmd/golangci-lint@" +
+		golangciLintVersion
+	if out, err := exec.Command("go", "install", "-n", lint).
+		CombinedOutput(); err != nil {
+		t.Fatalf("go install -n %s: %v\n%s", lint, err, out)
+	}
 	setSandboxGoEnv(t)
 	root := repoRoot(t)
 	t.Chdir(t.TempDir())
@@ -734,7 +749,7 @@ func scaffoldGate(t *testing.T, args ...string) string {
 	}
 	for _, lane := range []string{"budget code: within the limits.",
 		"cmd/rastrillo routes --check\n",
-		"csp: nothing the CSP drops"} {
+		"csp: nothing the CSP drops", "0 issues.\n"} {
 		if !strings.Contains(string(out), lane) {
 			t.Errorf("make ci ran no %q:\n%s", lane, out)
 		}

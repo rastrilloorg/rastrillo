@@ -92,10 +92,12 @@ The rest, and what each gate message means:
 
 ## The gate
 
-- `make ci` runs vet, gofmt, staticcheck, govulncheck, gitleaks, the
-  budgets, `make code`, `make routes` (every action is mounted), the
-  tests (`TestModelsMatchMigrations` is the migration check), perf and
-  the generate check, as CI does. Run it before every push. If that is
+- `make ci` runs vet, gofmt, `go fix -diff` (`go fix -tags
+  browser,perf ./...` applies it), staticcheck, golangci-lint
+  (`.golangci.yml`), govulncheck, gitleaks, the budgets, `make code`,
+  `make routes` (every action is mounted), the tests
+  (`TestModelsMatchMigrations` is the migration check), perf and the
+  generate check, as CI does. Run it before every push. If that is
   too slow, a budget has failed: fix it, never skip the gate. While
   editing: `go test -short ./...`.
 - Budgets: 5,000 source and 8,000 test lines per directory, 10s per

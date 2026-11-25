@@ -18,7 +18,7 @@ VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null)
 # One target at a time: the perf lane measures time.
 .NOTPARALLEL:
 
-.PHONY: build release version-check test vet fmt-check staticcheck govulncheck gitleaks budget code routes csp perf generate-check ci
+.PHONY: build release version-check test vet fmt-check fix-check staticcheck lint govulncheck gitleaks budget code routes csp perf generate-check ci
 
 # Needs only Go on PATH, through go.mod's tool line.
 RASTRILLO := go run amadan.net/rastrillo/rastrillo/cmd/rastrillo
@@ -78,16 +78,25 @@ vet:
 fmt-check:
 	@out=$$(gofmt -l .); if [ -n "$$out" ]; then echo "gofmt needed:"; echo "$$out"; exit 1; fi
 
+fix-check:
+	@go fix -tags browser,perf -diff ./... || { echo "go fix needed: run go fix -tags browser,perf ./..."; exit 1; }
+
 # At a version, not a tool line, which would move the app's own modules.
 # Raise it with the go directive. The cache: a runner's ~/.cache may be
 # read-only.
 STATICCHECK := honnef.co/go/tools/cmd/staticcheck@%[2]s
 ifneq ($(filter /%%,$(firstword $(GOCACHE))),)
 export STATICCHECK_CACHE ?= $(GOCACHE)/staticcheck
+export GOLANGCI_LINT_CACHE ?= $(GOCACHE)/golangci-lint
 endif
 
 staticcheck:
 	go run $(STATICCHECK) -tags browser,perf ./...
+
+# .golangci.yml lists the linters and explains why there are only a few.
+GOLANGCI_LINT := github.com/golangci/golangci-lint/v2/cmd/golangci-lint@%[6]s
+lint:
+	go run $(GOLANGCI_LINT) run ./...
 
 # The live database, so it can fail with no change here. Fix a module in
 # go.mod, the standard library with GOTOOLCHAIN.
@@ -108,4 +117,4 @@ generate-check:
 	$(RASTRILLO) generate --check
 
 # The one gate. .amadan/ci.d/ runs it a step per target: add to both.
-ci: vet fmt-check staticcheck govulncheck gitleaks budget code routes csp test perf generate-check
+ci: vet fmt-check fix-check staticcheck lint govulncheck gitleaks budget code routes csp test perf generate-check

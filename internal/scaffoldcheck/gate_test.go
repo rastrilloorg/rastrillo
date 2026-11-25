@@ -13,6 +13,10 @@ var requiredLanes = map[string]string{
 	"code":   "$(RASTRILLO) budget code",
 	"routes": "$(RASTRILLO) routes --check",
 	"csp":    "$(RASTRILLO) csp",
+	"fix-check": "@go fix -tags browser,perf -diff ./... || " +
+		"{ echo \"go fix needed: run go fix -tags browser,perf ./...\"; " +
+		"exit 1; }",
+	"lint": "go run $(GOLANGCI_LINT) run ./...",
 }
 
 // make ci and the runner's steps are one gate: a lane in one and not the

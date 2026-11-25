@@ -41,7 +41,7 @@ var taken = strings.Fields(`
 	mailer main method migrate modeldiff mux name navigateAs newApp
 	newAppWithMail
 	nil ok opener
-	options origin originFrom os outbox page path perftest post postOver
+	options origin originFrom os outbox page panic path perftest post postOver
 	powtest rastrillo recorder regexp request response rig router routes
 	schema send servingOptions sessions signedInTokenPage signIn
 	signInOver signins signinStore skip slog started staticDir step

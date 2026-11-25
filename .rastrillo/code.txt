@@ -3946,9 +3946,9 @@ columns cmd/rastrillo/new.go e8154254ee71 1
 columns cmd/rastrillo/new.go e9429fea88d9 1
 columns cmd/rastrillo/new.go ef2901dc0d45 1
 columns cmd/rastrillo/new.go f9075270659b 1
-file cmd/rastrillo/new.go - 527 lowered from 546 by scaffold shapes, which moved new.go's flag usage line to shapes.go and writes the tests into the app's own directory; raised from 541 by 2 when the migration check became the app's migrations_test.go, which writeSingle writes in place of the Makefile step
+file cmd/rastrillo/new.go - 533 raised from 527 by 6 when make ci gained go fix and golangci-lint: writeSingle writes .golangci.yml and passes the lint pin to the Makefile, its two ci.d steps and the summary line name the lanes, and the pin joins the const block; lowered from 546 by scaffold shapes, which moved new.go's flag usage line to shapes.go and writes the tests into the app's own directory; raised from 541 by 2 when the migration check became the app's migrations_test.go, which writeSingle writes in place of the Makefile step
 func cmd/rastrillo/new.go runNew 48 lowered from 235 by scaffold shapes, which moved its writing into writeSingle; it reads the flags every shape shares
-func cmd/rastrillo/new.go writeSingle 171 main's runNew body, moved by scaffold shapes so that bare and accounts share runNew's flags and refusals, less its separate test directory; owed the same split runNew was. Raised from 175 by 3: it writes migrations_test.go (2 lines), and the summary's test-files line pads its continuation to the package name's width (1 line)
+func cmd/rastrillo/new.go writeSingle 174 main's runNew body, moved by scaffold shapes so that bare and accounts share runNew's flags and refusals, less its separate test directory; owed the same split runNew was. Raised from 175 by 3: it writes migrations_test.go (2 lines), and the summary's test-files line pads its continuation to the package name's width (1 line). Raised from 171 by 3 when make ci gained go fix and golangci-lint: it writes .golangci.yml (1), passes the lint pin to the Makefile (1), and the summary line naming the lanes wraps once more (1)
 names cmd/rastrillo/new.go scaffoldFile/b 1
 columns cmd/rastrillo/new_scaffold_test.go 021618c81aba 1
 columns cmd/rastrillo/new_scaffold_test.go 031c8d38c56a 1
@@ -3960,7 +3960,6 @@ columns cmd/rastrillo/new_scaffold_test.go 0d56bd5f1bc5 1
 columns cmd/rastrillo/new_scaffold_test.go 0ecd732d0565 1
 columns cmd/rastrillo/new_scaffold_test.go 0fd0a6ec8135 1
 columns cmd/rastrillo/new_scaffold_test.go 1023bce446be 1
-columns cmd/rastrillo/new_scaffold_test.go 10838d23a3fa 1
 columns cmd/rastrillo/new_scaffold_test.go 12dafda4666f 1
 columns cmd/rastrillo/new_scaffold_test.go 16e674e1f54b 1
 columns cmd/rastrillo/new_scaffold_test.go 1bc3308a438d 1
@@ -4017,7 +4016,6 @@ columns cmd/rastrillo/new_scaffold_test.go 891996155b8f 1
 columns cmd/rastrillo/new_scaffold_test.go 8b7e703f5595 1
 columns cmd/rastrillo/new_scaffold_test.go 8e058499b1b3 1
 columns cmd/rastrillo/new_scaffold_test.go 90b3b3851389 1
-columns cmd/rastrillo/new_scaffold_test.go 94210da5e5ca 1
 columns cmd/rastrillo/new_scaffold_test.go 9529b36dd4e2 1
 columns cmd/rastrillo/new_scaffold_test.go 95cfa5abf2e6 1
 columns cmd/rastrillo/new_scaffold_test.go 979544f7f3e0 1
@@ -4064,7 +4062,6 @@ columns cmd/rastrillo/new_scaffold_test.go f0846a8c852f 1
 columns cmd/rastrillo/new_scaffold_test.go f0e9528d06d8 1
 columns cmd/rastrillo/new_scaffold_test.go f115a101f6a1 1
 columns cmd/rastrillo/new_scaffold_test.go f1ea7d184ea8 1
-columns cmd/rastrillo/new_scaffold_test.go f213880b2ed7 1
 columns cmd/rastrillo/new_scaffold_test.go f3237f06f7f1 1
 columns cmd/rastrillo/new_scaffold_test.go f7bca17cd655 1
 columns cmd/rastrillo/new_scaffold_test.go f8d8d5d714ec 1

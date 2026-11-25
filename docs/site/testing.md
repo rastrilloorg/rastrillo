@@ -66,9 +66,9 @@ Tito Go a fresh database took 207ms and a copy took 2.5ms, and a package of
 make ci
 ```
 
-runs vet, gofmt, staticcheck, govulncheck, gitleaks, `budget`, `code`,
-`routes`, `csp`, `test`, `perf` and `rastrillo generate --check`, in that
-order. It is the one gate definition: `.amadan/ci` and `.amadan/ci.d/`
+runs vet, gofmt, `go fix -diff`, staticcheck, golangci-lint, govulncheck,
+gitleaks, `budget`, `code`, `routes`, `csp`, `test`, `perf` and
+`rastrillo generate --check`, in that order. It is the one gate definition: `.amadan/ci` and `.amadan/ci.d/`
 are executable steps that call the same Makefile targets, so the CI
 runner and your terminal cannot disagree about what passing means.
 
@@ -76,6 +76,14 @@ staticcheck runs at a pinned version through `go run`, so there is nothing
 to install. Raise that version in the Makefile when you raise the `go`
 line in go.mod: a staticcheck older than your Go does not know that
 release's deprecations, and says nothing about them.
+
+`go fix` fails the gate when it would update code for a newer Go
+release, such as replacing a loop with `slices.Contains`. `go fix -tags browser,perf
+./...` applies the changes. golangci-lint runs four linters, listed in
+`.golangci.yml`: errcheck, errorlint, forcetypeassert and wastedassign.
+In apps written by agents, these linters found real mistakes without
+false alarms. errcheck ignores `Close` and `WriteTo` because there is
+usually no one to report their failures to.
 
 govulncheck reports only the vulnerabilities your code can reach, and it reads a live database, so the gate can go red with no change of yours. Fix a module finding by raising that requirement in go.mod, and a standard-library one by raising `GOTOOLCHAIN` in the Makefile: it names the Go release both the gate and `make release` use.
 

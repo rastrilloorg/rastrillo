@@ -32,14 +32,22 @@ import (
 // review added 1,118 more: with no instance key the app leaves the
 // authenticator off and says so, and a test checks it, while the
 // tests' TestMain sets a key (5,052 in all).
+//
+// lintGate is the third: make ci gained go fix and golangci-lint
+// (bench/agent/results/lint-sweep-groomer.md), with both apps at their
+// limits. .golangci.yml (491), the two lanes in the Makefile and their
+// ci.d steps (462), AGENTS.md naming them (100), and the scaffold's own
+// tests passing them (191: closeAll's error checked, a strings.Builder
+// for go fix): 1,244. magicapp's TestMain also checks os.Setenv (40).
 var before = map[string]struct {
-	total, agents, cutPercent, migrationCheck, defaultSignin int
+	total, agents, cutPercent, migrationCheck, defaultSignin,
+	lintGate int
 }{
 	// plainapp was 41 bytes under its limit, so 508 of the 549 went over.
-	"plainapp": {73438, 6536, 25, 508, 0},
+	"plainapp": {73438, 6536, 25, 508, 0, 1244},
 	// magicapp was already 495 bytes under its limit, so only 54 of the
 	// 549 went over.
-	"magicapp": {91400, 7360, 19, 54, 5052},
+	"magicapp": {91400, 7360, 19, 54, 5052, 1284},
 }
 
 // iconGrowth is the code, not prose, that Fiesta 1.4.0's icons added to
@@ -58,13 +66,13 @@ func TestNewAppsReadInFewerBytes(t *testing.T) {
 		was := before[variant.name]
 		total := bytesToRead(t, directory)
 		limit := was.total*(100-was.cutPercent)/100 + iconGrowth +
-			was.migrationCheck + was.defaultSignin
+			was.migrationCheck + was.defaultSignin + was.lintGate
 		if total > limit {
 			t.Errorf("%s: %d bytes outside gen/ and static/, over %d, "+
-				"%d%% less than %d, %d for the migration check and %d "+
-				"for the default sign-in", variant.name, total, limit,
-				was.cutPercent, was.total, was.migrationCheck,
-				was.defaultSignin)
+				"%d%% less than %d, %d for the migration check, %d "+
+				"for the default sign-in and %d for the lint gate",
+				variant.name, total, limit, was.cutPercent, was.total,
+				was.migrationCheck, was.defaultSignin, was.lintGate)
 		}
 		agents := len(readFile(t, filepath.Join(directory, "AGENTS.md")))
 		if limit := was.agents + 1000; agents > limit {

@@ -21,9 +21,10 @@ func TestModelsMatchMigrations(t *testing.T) {
 	if len(changes) == 0 {
 		return
 	}
-	message := "models and migrations disagree:\n"
+	var message strings.Builder
+	message.WriteString("models and migrations disagree:\n")
 	for _, change := range changes {
-		message += "  " + strings.TrimSpace(change.SQL) + "\n"
+		message.WriteString("  " + strings.TrimSpace(change.SQL) + "\n")
 	}
-	t.Fatal(message + "\nrun: rastrillo migration generate")
+	t.Fatal(message.String() + "\nrun: rastrillo migration generate")
 }

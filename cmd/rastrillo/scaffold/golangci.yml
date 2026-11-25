@@ -1,0 +1,14 @@
+# Few on purpose: each found real defects without false alarms in apps
+# written by agents (rastrillo's bench/agent/results/lint-sweep-groomer.md).
+version: "2"
+run:
+  build-tags: [browser, perf]
+linters:
+  default: none
+  enable: [errcheck, errorlint, forcetypeassert, wastedassign]
+  exclusions:
+    rules:
+      # There is usually no one to tell when a Close, or a WriteTo to the
+      # client, fails.
+      - linters: [errcheck]
+        text: "`[^`]*\\.(Close|WriteTo)` is not checked"

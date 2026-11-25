@@ -10,6 +10,11 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+### Changed: go fix and golangci-lint in a new app's gate
+
+- `rastrillo new` adds two lanes to `make ci` and `.amadan/ci.d/`. `fix-check` fails when `go fix` would change the code; `go fix -tags browser,perf ./...` applies the changes. `lint` runs golangci-lint v2.15.0 with errcheck, errorlint, forcetypeassert and wastedassign, set in the new `.golangci.yml`. errcheck ignores `Close` and `WriteTo`. To add these lanes to an existing app, copy the two targets, their steps and `.golangci.yml` from a fresh scaffold.
+- The scaffold passes both lanes. Its perf test checks the error from `closeAll`, the sign-in tests' `TestMain` checks the one from `os.Setenv`, and the migration check builds its message with a `strings.Builder`.
+
 ## v0.47.0
 
 **Upgrade order: sites first, then the root sends grants.** A receiver older than v0.47.0 refuses a roster snapshot that holds `grants`, and the root does not retry a refused snapshot. Release v0.47.0, deploy every hosted site on it, and only then let the root put grant IDs in snapshots. A snapshot with no grants is unchanged, so old sites still accept it.

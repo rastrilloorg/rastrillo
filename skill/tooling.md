@@ -16,7 +16,8 @@ docs/site/templates.md
 `rastrillo generate` writes `gen/` and `api/v1.json` from `manifest/`:
 commit both, never hand-edit; `make ci` runs `generate --check`
 (an app made before it: add a `generate-check` target to `ci`). `make ci` also runs
-staticcheck, govulncheck and gitleaks, pinned in the Makefile along with
+`go fix -diff` (`go fix -tags browser,perf ./...` applies it), and
+golangci-lint, staticcheck, govulncheck and gitleaks, pinned in the Makefile along with
 the Go release (`GOTOOLCHAIN`); raise the tool pins with the go
 directive, and `GOTOOLCHAIN` with each Go security release. `rastrillo
 dev` watches, regenerates, rebuilds and restarts.

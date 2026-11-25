@@ -181,7 +181,9 @@ func writeSingle(options newOpts) error {
 	files[atRoot("manifest", "app.toml")] = fmt.Sprintf(appTOMLTemplate,
 		code)
 	files[atRoot("Makefile")] = fmt.Sprintf(makefileTemplate, name,
-		staticcheckVersion, govulncheckVersion, gitleaksVersion, goToolchain)
+		staticcheckVersion, govulncheckVersion, gitleaksVersion, goToolchain,
+		golangciLintVersion)
+	files[atRoot(".golangci.yml")] = scaffoldFile("golangci.yml")
 	files[atRoot(".gitignore")] = fmt.Sprintf(gitignoreTemplate, name)
 	// AGENTS.md carries the instructions, for whatever agent someone
 	// uses; CLAUDE.md is an @AGENTS.md import and nothing else.
@@ -259,9 +261,10 @@ func writeSingle(options newOpts) error {
 		"  %*s browser_test.go runs with go test -tags browser ./...)\n",
 		tests, len(tests)+1, "")
 	fmt.Println("  manifest/            (the declarative path: drop a <name>.toml here, see its README)")
-	fmt.Println("  Makefile             (make ci = vet + fmt + staticcheck + " +
-		"govulncheck + gitleaks + budget + code + routes + csp + test + " +
-		"perf + generate check, the one gate definition;")
+	fmt.Println("  Makefile             (make ci = vet + fmt + go fix + " +
+		"staticcheck + lint + govulncheck + gitleaks + budget + code + " +
+		"routes + csp + test + perf + generate check, the one gate " +
+		"definition;")
 	fmt.Println("                        make release = the stripped binary)")
 	fmt.Println("  .gitignore           (build output and the local database)")
 	fmt.Println("  .amadan/ci, ci.d/    (amadan runner CI, executable, delegating to make)")
@@ -491,11 +494,13 @@ const staticcheckVersion = "v0.8.2"
 
 // govulncheckVersion, gitleaksVersion and goToolchain are the scaffold's
 // copies of the other pins in rastrillo's own Makefile, held to them by
-// TestGatePinsMatchRastrillosGate.
+// TestGatePinsMatchRastrillosGate. golangciLintVersion has no copy there,
+// as rastrillo's gate does not run it: raise it with goToolchain's minor.
 const (
-	govulncheckVersion = "v1.8.0"
-	gitleaksVersion    = "v8.30.1"
-	goToolchain        = "go1.26.11"
+	govulncheckVersion  = "v1.8.0"
+	gitleaksVersion     = "v8.30.1"
+	goToolchain         = "go1.26.11"
+	golangciLintVersion = "v2.15.0"
 )
 
 const gitignoreTemplate = `# Build output and the local database.
@@ -515,8 +520,9 @@ exec make ci
 var runnerSteps = []struct{ file, target string }{
 	{"10-vet", "vet"}, {"15-budget", "budget"}, {"16-code", "code"},
 	{"17-routes", "routes"}, {"18-csp", "csp"}, {"20-fmt", "fmt-check"},
-	{"25-staticcheck", "staticcheck"}, {"26-govulncheck", "govulncheck"},
-	{"27-gitleaks", "gitleaks"}, {"30-test", "test"}, {"35-perf", "perf"},
+	{"21-fix", "fix-check"}, {"25-staticcheck", "staticcheck"},
+	{"26-govulncheck", "govulncheck"}, {"27-gitleaks", "gitleaks"},
+	{"28-lint", "lint"}, {"30-test", "test"}, {"35-perf", "perf"},
 	{"45-generate-check", "generate-check"},
 }
 

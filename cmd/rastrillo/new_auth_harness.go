@@ -29,8 +29,9 @@ func (edit *magicAuth) harness() {
 	edit.swap(harness, "func TestMain(suite *testing.M) {\n",
 		edit.fill("func TestMain(suite *testing.M) {\n"+
 			"\t// A lasting key, as a deployment sets, turns every way on.\n"+
-			"\tos.Setenv(\"__ENV___INSTANCE_KEY\",\n"+
-			"\t\t\"a key for tests, not a secret\")\n"))
+			"\tif err := os.Setenv(\"__ENV___INSTANCE_KEY\",\n"+
+			"\t\t\"a key for tests, not a secret\"); err != nil {\n"+
+			"\t\tpanic(err)\n\t}\n"))
 	edit.importAfter(harness, `"amadan.net/rastrillo/rastrillo/db"`,
 		"background")
 	browser := filepath.Join(edit.appDir, "browser_test.go")

@@ -40,7 +40,11 @@ func TestPerfScreens(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer closeAll()
+	defer func() {
+		if err := closeAll(); err != nil {
+			t.Error(err)
+		}
+	}()
 	perftest.Screens(t, perftest.ScreenConfig{Routes: router, Handler: handler})
 }
 
@@ -72,7 +76,8 @@ func boot(path string) (http.Handler, func(), error) {
 		database.Close()
 		return nil, nil, err
 	}
-	return handler, func() { closeAll(); database.Close() }, nil
+	// The child exits after this, so no one can report a close failure.
+	return handler, func() { _ = closeAll(); database.Close() }, nil
 }
 
 // servingOptions are main.go's, so the lane measures what is served.
