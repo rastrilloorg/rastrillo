@@ -74,7 +74,7 @@ var migrationFS embed.FS
 // The trap is baseline with no --through: it stamps every migration,
 // including 0002, so the backfill never runs and the rows in
 // auth_sessions are stranded — silently signing everyone out.
-var Schema = migrate.MustFromFS(migrationFS, "auth")
+var Schema = declare(migrate.MustFromFS(migrationFS, "auth"))
 
 // linkStore implements signin.LinkStore over the app database.
 type linkStore struct{ db *sql.DB }

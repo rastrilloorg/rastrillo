@@ -1,6 +1,6 @@
 +++
 title = "Post messages"
-files = ["internal/chat/models.go", "internal/chat/messages.go", "internal/chat/rooms.go", "internal/chat/handlers.go", "internal/chat/templates/room.html", "internal/chat/routes.go"]
+files = ["internal/chat/models.go", "internal/chat/migrations.go", "internal/chat/messages.go", "internal/chat/rooms.go", "internal/chat/handlers.go", "internal/chat/templates/room.html", "internal/chat/routes.go"]
 commands = ["rastrillo migration generate"]
 run = ["rastrillo migration generate"]
 check = "In a room, a message you send appears in the list, and an empty one is refused with a reason."
@@ -8,6 +8,9 @@ check = "In a room, a message you send appears in the list, and an empty one is 
 
 Each message belongs to a room and has a sender. Add `Message` to
 `models.go`, then generate its migration as you did for rooms.
+
+Declare `messages` in `migrations.go` as `Personal`. Erasing the sender
+deletes their messages.
 
 `messages.go` holds the rules: 1 to 500 characters, in a room that
 exists. The room page has the newest 100 messages, with the oldest at

@@ -27,6 +27,13 @@ var Fixed = []string{
 	"resultSchema", "listResultSchema", "noResultSchema",
 }
 
+// Store is every top-level name a gen/store package declares beside
+// sqlc's output. sqlc names its model for the table's singular, so a
+// resource whose singular is one of these declares it twice.
+// generate's TestStoreNamesMatchTheEmitter holds this list to
+// declare.go.
+var Store = []string{"Declaration"}
+
 // Pascal title-cases a snake_case name for a Go or sqlc identifier:
 // "ticket_types" -> "TicketTypes".
 func Pascal(name string) string {
@@ -66,6 +73,15 @@ func Taken(name string) string {
 	}
 	if p := Pascal(name); contains(ListResultMembers, p) {
 		return p
+	}
+	return ""
+}
+
+// StoreTaken reports the name in Store a resource's sqlc model would
+// collide with, or "".
+func StoreTaken(name string) string {
+	if single := Singular(name); contains(Store, single) {
+		return single
 	}
 	return ""
 }

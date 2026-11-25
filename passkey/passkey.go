@@ -99,7 +99,7 @@ var migrationFS embed.FS
 // single-use rows consumed by DELETE ... RETURNING. The half-session
 // and recovery-code tables this set once created are secondfactor's
 // now; its Schema adopts them (merge it after this one).
-var Schema = migrate.MustFromFS(migrationFS, "passkey")
+var Schema = declare(migrate.MustFromFS(migrationFS, "passkey"))
 
 // Config configures New. Sessions, DB and Origin are required.
 type Config struct {

@@ -88,7 +88,7 @@ manifest/ticket_types.toml:
                    SQL: statement,
                })
            }
-           return set
+           return set.Declare(ticket_typesstore.Declaration)
        }
 
    Keep it out of Schema: migration check diffs Schema against Models.

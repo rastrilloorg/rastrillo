@@ -173,6 +173,8 @@ func writeSingle(options newOpts) error {
 	files[inApp("perf_test.go")] = fmt.Sprintf(perfTestTemplate, name, pkg)
 	files[inApp("migrations_test.go")] = fmt.Sprintf(
 		scaffoldFile("migrations_test.go.tmpl"), name, pkg)
+	files[inApp("audit_test.go")] = fmt.Sprintf(
+		scaffoldFile("audit_test.go.tmpl"), name, pkg)
 	files[atRoot(".gitleaks.toml")] = scaffoldFile("gitleaks.toml")
 	files[atRoot(".rastrillo", "budgets.txt")] = budgetsTxtTemplate
 	files[atRoot("README.md")] = fmt.Sprintf(readmeTemplate, name, pkg, env)

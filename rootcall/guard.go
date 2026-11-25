@@ -28,7 +28,7 @@ var migrationFS embed.FS
 
 // Schema holds the table that remembers spent call IDs. Apply it with
 // migrate.Apply alongside the app's own migrations.
-var Schema = migrate.MustFromFS(migrationFS, "rootcall")
+var Schema = declare(migrate.MustFromFS(migrationFS, "rootcall"))
 
 // These carry no submitted values either, so a refusal is logged as is.
 var (

@@ -16,4 +16,4 @@ var migrationFS embed.FS
 // The table never holds a secret: only its SHA-256. A copy of the
 // database (a backup, a replica, a laptop) therefore hands nobody a
 // working token.
-var Schema = migrate.MustFromFS(migrationFS, "apitoken")
+var Schema = declare(migrate.MustFromFS(migrationFS, "apitoken"))

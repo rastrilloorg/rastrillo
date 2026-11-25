@@ -360,6 +360,10 @@ var coveredElsewhere = map[string]string{
 	// rastrillo.org's tours and their replay: the site renders them from
 	// cmd/tourgen's output, and the chat tour is their documentation.
 	"tour": "getting-started",
+	// Table declarations: the checker and the identity type belong with
+	// the page about declaring tables.
+	"audit":   "audit",
+	"privacy": "audit",
 }
 
 // localePackCoverage maps every generated CLDR locale pack under

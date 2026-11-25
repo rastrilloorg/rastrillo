@@ -27,7 +27,7 @@ var migrationFS embed.FS
 // in models.go, or `rastrillo migration new <name>` to write one by
 // hand. Migrations apply at boot and are never re-run or reversed:
 // never edit one that has shipped, add a new one instead.
-var Schema = migrate.MustFromFS(migrationFS, "notes")
+var Schema = declare(migrate.MustFromFS(migrationFS, "notes"))
 
 // genSchema wraps bookmarksstore.Migrations — the []string a manifest
 // resource still emits (internal/generate/store.go feeds
@@ -51,7 +51,7 @@ func genSchemaSet() *migrate.Set {
 	for i, stmt := range bookmarksstore.Migrations {
 		s.Add(migrate.Migration{ID: fmt.Sprintf("bookmarks_gen/%04d_init", i+1), SQL: stmt})
 	}
-	return s
+	return s.Declare(bookmarksstore.Declaration)
 }
 
 var genSchema = genSchemaSet()

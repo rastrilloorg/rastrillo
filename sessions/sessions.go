@@ -101,7 +101,7 @@ var migrationFS embed.FS
 // []string: the ledger records what ran, so these statements are no
 // longer re-executed on every boot. Tokens never touch this table:
 // only their SHA-256 hash is stored.
-var Schema = migrate.MustFromFS(migrationFS, "sessions")
+var Schema = declare(migrate.MustFromFS(migrationFS, "sessions"))
 
 // ErrPathRouted answers SignIn and RevokeOthers on the row-backed store
 // (Signed nil) under a base path or on its direct host. Every tenant on one origin

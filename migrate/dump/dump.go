@@ -15,6 +15,7 @@ import (
 	"fmt"
 	"os"
 
+	"amadan.net/rastrillo/rastrillo/audit"
 	"amadan.net/rastrillo/rastrillo/migrate"
 	"amadan.net/rastrillo/rastrillo/migrate/modeldiff"
 )
@@ -74,6 +75,17 @@ func Main(ms []migrate.Migration, boot []migrate.Migration, models []any) {
 		os.Exit(1)
 	}
 	if err := json.NewEncoder(os.Stdout).Encode(p); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+}
+
+// Exemptions is the body of the loader program `rastrillo audit
+// exemptions` runs. It prints the exemptions as JSON and leaves the
+// wording of each line to the CLI, so formatting lives in one place.
+func Exemptions(boot *migrate.Set) {
+	err := json.NewEncoder(os.Stdout).Encode(audit.Exemptions(boot))
+	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}

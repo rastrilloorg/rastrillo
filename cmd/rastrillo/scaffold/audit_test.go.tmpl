@@ -1,0 +1,15 @@
+package %[2]s_test
+
+import (
+	"testing"
+
+	"amadan.net/rastrillo/rastrillo/audit"
+
+	"%[1]s/internal/%[2]s"
+)
+
+// A table nobody declared is one erasure and export never reach.
+func TestTablesAreDeclared(t *testing.T) {
+	t.Parallel()
+	audit.CheckSchema(t, %[2]s.BootSchema)
+}

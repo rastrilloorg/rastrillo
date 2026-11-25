@@ -14,9 +14,9 @@ import (
 // manifest/README.md is followed by hand, so a step that no longer fits
 // the app's shape fails a person, not a build. This follows it as
 // written on both variants, the example resource and each step's commands
-// and code at the place its prose names; then the app's gates pass, and
-// its generated screens and API answer under one policy that refuses one
-// operation.
+// and code at the place its prose names; then the app's gates pass, its
+// generated screens and API answer under one policy that refuses one
+// operation, and its generated table is declared.
 func TestTheManifestRecipeServesAResourceUnderOnePolicy(t *testing.T) {
 	t.Parallel()
 	for _, variant := range variants {
@@ -47,7 +47,7 @@ func followTheRecipe(t *testing.T, variant variant) {
 	write(t, filepath.Join(directory, "internal", "recipeapp",
 		"recipe_extra_test.go"), policyTestFor(variant))
 	runTests(t, directory, "./internal/recipeapp/",
-		"TestThePagesAndTheAPIShareOnePolicy")
+		"TestThePagesAndTheAPIShareOnePolicy", "TestTablesAreDeclared")
 }
 
 // recipe is manifest/README.md cut into what a reader acts on: the

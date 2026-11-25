@@ -51,6 +51,9 @@ type Result struct {
 	// PostAdoption, which are exactly the ones adoption exists to let
 	// run.
 	Adopted bool
+	// Problems are declarations that disagree with the migrated
+	// schema. They are for the boot log and never fail Apply.
+	Problems []Problem
 }
 
 // Apply runs every migration in s that the ledger does not already
@@ -71,8 +74,14 @@ type Result struct {
 // is per-connection state and SQLite's twelve-step table rebuild
 // requires toggling it outside the transaction, so a pooled
 // connection would be a correctness bug, not just a slow path.
-func Apply(ctx context.Context, d WriterSource, s *Set) (Result, error) {
-	var res Result
+func Apply(
+	ctx context.Context, d WriterSource, s *Set,
+) (res Result, err error) {
+	defer func() {
+		if err == nil {
+			res.Problems = declarationProblems(ctx, d.Writer(), s)
+		}
+	}()
 	conn, err := d.Writer().Conn(ctx)
 	if err != nil {
 		return res, err
@@ -117,23 +126,33 @@ func Apply(ctx context.Context, d WriterSource, s *Set) (Result, error) {
 		}
 	}
 
-	for _, m := range migrations {
-		sum, ok := applied[m.ID]
+	return runPending(ctx, conn, migrations, applied, res)
+}
+
+// runPending runs the migrations the ledger has not recorded.
+func runPending(
+	ctx context.Context, conn *sql.Conn, migrations []Migration,
+	applied map[string]string, res Result,
+) (Result, error) {
+	for _, migration := range migrations {
+		sum, ok := applied[migration.ID]
 		if ok {
-			if m.SQL != "" && sum != Checksum(m.SQL) {
+			if migration.SQL != "" && sum != Checksum(migration.SQL) {
 				return res, fmt.Errorf(
-					"migrate: %s was applied with different SQL than the file now contains; "+
-						"migrations are immutable once applied — add a new one instead of editing this", m.ID)
+					"migrate: %s was applied with different SQL "+
+						"than the file now contains; migrations are "+
+						"immutable once applied — add a new one "+
+						"instead of editing this", migration.ID)
 			}
 			res.Skipped++
 			continue
 		}
-		didApply, err := runOne(ctx, conn, m)
+		didApply, err := runOne(ctx, conn, migration)
 		if err != nil {
-			return res, fmt.Errorf("migrate: %s: %w", m.ID, err)
+			return res, fmt.Errorf("migrate: %s: %w", migration.ID, err)
 		}
 		if didApply {
-			res.Applied = append(res.Applied, m.ID)
+			res.Applied = append(res.Applied, migration.ID)
 		} else {
 			res.Skipped++
 		}

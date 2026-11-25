@@ -1,6 +1,6 @@
 +++
 title = "Give rooms a table"
-files = ["internal/chat/models.go"]
+files = ["internal/chat/models.go", "internal/chat/migrations.go"]
 commands = ["rastrillo migration generate"]
 run = ["rastrillo migration generate"]
 check = "`internal/chat/migrations/` has a new file, `0002_create_rooms.sql`, and the dev server logs that it applied a migration."
@@ -9,6 +9,9 @@ check = "`internal/chat/migrations/` has a new file, `0002_create_rooms.sql`, an
 Chat happens in rooms, so rooms come first. A room is a row in the
 database, and you describe it with a model: add `Room` to `models.go`,
 and list it in `Models`.
+
+Declare the room table in `migrations.go` as `Shared`. Rooms don't
+belong to one person, and the tests fail if a table has no declaration.
 
 `Note` is the scaffold's example model. Leave it for now; removing it
 means changing the account page too.

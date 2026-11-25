@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -82,4 +84,44 @@ func TestAuthSigninWritesWhatAuthMagicWrites(t *testing.T) {
 func TestUnknownAuthNamesSignin(t *testing.T) {
 	refusedBeforeWriting(t, `unknown --auth "sigin": known kinds are `+
 		"none, signin, magic", "--auth=sigin")
+}
+
+// Sign-in gives notes an owner column, so the declaration that called
+// the table nobody's must say whose it is. ownerOf fills it from
+// auth.From's Address, which identityFrom (auth/handlers.go) sets to the
+// session subject: the address by default, but SubjectFor's ref or a
+// records-mode user id otherwise (TestSubjectForRemapsTheStoredSubject).
+// Declared as an address, erasure would look for the wrong identifier.
+func TestSigninDeclaresNotesAsTheOwnersData(t *testing.T) {
+	t.Chdir(t.TempDir())
+	for _, run := range [][]string{{"plain"}, {"--auth=signin", "owned"}} {
+		if err := runNew(run); err != nil {
+			t.Fatalf("rastrillo new %v: %v", run, err)
+		}
+	}
+	read := func(name string) string {
+		source, err := os.ReadFile(filepath.Join(name, "internal", name,
+			"migrations.go"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		return string(source)
+	}
+	if source := read("plain"); !strings.Contains(source,
+		"Kind: migrate.Shared") {
+		t.Errorf("plain: notes is not declared Shared:\n%s", source)
+	}
+	source := read("owned")
+	for _, want := range []string{"Kind: migrate.Personal",
+		`Owner: migrate.Subject("owner")`, "Erase: migrate.EraseRow",
+		"Export: true"} {
+		if !strings.Contains(source, want) {
+			t.Errorf("signin: notes' declaration has no %s:\n%s", want,
+				source)
+		}
+	}
+	if strings.Contains(source, "migrate.Address(") {
+		t.Errorf("signin: notes' owner is declared an address, but "+
+			"it holds the session subject:\n%s", source)
+	}
 }

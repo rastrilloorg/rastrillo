@@ -929,7 +929,7 @@ columns auth/auth.go e29553cd014f 1
 columns auth/auth.go ec14109dd65b 1
 columns auth/auth.go eda525fa5bef 1
 columns auth/auth.go edb224703a41 1
-file auth/auth.go - 661 the public-only keymail client branch in New; Config.Reader for the session lookups (#241); Config.SigninOneWay, the smart door; Config.Now and ErrNoUser refusal docs, raised from 646 when plaza-core's suspension work met main's one-way sign-in
+file auth/auth.go - 667 the public-only keymail client branch in New; Config.Reader for the session lookups (#241); Config.SigninOneWay, the smart door; Config.Now and ErrNoUser refusal docs, raised from 646 when plaza-core's suspension work met main's one-way sign-in; Config.AddressesFor, raised from 661 to 667 for Identify and AddressesFor docs (audit phase 1)
 func auth/auth.go New 158 the public-only keymail client branch; Config.Now default, raised from 152 when plaza-core's suspension work met main's one-way sign-in
 names auth/auth.go -/d 1
 names auth/auth.go -/r 3
@@ -3800,9 +3800,7 @@ columns cmd/rastrillo/migration.go 0e8e7cc101ef 1
 columns cmd/rastrillo/migration.go 13f1339a784a 1
 columns cmd/rastrillo/migration.go 1b2adf16b082 1
 columns cmd/rastrillo/migration.go 24a11220569c 1
-columns cmd/rastrillo/migration.go 270c04c2599d 1
 columns cmd/rastrillo/migration.go 2c438fd655ed 1
-columns cmd/rastrillo/migration.go 387da845d14d 1
 columns cmd/rastrillo/migration.go 3d5a47d7604f 1
 columns cmd/rastrillo/migration.go 4389268d2234 1
 columns cmd/rastrillo/migration.go 50af61360325 1
@@ -3816,10 +3814,9 @@ columns cmd/rastrillo/migration.go 98a716165ba9 1
 columns cmd/rastrillo/migration.go 9f1ed85119bf 1
 columns cmd/rastrillo/migration.go a22f9f42ee3d 1
 columns cmd/rastrillo/migration.go a4a79e1d6b67 1
-columns cmd/rastrillo/migration.go bd801a75f715 1
 columns cmd/rastrillo/migration.go cca31be52958 1
 columns cmd/rastrillo/migration.go fafe6a1b8033 1
-file cmd/rastrillo/migration.go - 644 lowered from 667 when finding the app package moved to migration_package.go
+file cmd/rastrillo/migration.go - 595 lowered from 667 when finding the app package moved to migration_package.go
 func cmd/rastrillo/migration.go migrationBaseline 53
 func cmd/rastrillo/migration.go migrationGenerate 71
 func cmd/rastrillo/migration.go migrationStatus 121
@@ -3943,9 +3940,9 @@ columns cmd/rastrillo/new.go e8154254ee71 1
 columns cmd/rastrillo/new.go e9429fea88d9 1
 columns cmd/rastrillo/new.go ef2901dc0d45 1
 columns cmd/rastrillo/new.go f9075270659b 1
-file cmd/rastrillo/new.go - 533 raised from 527 by 6 when make ci gained go fix and golangci-lint: writeSingle writes .golangci.yml and passes the lint pin to the Makefile, its two ci.d steps and the summary line name the lanes, and the pin joins the const block; lowered from 546 by scaffold shapes, which moved new.go's flag usage line to shapes.go and writes the tests into the app's own directory; raised from 541 by 2 when the migration check became the app's migrations_test.go, which writeSingle writes in place of the Makefile step
+file cmd/rastrillo/new.go - 535 raised from 533 by 2 when every table had to say whose data it holds (audit spec §1): writeSingle writes audit_test.go beside migrations_test.go; raised from 527 by 6 when make ci gained go fix and golangci-lint: writeSingle writes .golangci.yml and passes the lint pin to the Makefile, its two ci.d steps and the summary line name the lanes, and the pin joins the const block; lowered from 546 by scaffold shapes, which moved new.go's flag usage line to shapes.go and writes the tests into the app's own directory; raised from 541 by 2 when the migration check became the app's migrations_test.go, which writeSingle writes in place of the Makefile step
 func cmd/rastrillo/new.go runNew 48 lowered from 235 by scaffold shapes, which moved its writing into writeSingle; it reads the flags every shape shares
-func cmd/rastrillo/new.go writeSingle 174 main's runNew body, moved by scaffold shapes so that bare and accounts share runNew's flags and refusals, less its separate test directory; owed the same split runNew was. Raised from 175 by 3: it writes migrations_test.go (2 lines), and the summary's test-files line pads its continuation to the package name's width (1 line). Raised from 171 by 3 when make ci gained go fix and golangci-lint: it writes .golangci.yml (1), passes the lint pin to the Makefile (1), and the summary line naming the lanes wraps once more (1)
+func cmd/rastrillo/new.go writeSingle 176 main's runNew body, moved by scaffold shapes so that bare and accounts share runNew's flags and refusals, less its separate test directory; owed the same split runNew was. Raised from 174 by 2: it writes audit_test.go, the app's check that every table is declared. Raised from 175 by 3: it writes migrations_test.go (2 lines), and the summary's test-files line pads its continuation to the package name's width (1 line). Raised from 171 by 3 when make ci gained go fix and golangci-lint: it writes .golangci.yml (1), passes the lint pin to the Makefile (1), and the summary line naming the lanes wraps once more (1)
 names cmd/rastrillo/new.go scaffoldFile/b 1
 columns cmd/rastrillo/new_scaffold_test.go 021618c81aba 1
 columns cmd/rastrillo/new_scaffold_test.go 031c8d38c56a 1
@@ -11161,7 +11158,6 @@ columns internal/generate/store.go 55d08e7398d6 1
 columns internal/generate/store.go 585584013900 1
 columns internal/generate/store.go 61379022fe0d 1
 columns internal/generate/store.go 642e6bd9db89 1
-columns internal/generate/store.go 660e54745915 2
 columns internal/generate/store.go 729c65cd430c 1
 columns internal/generate/store.go 79fce7587034 1
 columns internal/generate/store.go 88bbb45bb5b2 1
@@ -11173,8 +11169,8 @@ columns internal/generate/store.go baeed5800339 1
 columns internal/generate/store.go d9857db5123f 1
 columns internal/generate/store.go e626d79750d6 1
 columns internal/generate/store.go ef5d8426b5c1 1
-file internal/generate/store.go - 436
-func internal/generate/store.go EmitStore 75
+file internal/generate/store.go - 421
+func internal/generate/store.go EmitStore 61
 func internal/generate/store.go queriesSQL 62
 names internal/generate/store.go EmitStore/h 1
 names internal/generate/store.go EmitStore/i 1
@@ -13454,8 +13450,8 @@ columns manifest.go b6bd96ac1fe1 1
 columns manifest.go c9a6ae4b9769 1
 columns manifest.go e5ed3eeaa9e2 1
 columns manifest.go f5d5d1e5dc32 2
-file manifest.go - 682
-func manifest.go Resource.Validate 231
+file manifest.go - 677
+func manifest.go Resource.Validate 227
 func manifest.go Resource.checkGeneratedNames 56
 func manifest.go Resource.validateMoney 42
 names manifest.go -/w 1
@@ -13667,13 +13663,10 @@ columns migrate/apply.go 9426b69b45ea 1
 columns migrate/apply.go 9e56fb71c498 1
 columns migrate/apply.go abd70706edb8 1
 columns migrate/apply.go bef9debbf31f 1
-columns migrate/apply.go cdbdbfa4fd68 1
 columns migrate/apply.go ed8e68468db4 1
-columns migrate/apply.go f4566e7364aa 1
-func migrate/apply.go Apply 67
+func migrate/apply.go Apply 50
 func migrate/apply.go runOne 117
 names migrate/apply.go Apply/d 1
-names migrate/apply.go Apply/m 1
 names migrate/apply.go Apply/s 1
 names migrate/apply.go Pool/w 1
 names migrate/apply.go needsRebuild/u 1
@@ -17740,7 +17733,6 @@ columns secondfactor/secondfactor.go 7eaa05fe1919 1
 columns secondfactor/secondfactor.go 8b52f08edcb3 1
 columns secondfactor/secondfactor.go 99528d879e3d 1
 columns secondfactor/secondfactor.go 9a5ceb5869ee 1
-columns secondfactor/secondfactor.go 9ddcc5401655 1
 columns secondfactor/secondfactor.go b11c2feaa687 1
 columns secondfactor/secondfactor.go b38d800859ef 1
 columns secondfactor/secondfactor.go b9fb8eb05ae1 1

@@ -391,6 +391,22 @@ func TestValidateRefusesNamesGeneratedOperationsDeclare(t *testing.T) {
 	}
 }
 
+// A generated store package declares Declaration beside sqlc's model,
+// which is named for the table's singular, so a resource named
+// declarations would declare it twice and the store would not compile.
+func TestValidateRefusesNamesGeneratedStoresDeclare(t *testing.T) {
+	for _, name := range []string{"declarations", "declaration"} {
+		resource := validResource()
+		resource.Name = name
+		want := `name: "` + name + `" would be the Go name "Declaration"`
+		if err := resource.Validate(); err == nil ||
+			!strings.Contains(err.Error(), want) {
+			t.Errorf("name = %q: Validate error %v, want one containing %q",
+				name, err, want)
+		}
+	}
+}
+
 // TestValidateRefusesPluralsNamedLikeListResultMembers pins the
 // plural's scope: ListResult holds the page under the resource's plural
 // beside its own NextAfter, so a resource named next_after would give

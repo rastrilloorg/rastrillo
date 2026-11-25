@@ -1,7 +1,8 @@
 // Package tickets is the whole hand-written half of this example: the
 // Ctx.Render seam every generated action calls into (internal/
-// generate/actions.go's package doc), and the one layout every screen
-// shares. Nothing else lives here — no store code, no view models, no
+// generate/actions.go's package doc), the one layout every screen
+// shares, and the schema as a set for the audit check (schema.go).
+// Nothing else lives here — no store code, no view models, no
 // formatting helpers — because there is nothing else to write: this
 // app declares its one resource in manifest/ticket_types.toml and
 // ships whatever `rastrillo generate` produced for it, unedited and

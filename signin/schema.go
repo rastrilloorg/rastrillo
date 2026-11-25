@@ -13,4 +13,4 @@ var migrationFS embed.FS
 // alongside auth's, totp's and passkey's. Its tables are the
 // passphrases, the dismissed offers and the misses the limiter counts,
 // kept in SQL so a restart forgets none of them.
-var Schema = migrate.MustFromFS(migrationFS, "signin")
+var Schema = declare(migrate.MustFromFS(migrationFS, "signin"))

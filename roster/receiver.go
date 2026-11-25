@@ -23,7 +23,7 @@ var migrationFS embed.FS
 
 // Schema holds the one row that remembers the last applied snapshot. Apply
 // it with migrate.Apply alongside the app's own migrations.
-var Schema = migrate.MustFromFS(migrationFS, "roster")
+var Schema = declare(migrate.MustFromFS(migrationFS, "roster"))
 
 // Store is the app's own roster. The receiver only reads and changes it
 // through this interface, so each app keeps its own tables. Every method

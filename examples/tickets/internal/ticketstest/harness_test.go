@@ -16,7 +16,6 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"path/filepath"
-	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -27,7 +26,6 @@ import (
 
 	"tickets/gen"
 	genlocales "tickets/gen/locales"
-	announcementsstore "tickets/gen/store/announcements"
 	ticket_typesstore "tickets/gen/store/ticket_types"
 	"tickets/internal/tickets"
 )
@@ -78,7 +76,7 @@ func newAppWithAt(t *testing.T, path, def string, offered []string, base basepat
 	var db *sql.DB
 	handler, closeApp, err := rastrillo.Handler(rastrillo.Options{
 		DBPath:        path,
-		Migrations:    slices.Concat(ticket_typesstore.Migrations, announcementsstore.Migrations),
+		Migrations:    tickets.Migrations,
 		BaseCatalog:   genlocales.BaseCatalog,
 		Logger:        logger,
 		Locales:       offered,

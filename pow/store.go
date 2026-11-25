@@ -21,7 +21,7 @@ var migrationFS embed.FS
 // checks the table is there:
 //
 //	migrate.Apply(ctx, d, migrate.Merge(sessions.Schema, pow.Schema, app.Schema))
-var Schema = migrate.MustFromFS(migrationFS, "pow")
+var Schema = declare(migrate.MustFromFS(migrationFS, "pow"))
 
 // ErrNoSchema means pow_spent_nonces is missing or predates v2. New
 // refuses to build a Guard over it: otherwise every submission is

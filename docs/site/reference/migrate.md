@@ -71,6 +71,63 @@ dropping a table your models do not know about.
 namespace. The same id in different namespaces is fine, which is what
 lets every subsystem number from 0001.
 
+## Declarations
+
+```go
+func (set *Set) Declare(decl Data) *Set
+func (set *Set) Retire(names ...string) *Set
+func (set *Set) Declarations() []Data
+
+type Data struct {
+	Name       string
+	Key        []string
+	Kind       Kind
+	Owner      Owner
+	Fields     []Field
+	Recorded   []string
+	NotAudited string
+	Erase      Treatment
+	KeepReason string
+	Export     bool
+	Namespace  string // set by Declare
+}
+
+type Field struct {
+	Name  string
+	Holds Holds
+	Erase Treatment
+}
+type Owner struct {
+	Column string
+	Holds  Holds
+	Parent string
+}
+
+func Subject(column string) Owner
+func Address(column string) Owner
+func UserID(column string) Owner
+func Via(column, parent string) Owner
+
+func CheckDeclarations(ctx context.Context, set *Set) ([]Problem, error)
+type Problem struct{ Table, Message string }
+```
+
+`Declare` describes what a table holds, alongside the migrations that create it.
+`Kind` is `Personal`, `Shared` or `System`. `Holds` is `HoldsSubject`,
+`HoldsAddress`, `HoldsUserID` or `HoldsFreeText`. `Treatment` is
+`EraseRow`, `EraseNull`, `EraseTombstone` or `EraseKeep`, and `EraseKeep`
+requires a `KeepReason`. `Via` reaches a person through a declared parent
+table.
+
+`Retire` removes declarations for tables that this set's migrations
+drop. It affects only sets merged before it. `Declarations` returns
+declarations in merged order.
+
+`CheckDeclarations` applies a set to an empty in-memory database and
+reports problems with its declarations. `Apply` returns the same
+problems in `Result.Problems` and does not refuse to boot. See
+[Declaring tables](/docs/audit).
+
 ## Migration
 
 ```go

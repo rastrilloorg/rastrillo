@@ -14,4 +14,4 @@ var migrationFS embed.FS
 //
 // Codes and refresh tokens are stored as their SHA-256 only, so a copy
 // of the database hands nobody a working credential.
-var Schema = migrate.MustFromFS(migrationFS, "oauth")
+var Schema = declare(migrate.MustFromFS(migrationFS, "oauth"))

@@ -76,7 +76,7 @@ var migrationFS embed.FS
 // alongside the app's own. It replaces the exported Migrations
 // []string: the ledger records what ran, so these statements are no
 // longer re-executed on every boot.
-var Schema = migrate.MustFromFS(migrationFS, "blobs")
+var Schema = declare(migrate.MustFromFS(migrationFS, "blobs"))
 
 func hashOf(b []byte) string {
 	sum := sha256.Sum256(b)

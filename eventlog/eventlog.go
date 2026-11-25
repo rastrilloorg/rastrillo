@@ -51,7 +51,7 @@ var migrationFS embed.FS
 // alongside the app's own. It replaces the exported Migrations
 // []string: the ledger records what ran, so these statements are no
 // longer re-executed on every boot.
-var Schema = migrate.MustFromFS(migrationFS, "eventlog")
+var Schema = declare(migrate.MustFromFS(migrationFS, "eventlog"))
 
 // Event is one immutable entry in a stream.
 type Event struct {

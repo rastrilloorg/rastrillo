@@ -23,7 +23,7 @@ var migrationFS embed.FS
 // Schema is the package's migration set, applied with migrate.Apply
 // alongside the app's own. One table: a sealed secret per subject,
 // confirmed or not, and the last step it verified at.
-var Schema = migrate.MustFromFS(migrationFS, "totp")
+var Schema = declare(migrate.MustFromFS(migrationFS, "totp"))
 
 // ErrEnrolled is Begin's refusal for a subject whose authenticator is
 // already confirmed: Disable first (from a page behind RequireFresh),

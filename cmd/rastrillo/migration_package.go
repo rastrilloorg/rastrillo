@@ -6,11 +6,11 @@ import (
 	"amadan.net/rastrillo/rastrillo/internal/apppackage"
 )
 
-// loaderNeeds are the package-level names loaderTemplate reads off the
-// app package. Finding the one package that declares all three tells
-// the app apart from the helper and end-to-end packages an app such as
-// Patrix keeps beside it in internal/.
-var loaderNeeds = []string{"Schema", "BootSchema", "Models"}
+// migrationNeeds are the package-level names the migration loader
+// reads off the app package. Finding the one package that declares all
+// three tells the app apart from the helper and end-to-end packages an
+// app such as Patrix keeps beside it in internal/.
+var migrationNeeds = []string{"Schema", "BootSchema", "Models"}
 
 // parseMigrationArgs registers -package, which every migration
 // subcommand takes for the app detection cannot settle, and parses
@@ -35,15 +35,15 @@ func parseMigrationArgs(flags *flag.FlagSet, args []string) (
 	}
 }
 
-// appPackage locates the app's package under internal/, as
-// apppackage.Find describes, and its import path.
-func appPackage(dir, override string) (importPath, pkgName string,
-	err error) {
+// appPackage locates the app's package under internal/, the one
+// declaring needs, as apppackage.Find describes, and its import path.
+func appPackage(dir, override string, needs []string) (importPath,
+	pkgName string, err error) {
 	module, err := modulePath(dir)
 	if err != nil {
 		return "", "", err
 	}
-	if pkgName, err = apppackage.Find(dir, override, loaderNeeds); err != nil {
+	if pkgName, err = apppackage.Find(dir, override, needs); err != nil {
 		return "", "", err
 	}
 	return module + "/internal/" + pkgName, pkgName, nil

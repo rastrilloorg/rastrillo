@@ -10,6 +10,16 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+**Upgrade: rerun `rastrillo generate` if your app has manifest stores.** The generator now writes a `declare.go` in each store package, holding the table's `Declaration`. Declare it on the set that wraps the store's migrations. `generate --check` fails until you rerun `generate`, and your schema test fails until you declare the table. Resource names `declaration` and `declarations` are no longer allowed because the generated package already uses that name.
+
+### Added: table declarations
+
+- `migrate.Set.Declare` records, beside a table's migrations, whose data it holds, how to find a person's rows and how erasure treats them. The core packages declare their own tables, and `eventlog.Schema` carries eventlog's, so an app with mergeable stores needs it in `BootSchema`. `Set.Retire` ends the declaration of a table that another package's migration drops. See [Declaring tables](/docs/audit).
+- `audit.CheckSchema(t, set)` fails an app's test for an undeclared table or a declaration that does not fit its table. Boot does not refuse yet: `migrate.Apply` returns the same problems on `Result.Problems`.
+- `privacy.Identity` holds every identifier for one person, and `auth.Auth.Identify` builds it.
+- `rastrillo audit exemptions` lists each table left out of the audit log or kept on erasure, with its reason.
+- There is no audit log, export or erasure in this version. Data outside the database is out of scope.
+
 **Fixed: malformed passkey registrations could crash the request.** The WebAuthn CBOR reader panicked on some short attestation objects. A body of just 4 bytes was enough. It also accepted a second spelling of the ES256 algorithm and followed nested data without a limit. A 1 MiB body could use 256 MiB of stack space. Any signed-in person could send one of these objects while registering a passkey. The server recovered from each panic, returned a 500 error, and stayed up. The reader now rejects all three cases.
 
 **Fixed: `apitoken.Store.Redact` could log a token's secret.** If one token followed another token's public ID with nothing in between, the second token's secret was not redacted. Both public IDs now stay in the log, and every secret is replaced.

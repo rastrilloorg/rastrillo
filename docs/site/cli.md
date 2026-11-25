@@ -279,6 +279,22 @@ what it is for, and it is why it is manual.
 [Migrations](/docs/migrations#recovering-an-old-database) walks the
 whole recovery.
 
+## rastrillo audit
+
+### audit exemptions
+
+```sh
+rastrillo audit exemptions [-package <name>] [dir]
+```
+
+Prints every table that is not audited or is kept on erasure, one per
+line, with the reason it gave: namespace, table, which of the two, then
+the reason. Prints `No exemptions declared.` when no table declares
+one. That does not mean every table is audited and erased: a shared
+table has nothing to erase, and a table with no declaration has no
+exemption either. It builds your app to read its boot schema, so the
+app must compile.
+
 ## rastrillo doctor
 
 ```sh

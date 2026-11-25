@@ -12,7 +12,9 @@ var migrationFS embed.FS
 
 // Schema is this app's own migrations, which migration generate and
 // check diff against Models. Never edit one that has shipped.
-var Schema = migrate.MustFromFS(migrationFS, %[1]q)
+var Schema = migrate.MustFromFS(migrationFS, %[1]q).
+	Declare(migrate.Data{Name: "notes", Key: []string{"id"},
+		Kind: migrate.Shared})
 
 // BootSchema is what boot applies. A subsystem's schema goes here, in the
 // order it applies, and never in Schema: check would drop its tables.

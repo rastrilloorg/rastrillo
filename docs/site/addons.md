@@ -19,6 +19,9 @@ which is what lets an addon ship on its own schedule.
 merges into `BootSchema` — never into its own `Schema`, or
 `rastrillo migration check` proposes dropping tables that `Models` does
 not know about. See [Migrations](/docs/migrations).
+It declares each table it creates on that set, saying whose data the table
+holds and how erasure treats it, so merging the set brings the
+declarations along. See [Declaring tables](/docs/audit).
 
 **It ships its own `SKILL.md`, inside the module.** The framework's sits
 at the repo root a scaffolded app points to; an addon's lands in the

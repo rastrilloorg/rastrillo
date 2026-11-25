@@ -16,7 +16,6 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
-	"slices"
 
 	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/locales"
@@ -24,8 +23,6 @@ import (
 	ticketsassets "tickets"
 	"tickets/gen"
 	genlocales "tickets/gen/locales"
-	announcementsstore "tickets/gen/store/announcements"
-	ticket_typesstore "tickets/gen/store/ticket_types"
 	"tickets/internal/tickets"
 )
 
@@ -36,15 +33,14 @@ func main() {
 	// the database (pragmas, eager ping, the schema migration), and
 	// hands the *sql.DB back through Router — the F4 seam (see
 	// examples/blog/cmd/blog/main.go, the same wiring). Migrations is
-	// the two generated stores' own vars concatenated, unaltered: the
-	// exclusive resource's table plus the mergeable resource's eventlog
-	// schema (announcementsstore.Migrations re-exports it) — this app
-	// adds no column of its own, unlike the blog's published (internal/
-	// blog/store.go); there is nothing here but what the manifests
-	// declared.
+	// the two generated stores' statements, unaltered and defined once
+	// in tickets.BootSchema: the exclusive resource's table plus the
+	// mergeable resource's eventlog schema — this app adds no column of
+	// its own, unlike the blog's published (internal/blog/store.go);
+	// there is nothing here but what the manifests declared.
 	err := rastrillo.Run(rastrillo.Options{
 		DBPath:      "tickets.db",
-		Migrations:  slices.Concat(ticket_typesstore.Migrations, announcementsstore.Migrations),
+		Migrations:  tickets.Migrations,
 		BaseCatalog: genlocales.BaseCatalog,
 		Logger:      logger,
 		// Locales and DefaultLocale come from manifest/app.toml, through

@@ -30,7 +30,7 @@ const (
 // TestNewRefusesEveryNameTheScaffoldUses in internal/scaffoldcheck
 // parses every scaffold and fails on a name missing here.
 var taken = strings.Fields(`
-	action address answer append askForLink assets background base
+	action address answer append askForLink assets audit background base
 	basepath body bool boot box budget bytes catalog chi chromedp client
 	closeAll code confirm confirmPattern context cookie csrf ctx database
 	db dbtest err error everyWay exitOnError filepath form formPattern
@@ -52,7 +52,7 @@ var taken = strings.Fields(`
 	TestMain TestMenuRenders TestModelsMatchMigrations
 	TestNoInstanceKeyLeavesTheAuthenticatorOff testOrigin
 	TestOverviewRenders TestPerfBoot TestPerfScreens
-	TestSignInByEmailedLink TestSigninOffersEveryWay
+	TestSignInByEmailedLink TestSigninOffersEveryWay TestTablesAreDeclared
 	TestTokenPageShowsANewTokenOnce
 	TestUnknownPathIs404 TestVendoredAssetsMatchTheLibrary time title
 	token tokenPattern ui url variable vendored vendoredIsMine

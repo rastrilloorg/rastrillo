@@ -35,7 +35,7 @@ var migrationFS embed.FS
 
 // Schema holds the table that remembers spent assertion IDs. Apply it with
 // migrate.Apply alongside the app's own migrations.
-var Schema = migrate.MustFromFS(migrationFS, "handoff")
+var Schema = declare(migrate.MustFromFS(migrationFS, "handoff"))
 
 // ErrConfig is what New returns for a Config it cannot use.
 var ErrConfig = errors.New("handoff: configuration")

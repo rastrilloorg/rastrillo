@@ -5,10 +5,9 @@
 #
 # <kind> <path> <key, or -> <count> [reason]
 columns cmd/tickets/main.go 212e61256978 1
-columns cmd/tickets/main.go 7430458586a1 1
 columns cmd/tickets/main.go c5c901f3978b 1
 columns cmd/tickets/main.go fdc331cb4b5d 1
-func cmd/tickets/main.go main 72
+func cmd/tickets/main.go main 71
 columns internal/tickets/render.go 8197b7a46be4 1
 columns internal/tickets/render.go b2062f611d77 1
 names internal/tickets/render.go App.Middleware/a 1
@@ -93,7 +92,6 @@ columns internal/ticketstest/harness_test.go a7f8f901c9ec 1
 columns internal/ticketstest/harness_test.go c42d357f1ca8 1
 columns internal/ticketstest/harness_test.go d28810707764 1
 columns internal/ticketstest/harness_test.go d56d0dde6fa3 1
-columns internal/ticketstest/harness_test.go fcb26b59b63c 1
 names internal/ticketstest/harness_test.go get/h 1
 names internal/ticketstest/harness_test.go newAppWithAt/d 1
 names internal/ticketstest/harness_test.go post/h 1

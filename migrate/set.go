@@ -95,6 +95,11 @@ type Migration struct {
 type Set struct {
 	namespace  string
 	migrations []Migration
+	// declarations already carry the namespace Declare stamped, so
+	// Merge appends them as they are.
+	declarations []Data
+	// retired names whose declarations end here; see Retire.
+	retired []string
 }
 
 // fileName is the only shape FromFS accepts: four digits, underscore,
@@ -176,6 +181,11 @@ func Merge(sets ...*Set) *Set {
 			}
 			out.migrations = append(out.migrations, m)
 		}
+		out.retire(s.retired)
+		out.declarations = append(out.declarations, s.declarations...)
+		// Kept so a later Merge of this result still retires the
+		// names from sets that come before it.
+		out.retired = append(out.retired, s.retired...)
 	}
 	// Already qualified; All must not qualify a second time.
 	out.namespace = ""

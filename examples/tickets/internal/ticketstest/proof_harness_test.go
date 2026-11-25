@@ -27,8 +27,6 @@ import (
 	"tickets/gen"
 	genlocales "tickets/gen/locales"
 	ops_ticket_types "tickets/gen/ops/ticket_types"
-	announcementsstore "tickets/gen/store/announcements"
-	ticket_typesstore "tickets/gen/store/ticket_types"
 	"tickets/internal/proof"
 	"tickets/internal/tickets"
 )
@@ -70,10 +68,8 @@ func newProofAppWith(
 	}
 	var database *sql.DB
 	handler, closeApp, err := rastrillo.Handler(rastrillo.Options{
-		DBPath: filepath.Join(t.TempDir(), "tickets.db"),
-		Migrations: slices.Concat(
-			ticket_typesstore.Migrations, announcementsstore.Migrations,
-		),
+		DBPath:        filepath.Join(t.TempDir(), "tickets.db"),
+		Migrations:    tickets.Migrations,
 		BaseCatalog:   genlocales.BaseCatalog,
 		Logger:        logger,
 		Locales:       genlocales.Locales,

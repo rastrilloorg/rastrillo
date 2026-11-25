@@ -17,7 +17,6 @@ package generate
 
 import (
 	"fmt"
-	"go/format"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -28,8 +27,8 @@ import (
 )
 
 // EmitStore writes per resource either the sqlc inputs (exclusive:
-// gen/store/<name>/{schema.sql,queries.sql,migrations.go}) or the
-// template-rendered eventlog store (mergeable:
+// gen/store/<name>/{schema.sql,queries.sql,migrations.go,declare.go})
+// or the template-rendered eventlog store (mergeable:
 // gen/store/<name>/{store.go,migrations.go} — see mergeablestore.go),
 // plus gen/store/sqlc.yaml covering the exclusive resources — written
 // only when at least one exists, since a module of only-mergeable
@@ -65,25 +64,13 @@ func EmitStore(genDir string, rs []rastrillo.Resource, h History) (paths, append
 		resDir := filepath.Join(storeDir, r.Name)
 
 		if r.Store == rastrillo.Mergeable {
-			storeSrc, err := format.Source(mergeableStoreGo(r))
+			written, err := writeGoFiles(resDir,
+				goFile{"store.go", mergeableStoreGo(r)},
+				goFile{"migrations.go", mergeableMigrationsGo(r)})
 			if err != nil {
-				return nil, nil, fmt.Errorf("%s: store.go: %w", r.Name, err)
+				return nil, nil, err
 			}
-			storePath := filepath.Join(resDir, "store.go")
-			if err := writeFileIfChanged(storePath, storeSrc); err != nil {
-				return nil, nil, fmt.Errorf("%s: store.go: %w", r.Name, err)
-			}
-			paths = append(paths, storePath)
-
-			migSrc, err := format.Source(mergeableMigrationsGo(r))
-			if err != nil {
-				return nil, nil, fmt.Errorf("%s: migrations.go: %w", r.Name, err)
-			}
-			migPath := filepath.Join(resDir, "migrations.go")
-			if err := writeFileIfChanged(migPath, migSrc); err != nil {
-				return nil, nil, fmt.Errorf("%s: migrations.go: %w", r.Name, err)
-			}
-			paths = append(paths, migPath)
+			paths = append(paths, written...)
 			continue
 		}
 
@@ -104,15 +91,13 @@ func EmitStore(genDir string, rs []rastrillo.Resource, h History) (paths, append
 			return nil, nil, err
 		}
 		appended = append(appended, appendedNotes(r, h[r.Name], stmts)...)
-		migSrc, err := format.Source(migrationsGo(r, stmts))
+		written, err := writeGoFiles(resDir,
+			goFile{"migrations.go", migrationsGo(r, stmts)},
+			goFile{"declare.go", declareGo(r)})
 		if err != nil {
-			return nil, nil, fmt.Errorf("%s: migrations.go: %w", r.Name, err)
+			return nil, nil, err
 		}
-		migPath := filepath.Join(resDir, "migrations.go")
-		if err := writeFileIfChanged(migPath, migSrc); err != nil {
-			return nil, nil, fmt.Errorf("%s: migrations.go: %w", r.Name, err)
-		}
-		paths = append(paths, migPath)
+		paths = append(paths, written...)
 	}
 
 	return paths, appended, nil

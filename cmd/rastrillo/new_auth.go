@@ -100,8 +100,8 @@ func (edit *magicAuth) filled(template string) string {
 
 // schema: sessions before auth (auth's backfill reads the sessions
 // table), pow for the guard's nonces, the further ways' tables, then
-// what was there. The example model becomes owned, and its migration
-// is what generate writes.
+// what was there. The example model becomes owned, so its declaration
+// says whose, and its migration is what generate writes.
 func (edit *magicAuth) schema() {
 	migrations := filepath.Join(edit.appDir, "migrations.go")
 	edit.swap(migrations,
@@ -109,6 +109,9 @@ func (edit *magicAuth) schema() {
 		"var BootSchema = migrate.Merge(sessions.Schema, auth.Schema,\n"+
 			"\tpow.Schema, passkey.Schema, totp.Schema, signin.Schema,\n"+
 			"\tapitoken.Schema, Schema)")
+	edit.swap(migrations, "\t\tKind: migrate.Shared})",
+		"\t\tKind: migrate.Personal, Owner: migrate.Subject(\"owner\"),\n"+
+			"\t\tErase: migrate.EraseRow, Export: true})")
 	edit.importAfter(migrations, `"amadan.net/rastrillo/rastrillo/apitoken"`,
 		"auth", "passkey", "pow", "sessions", "signin", "totp")
 	edit.swap(filepath.Join(edit.appDir, "models.go"),

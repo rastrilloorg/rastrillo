@@ -93,6 +93,21 @@ so it sticks) and treat it as damage control. For a value that must
 not be at rest the only answer is not to write it — seal, hash, or key
 by digest.
 
+## Declare every table
+
+Each table gets a `migrate.Data` on the set that creates it:
+`set.Declare(migrate.Data{Name, Key, Kind, Owner, Erase, ...})`. `Kind` is
+`Personal`, `Shared` or `System`; a personal table needs an `Erase` and,
+to delete or clear rows, an `Owner`. Test it with
+`audit.CheckSchema(t, BootSchema)`. Boot does not refuse an undeclared
+table yet; `Apply` lists it on `Result.Problems`. A generated store's
+`declare.go` holds its `Declaration`: declare it on the set that wraps its
+migrations, and rerun `rastrillo generate` after upgrading. Mergeable
+stores keep data in `eventlog`, so `eventlog.Schema` must be in
+`BootSchema`. `Retire` ends a declaration whose table another package's
+migration drops. There is no audit log, export or erasure yet.
+docs/site/audit.md
+
 ## Roles and teams
 
 Scoping separates users, never tenants: one instance serves one tenant

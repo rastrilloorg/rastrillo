@@ -452,6 +452,21 @@ An unknown hash, a wrong purpose and an expired row all come back as the
 same "not ok"; telling them apart would be an oracle. The row is deleted
 even when expired, because a presented token is spent either way.
 
+## Identify
+
+```go
+func (auth *Auth) Identify(ctx context.Context, subject string) (privacy.Identity, error)
+```
+
+`Identify` returns every identifier for the person named by a subject, so
+their rows can be found in tables that hold an address or user ID. It
+rejects an empty subject. By default it reads the address from the
+subject. In records mode it reads the address from the user record. When
+`SubjectFor` is set it reads addresses from `Config.AddressesFor`, and
+returns `privacy.ErrUnidentifiable` if that is nil. With blind links or
+blind records no address is retained, so `Addresses` is empty. See
+[Declaring tables](/docs/audit).
+
 ## SendLink
 
 ```go

@@ -9,7 +9,6 @@ import (
 
 	"amadan.net/rastrillo/rastrillo/currency"
 	"amadan.net/rastrillo/rastrillo/internal/manifesterr"
-	"amadan.net/rastrillo/rastrillo/internal/opsnames"
 	"amadan.net/rastrillo/rastrillo/internal/wirename"
 )
 
@@ -229,12 +228,8 @@ func (r *Resource) Validate() error {
 	if !namePattern.MatchString(r.Name) {
 		return fmt.Errorf("name: must be snake_case")
 	}
-	// The resource's type is declared beside gen/ops' own names (Page,
-	// Update, ListInput...), so "pages" would declare Page twice and the
-	// package would not compile. Refused here, where the manifest is
-	// read, rather than left to the compiler to explain.
-	if taken := opsnames.Taken(r.Name); taken != "" {
-		return fmt.Errorf(msgOpsNameTaken, r.Name, taken)
+	if err := checkGoNames(r.Name); err != nil {
+		return err
 	}
 
 	if r.Route == "" {

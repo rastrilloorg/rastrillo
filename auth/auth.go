@@ -179,6 +179,12 @@ type Config struct {
 	// address does.
 	SubjectFor func(address string) (string, error)
 
+	// AddressesFor lists the addresses a subject signs in with, for an
+	// app whose SubjectFor is not reversible. Nil with SubjectFor set
+	// makes Identify answer privacy.ErrUnidentifiable. Ignored unless
+	// SubjectFor is set.
+	AddressesFor func(subject string) ([]string, error)
+
 	// SecondFactor is the sign-in-time 2FA seam: called at the exact
 	// point a verified first factor would mint the session, with the
 	// session that WOULD be minted. done=true means the hook took over

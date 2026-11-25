@@ -31,7 +31,8 @@ func TestAppPackageFindsTheScaffoldWithNoFlag(t *testing.T) {
 	if err := runNew([]string{"stubapp"}); err != nil {
 		t.Fatal(err)
 	}
-	importPath, pkg, err := appPackage(filepath.Join(dir, "stubapp"), "")
+	importPath, pkg, err := appPackage(filepath.Join(dir, "stubapp"), "",
+		migrationNeeds)
 	if err != nil || pkg != "stubapp" ||
 		!strings.HasSuffix(importPath, "/internal/stubapp") {
 		t.Errorf("found %s (%s), %v; want stubapp", pkg, importPath, err)

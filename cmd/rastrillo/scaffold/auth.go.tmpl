@@ -236,8 +236,8 @@ func (app *App) signedIn(next http.Handler) http.Handler {
 	})
 }
 
-// ownerOf is the signed-in address exactly as auth gives it; set Owner
-// from it. Never lowercase it: the part before @ can be case-sensitive.
+// ownerOf is the session subject: the address unless SubjectFor remaps
+// it. Never lowercase it: the part before @ can be case-sensitive.
 func ownerOf(request *http.Request) string {
 	identity, _ := auth.From(request)
 	return identity.Address

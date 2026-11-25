@@ -49,6 +49,8 @@ func dispatch(command string, args []string) error {
 		return runDev(args)
 	case "migration":
 		return runMigration(args)
+	case "audit":
+		return runAudit(args, os.Stdout)
 	case "vectors":
 		return runVectors(args)
 	case "doctor":
@@ -96,6 +98,8 @@ Usage:
        new <name>                                write a numbered stub migration (for a hand-written change, e.g. a rename)
        status --db <path>                        what a real database's ledger has applied, plus pending drift
        baseline --db <path> [--through <id>]      stamp a ledger by hand after boot refuses to adopt (manual by design)
+  rastrillo audit exemptions [-package <name>] [dir]
+       every table not audited or kept on erasure, and why
   rastrillo doctor [flags] [dir]                compare the app's vendored static/ files with this binary's (default dir: .)
        --fix [--force]                          re-copy what drifted (--force overrides its two refusals)
        --theme <name>                           which theme static/theme.css should be, for an app with no pin

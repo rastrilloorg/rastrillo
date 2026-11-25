@@ -34,6 +34,11 @@
           "blurb": "Numbered, applied once at boot, ledgered — and the two rules that cost data if you get them wrong."
         },
         {
+          "slug": "audit",
+          "label": "Declaring tables",
+          "blurb": "Say whose data each table holds, and fail a test when one is undeclared."
+        },
+        {
           "slug": "scoping",
           "label": "Scoping",
           "blurb": "The one seam every owned query goes through, and why a row that isn't yours answers 404."

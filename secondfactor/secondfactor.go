@@ -82,10 +82,12 @@ var migrationFS embed.FS
 // recovery code across and dropping the old tables — and on a fresh
 // database that order lets it also tidy away the two tables passkey's
 // frozen first migration still creates.
-var Schema = migrate.MustFromFS(migrationFS, "secondfactor").Add(migrate.Migration{
-	ID: "0002_adopt_passkey",
-	Fn: adoptPasskeyTables,
-})
+var Schema = declare(
+	migrate.MustFromFS(migrationFS, "secondfactor").Add(migrate.Migration{
+		ID: "0002_adopt_passkey",
+		Fn: adoptPasskeyTables,
+	}),
+)
 
 // adoptPasskeyTables carries recovery codes over from the passkey
 // package's table, where they lived until this package took the seam
