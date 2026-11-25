@@ -119,6 +119,21 @@ Tag semantic versions, `v0.x.y` while the API is settling. Pin Rastrillo to a re
 
 When Rastrillo releases a breaking change to a package your addon uses, update the addon and tag a release soon. Apps cannot upgrade Rastrillo until you do.
 
+Attach an SBOM and a `checksums.txt` to each release, as Rastrillo does. In a clean clone, check out the release tag before running this command. Replace `aviso` with your addon's name:
+
+```sh
+tag=v0.3.0
+sbom=aviso_${tag}_module.cdx.json
+go run github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod@v1.12.0 \
+  mod -json -licenses -type library -short-purls -noserial -notimestamp \
+  -output "$sbom" .
+sha256sum "$sbom" >checksums.txt
+amadan release create -repo rastrillo/aviso -notes-file notes.md \
+  "$tag" "$sbom" checksums.txt
+```
+
+Keep the tool in `go run` with a version, not in a `tool` line in `go.mod`. A tool's requirements in your `go.mod` join the module graph of every app that uses your addon. If your addon ships a binary, copy `hack/release.sh` from Rastrillo instead: it also writes an SBOM for each binary. Rastrillo releases are not signed.
+
 ## Get listed
 
 Open a branch on `rastrillo/rastrillo` that adds an entry to [Addons](/docs/addons) (`docs/site/addons.md`). Follow the existing entries: status and version, module path and source link, the `go get` and `cat SKILL.md` commands, what the addon does, and what it deliberately does not do.

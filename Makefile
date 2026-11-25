@@ -456,13 +456,14 @@ mirror-check:
 	exit 1
 
 # Every tag with a CHANGELOG section is a release on both forges, with
-# the section as notes and the CLI for four platforms. Not part of ci,
-# for the reason mirror is not: publishing is not a runner's job, and a
-# release missing is no branch's fault. Run release after pushing a
-# tag, and release-check whenever you want to know nothing was missed.
+# the section as notes, the CLI for four platforms and their SBOMs. Not
+# part of ci, for the reason mirror is not: publishing is not a runner's
+# job, and a release missing is no branch's fault. Run release after
+# pushing a tag, and release-check whenever you want to know nothing was
+# missed. SIGN=cmd signs checksums.txt; hack/release.sh says how.
 release: | $(BIN)/tmp
 	@test -n "$(TAG)" || { echo "usage: make release TAG=vX.Y.Z"; exit 2; }
-	hack/release.sh $(TAG)
+	hack/release.sh $(if $(SIGN),-sign '$(SIGN)') $(TAG)
 
 release-check:
 	@hack/release.sh -check

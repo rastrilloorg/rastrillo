@@ -69,13 +69,21 @@ good. Then mirror.
     make release-check        # lists any tag missing a release
 
 A release is the tag on amadan and on GitHub, with the tag's CHANGELOG
-section as its notes and the CLI for four platforms attached. `release`
+section as its notes and the CLI for four platforms attached, each with
+a CycloneDX SBOM, plus one SBOM for the module. `release`
 pushes the tag to the mirror if it is not there yet, then publishes on
 each forge that lacks it, so it is safe to re-run after a failure.
 
 amadan cannot delete a release or edit its notes. Get the CHANGELOG
 section right before you tag; `hack/release.sh -n vX.Y.Z` builds
 everything and prints where, without publishing.
+
+Signing is wired but not chosen: `make release TAG=... SIGN=cmd` runs
+`cmd sign` and `cmd verify` on checksums.txt, and `SIGN_AFTER` in
+`hack/release.sh` says which tags must carry the signature. Leave it
+empty until the method is decided. `hack/release.sh -sign cmd -try-sign`
+rehearses a signer in seconds; it and `-n -sign` really sign, so a
+keyless signer leaves an entry in its public log.
 
 ## The gate
 

@@ -11,6 +11,41 @@ go install amadan.net/rastrillo/rastrillo/cmd/rastrillo@latest
 You need Go 1.26 or newer. [The CLI reference](/docs/cli) has every
 command; you will mostly use three of them.
 
+## Check a downloaded release
+
+`go install` checks the module against Go's checksum database, so you
+need do nothing more. Each
+[release](https://amadan.net/rastrillo/rastrillo/-/releases) also has
+the CLI as a tarball for macOS and Linux. To check one you downloaded,
+put the release's `checksums.txt` in the same folder and run:
+
+```sh
+sha256sum --ignore-missing -c checksums.txt
+```
+
+On macOS, use `shasum -a 256` in place of `sha256sum`.
+
+Releases after v0.47.0 also carry a CycloneDX SBOM, a list of the
+modules inside, for each tarball (`rastrillo_<version>_linux_amd64.cdx.json`)
+and one for the module as a whole (`rastrillo_<version>_module.cdx.json`).
+`checksums.txt` covers them too. To look for known vulnerabilities, give
+one to a scanner, for example `grype sbom:rastrillo_<version>_module.cdx.json`.
+
+The build is reproducible, so you can also rebuild the binary and
+compare. For the Linux amd64 tarball of v0.47.0, on a Linux amd64
+machine, check which Go built it with
+`go version rastrillo_v0.47.0_linux_amd64/rastrillo`, then run:
+
+```sh
+bin=$(mktemp -d)
+GOTOOLCHAIN=go1.26.11 CGO_ENABLED=0 GOBIN=$bin go install -trimpath \
+  amadan.net/rastrillo/rastrillo/cmd/rastrillo@v0.47.0
+cmp "$bin/rastrillo" rastrillo_v0.47.0_linux_amd64/rastrillo
+```
+
+Rastrillo releases are not signed. `checksums.txt` verifies that a
+download is intact, but not who published it.
+
 ## Scaffold an app
 
 ```sh

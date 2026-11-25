@@ -3,13 +3,27 @@
 #
 #   hack/release.sh vX.Y.Z...      publish each tag on amadan and GitHub
 #   hack/release.sh -n vX.Y.Z...   build and print, publish nothing
+#   hack/release.sh -sign CMD ...  sign checksums.txt with CMD (below)
 #   hack/release.sh -check         list tags whose release is missing or
 #                                  incomplete
+#   hack/release.sh -files vX.Y.Z  print the files tag's release carries
+#   hack/release.sh -sign CMD -try-sign
+#                                  sign and verify a scratch file with CMD
+#   hack/release.sh -tidy-sbom F   drop the SBOM tool's hashes of itself
 #
 # A release is the tag's CHANGELOG section as notes, plus the CLI for
-# four platforms as tarballs and a checksums.txt. Doc links in the notes
-# point at rastrillo.org, because a relative /docs/ link is broken on
-# both forges.
+# four platforms as tarballs, a CycloneDX SBOM for each binary and one
+# for the module, and a checksums.txt over all of them. Doc links in the
+# notes point at rastrillo.org, because a relative /docs/ link is broken
+# on both forges.
+#
+# The signature covers checksums.txt, which covers everything else. CMD
+# is run as `CMD sign checksums.txt SIG` to write the signature and as
+# `CMD verify checksums.txt SIG` to check it, so the key's home can
+# change without touching this script. Which method signs is still open
+# (discussion #417); until SIGN_AFTER names a tag, no release needs a
+# signature and -sign is only rehearsed, by -n or -try-sign. Both really
+# sign, so a keyless signer leaves an entry in its public log.
 #
 # amadan has no verb to delete a release, edit its notes or replace a
 # file, so a wrong release there is permanent. Everything that can fail
@@ -40,8 +54,28 @@ MIRROR_REMOTE=${MIRROR_REMOTE:-github}
 HUB=https://amadan.net
 DOCS=https://rastrillo.org
 PLATFORMS="darwin/amd64 darwin/arm64 linux/amd64 linux/arm64"
+# go run's pin, not a tool directive, for the reason the Makefile gives
+# staticcheck: a tool's requirements in go.mod join every app's graph.
+CYCLONEDX=github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod@v1.12.0
+
+# SBOM_AFTER and SIGN_AFTER are the newest tags released without an SBOM
+# and without a signature. A published release cannot gain a file:
+# checksums.txt would no longer list everything beside it, and amadan
+# cannot replace it. Without the cut, release-check would report every
+# older release as incomplete and release would try to add to them.
+SBOM_AFTER=${SBOM_AFTER:-v0.47.0}
+SIGN_AFTER=${SIGN_AFTER:-}
+SIGNATURE=${SIGNATURE:-checksums.txt.sig}
 
 die() { echo "release: $*" >&2; exit 1; }
+
+# newer reports whether tag $1 comes after tag $2.
+newer() {
+	[ "$1" != "$2" ] &&
+		[ "$(printf '%s\n%s\n' "$1" "$2" | sort -V | tail -n1)" = "$1" ]
+}
+has_sbom() { newer "$1" "$SBOM_AFTER"; }
+signed() { [ -n "$SIGN_AFTER" ] && newer "$1" "$SIGN_AFTER"; }
 
 # section prints tag's section of the CHANGELOG at rev, without its
 # heading, HTML comments (notes to the gate, not to readers) or the
@@ -61,10 +95,19 @@ notes() {
 	[ -z "$n" ] || printf '%s\n' "$n"
 }
 
+# payload lists the files of tag's release that checksums.txt covers.
+payload() {
+	for p in $PLATFORMS; do echo "rastrillo_$1_${p%/*}_${p#*/}.tar.gz"; done
+	has_sbom "$1" || return 0
+	for p in $PLATFORMS; do echo "rastrillo_$1_${p%/*}_${p#*/}.cdx.json"; done
+	echo "rastrillo_$1_module.cdx.json"
+}
+
 # files lists the names a complete release of tag carries.
 files() {
-	for p in $PLATFORMS; do echo "rastrillo_$1_${p%/*}_${p#*/}.tar.gz"; done
+	payload "$1"
 	echo checksums.txt
+	! signed "$1" || echo "$SIGNATURE"
 }
 
 # amadan_has and github_has print the files tag's release holds on that
@@ -157,6 +200,7 @@ build() {
 	t=$1 dir=$2
 	mod=$(git show "$t:go.mod" | awk '$1 == "module" { print $2; exit }')
 	when=$(git log -1 --format=%ct "$t")
+	! has_sbom "$t" || cyclonedx "$dir"
 	for p in $PLATFORMS; do
 		os=${p%/*} arch=${p#*/}
 		CGO_ENABLED=0 GOOS=$os GOARCH=$arch GOFLAGS=-trimpath \
@@ -174,13 +218,74 @@ build() {
 			awk '$1 == "mod" { print $3 }')
 		[ "$got" = "$t" ] ||
 			die "$name says it is $got, not $t; the build lost its version"
+		! has_sbom "$t" || sbom_bin "$t" "$dir" "$name" "$os" "$arch"
 		tar -C "$dir" --sort=name --owner=0 --group=0 --numeric-owner \
 			--mtime="@$when" -cf - "$name" | gzip -n -9 >"$dir/$name.tar.gz"
 		rm -r "$dir/$name"
 	done
 	chmod -R u+w "$dir/gopath"
 	rm -rf "$dir/gopath"
-	(cd "$dir" && sha256sum $(files "$t" | grep -v checksums) >checksums.txt)
+	! has_sbom "$t" || sbom_module "$t" "$dir"
+	rm -rf "$dir/tools"
+	(cd "$dir" && sha256sum $(payload "$t") >checksums.txt)
+}
+
+# cyclonedx builds the SBOM tool into dir/tools. go run would do for
+# the module, but the binaries' SBOMs need GOOS and GOARCH set to the
+# target's: the tool puts the go env it runs under into every purl, and
+# go run would build the tool itself for that target.
+cyclonedx() {
+	GOBIN=$1/tools GOFLAGS=-trimpath go install "$CYCLONEDX"
+}
+
+# sbom_bin writes the SBOM of the binary in dir/name, from the module
+# list its build info records. One per platform, because the list
+# differs: darwin links modules linux does not. No serial number or
+# timestamp, so a rebuild is byte for byte the same, as agree needs.
+# -std lists the Go release as a component, std@goX.Y.Z, so a scanner
+# reading components sees a vulnerable runtime too; the check makes
+# sure it names the Go that built the binary.
+sbom_bin() {
+	GOOS=$4 GOARCH=$5 "$2/tools/cyclonedx-gomod" bin -json -licenses -std \
+		-noserial -notimestamp -version "$1" \
+		-output "$2/$3.cdx.json" "$2/$3/rastrillo"
+	tidy_sbom "$2/$3.cdx.json"
+	go=$(go version "$2/$3/rastrillo" | awk '{ print $NF }')
+	grep -q "\"bom-ref\": \"pkg:golang/std@$go?type=module\"" \
+		"$2/$3.cdx.json" || die "$3.cdx.json does not list std@$go"
+}
+
+# tidy_sbom drops the hashes the tool records of its own executable.
+# That executable is built for the release host, so the hashes differ
+# between an amd64 and an arm64 host, and a release interrupted on one
+# and retried on the other would fail agree on SBOMs it had already
+# uploaded. The tool has no flag for it. The pattern is tied to v1.12.0's
+# layout; when a bump changes it, this stops the release instead of
+# shipping host-dependent SBOMs.
+tidy_sbom() {
+	perl -0ne '
+		my $tool = q{("name": "cyclonedx-gomod",\n {8}"version": "[^"\n]*",\n)};
+		s/$tool {8}"hashes": \[\n.*?\n {8}\],\n/$1/s or exit 3;
+		print' "$1" >"$1.tidy" || {
+		rm -f "$1.tidy"
+		die "$1: the SBOM tool's own entry changed shape; update tidy_sbom"
+	}
+	mv "$1.tidy" "$1"
+}
+
+# sbom_module writes the SBOM of the module at tag: every module an app
+# that requires it may build with. It runs in a clone because the tool
+# takes the version from the clone's tag, and a shallow one because the
+# tool's git reader cannot follow a --shared clone's alternates. Short
+# purls: the module graph is the same on every platform.
+sbom_module() {
+	git -c advice.detachedHead=false clone -q --depth 1 --branch "$1" \
+		"file://$(git rev-parse --show-toplevel)" "$2/src"
+	(cd "$2/src" && "$2/tools/cyclonedx-gomod" mod -json -licenses \
+		-type library -short-purls -noserial -notimestamp \
+		-output "$2/rastrillo_$1_module.cdx.json" .)
+	tidy_sbom "$2/rastrillo_$1_module.cdx.json"
+	rm -rf "$2/src"
 }
 
 # fetch downloads forge's copy of tag's file into dir.
@@ -205,8 +310,50 @@ agree() {
 	rm -r "$dir/have"
 }
 
+# seal puts tag's signature of checksums.txt in dir and verifies it. A
+# signature a forge already holds is reused rather than made again: a
+# keyless one differs on every run, and agree would then stop a re-run
+# that only had files left to upload.
+#
+# -sign with -n signs for real even for a tag that needs no signature,
+# so a broken signer shows up in the rehearsal rather than on release
+# day. A keyless signer therefore leaves an entry in its public log.
+seal() {
+	t=$1 dir=$2 sig=$2/$SIGNATURE
+	if signed "$t" && [ ! -f "$sig" ]; then
+		held "$t" "$dir" "$3" "$4"
+	fi
+	if [ -z "$SIGNER" ]; then
+		[ "$5" = 1 ] || die "$t needs a signature; pass -sign CMD"
+		echo "$t: unsigned; pass -sign CMD to rehearse signing"
+		return
+	fi
+	if [ ! -f "$sig" ]; then
+		$SIGNER sign "$dir/checksums.txt" "$sig" ||
+			die "$t: $SIGNER sign failed"
+		[ -s "$sig" ] || die "$t: $SIGNER sign wrote no $SIGNATURE"
+	fi
+	$SIGNER verify "$dir/checksums.txt" "$sig" ||
+		die "$t: $SIGNATURE does not verify against checksums.txt"
+	signed "$t" ||
+		echo "$t: rehearsed: $SIGNATURE signed and verified, not published"
+}
+
+# held fetches the signature a forge's partial release already has.
+held() {
+	for forge in amadan github; do
+		case $forge in amadan) s=$3 ;; github) s=$4 ;; esac
+		[ "$s" = none ] && continue
+		printf '%s\n' "$s" | grep -qx "$SIGNATURE" && continue
+		fetch "$forge" "$1" "$SIGNATURE" "$2"
+		return
+	done
+}
+
 publish() {
 	t=$1 dry=$2
+	[ -z "$SIGNER" ] || signed "$t" || [ "$dry" = 1 ] ||
+		die "$t needs no signature until SIGN_AFTER covers it; drop -sign"
 	o=$(git ls-remote origin "refs/tags/$t" | cut -f1)
 	[ -n "$o" ] || die "$t is not on origin; push the tag first"
 	m=$(git ls-remote "$MIRROR_REMOTE" "refs/tags/$t" | cut -f1)
@@ -218,6 +365,12 @@ publish() {
 	g=$(state github "$t")
 	if [ -z "$a" ] && [ -z "$g" ]; then
 		echo "$t: already complete on both forges"
+		# A rehearsal must still reach the signer it was handed, or
+		# a signer that cannot sign passes for one that can.
+		if [ -n "$SIGNER" ] && [ "$dry" = 1 ]; then
+			echo "$t: rehearsing the signer on a scratch file"
+			try_sign
+		fi
 		return
 	fi
 
@@ -237,6 +390,9 @@ publish() {
 		echo "$t: copying $from's files"
 	else
 		build "$t" "$dir"
+	fi
+	if signed "$t" || [ -n "$SIGNER" ]; then
+		seal "$t" "$dir" "$a" "$g" "$dry"
 	fi
 	# A partial release must already hold these very files.
 	[ "$a" = none ] || [ -z "$a" ] || agree amadan "$t" "$dir" "$a"
@@ -283,10 +439,30 @@ publish() {
 	trap - EXIT INT TERM
 }
 
-dry=0
-case ${1:-} in
--check) check; exit ;;
--n) dry=1; shift ;;
-esac
-[ $# -gt 0 ] || die "usage: hack/release.sh [-n] vX.Y.Z... | -check"
+# try_sign runs the signer on a scratch file: the rehearsal without the
+# build, for checking a signer in seconds.
+try_sign() {
+	[ -n "$SIGNER" ] || die "-try-sign needs -sign CMD before it"
+	dir=$(mktemp -d)
+	trap 'rm -rf "$dir"' EXIT
+	echo "rehearsal" >"$dir/checksums.txt"
+	seal rehearsal "$dir" none none 1
+}
+
+dry=0 SIGNER=
+while [ $# -gt 0 ]; do
+	case $1 in
+	-check) check; exit ;;
+	-files) shift; for t; do files "$t"; done; exit ;;
+	-tidy-sbom) shift; for f; do tidy_sbom "$f"; done; exit ;;
+	-try-sign) try_sign; exit ;;
+	-n) dry=1 ;;
+	-sign) [ $# -gt 1 ] || die "-sign needs a command"; SIGNER=$2; shift ;;
+	-*) die "unknown flag $1" ;;
+	*) break ;;
+	esac
+	shift
+done
+[ $# -gt 0 ] ||
+	die "usage: hack/release.sh [-n] [-sign CMD] vX.Y.Z... | -check"
 for t; do publish "$t" $dry; done
