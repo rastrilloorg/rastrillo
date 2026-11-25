@@ -59,6 +59,10 @@ type config struct {
 	withScrollbars       bool
 	coarsePointer        bool
 	hover                bool
+
+	// pick binds the rig's IPv4 port; nil is a fresh ephemeral one.
+	// Tests set it to hand the rig a port a stranger holds on ::1.
+	pick func() (net.Listener, error)
 }
 
 // Option adjusts what New builds.
@@ -118,7 +122,7 @@ func New(t *testing.T, build func(origin string) http.Handler, opts ...Option) *
 	}
 	chrome := ChromePath(t)
 
-	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	ln, err := listenLoopback(cfg.pick)
 	if err != nil {
 		t.Fatalf("harness: listen: %v", err)
 	}

@@ -33,19 +33,35 @@ func Load(
 	width, height int64, url string, ready chromedp.Action[chromedp.Void],
 ) {
 	t.Helper()
-	if err := loadErr(ctx, width, height, url, ready); err != nil {
+	LoadAt(t, ctx, where, chromedp.EmulateViewport(width, height), url,
+		ready)
+}
+
+// LoadAt is Load with the tab sized by size, so a drive can keep the
+// browser's own window with chromedp.EmulateReset.
+func LoadAt(
+	t *testing.T, ctx context.Context, where string,
+	size chromedp.Action[chromedp.Void], url string,
+	ready chromedp.Action[chromedp.Void],
+) {
+	t.Helper()
+	if err := loadErr(ctx, t.Logf, size, url, ready); err != nil {
 		t.Fatalf("%s: loading: %v", where, err)
 	}
 }
 
-// loadErr is Load without the test, so a test can check its failures.
+// loadErr is LoadAt without the test, so a test can check its failures.
+// It reports a second try to logf, with the error the first one met.
 func loadErr(
-	ctx context.Context, width, height int64, url string,
+	ctx context.Context, logf func(format string, args ...any),
+	size chromedp.Action[chromedp.Void], url string,
 	ready chromedp.Action[chromedp.Void],
 ) error {
-	err := loadOnce(ctx, width, height, url, ready)
+	err := loadOnce(ctx, size, url, ready)
 	if worthAnotherTry(err) {
-		return loadOnce(ctx, width, height, url, ready)
+		logf("%s: Chrome dropped the navigation (%v); loading it once more",
+			url, err)
+		return loadOnce(ctx, size, url, ready)
 	}
 	return err
 }
@@ -61,7 +77,7 @@ func worthAnotherTry(err error) bool {
 // loadOnce is one attempt. Any navigation the top frame asked for while
 // it ran is named in its error, and makes an abort final.
 func loadOnce(
-	ctx context.Context, width, height int64, url string,
+	ctx context.Context, size chromedp.Action[chromedp.Void], url string,
 	ready chromedp.Action[chromedp.Void],
 ) error {
 	top, err := topFrame(ctx)
@@ -87,8 +103,7 @@ func loadOnce(
 			}
 		}
 	})
-	err = chromedp.Do(ctx, chromedp.EmulateViewport(width, height),
-		chromedp.Navigate(url), ready)
+	err = chromedp.Do(ctx, size, chromedp.Navigate(url), ready)
 	// One more round trip before the watch stops: Chrome sends events
 	// before the answer to a later command, so a request the page made
 	// during the attempt is queued by then rather than lost to the stop.

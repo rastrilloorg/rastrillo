@@ -193,9 +193,9 @@ func TestTheAuthenticatorWayRememberedInTheBrowser(t *testing.T) {
 	walk(t, rig, chromedp.Navigate(rig.Origin+"/signin"),
 		chromedp.WaitVisible(chromedp.CSS(otherWays)),
 		chromedp.Click(chromedp.CSS(otherWays)),
-		chromedp.WaitVisible(chromedp.CSS(authenticator)),
+		arrive(authenticator),
 		chromedp.Click(chromedp.CSS(authenticator)),
-		chromedp.WaitVisible(chromedp.CSS(codeField)))
+		arrive(codeField))
 	code, err := totp.Code(key, time.Now())
 	if err != nil {
 		t.Fatal(err)
@@ -203,13 +203,13 @@ func TestTheAuthenticatorWayRememberedInTheBrowser(t *testing.T) {
 	walk(t, rig, chromedp.SendKeys(chromedp.CSS(addressField), ada),
 		chromedp.SendKeys(chromedp.CSS(codeField), code),
 		chromedp.Click(chromedp.CSS(codeDoor+` button[type="submit"]`)),
-		chromedp.WaitVisible(chromedp.CSS("#home")))
+		arrive("#home"))
 	if got := textAt(t, rig, "#home"); got != ada {
 		t.Fatalf("signed in as %q, want %q", got, ada)
 	}
 
 	walk(t, rig, chromedp.Click(chromedp.CSS("#signout")),
-		chromedp.WaitVisible(chromedp.CSS("[rst-signin]")),
+		arrive("[rst-signin]"),
 		chromedp.Reload(),
 		chromedp.WaitVisible(chromedp.CSS(codeField)))
 	rig.Screen("[rst-signin]", "the code door, remembered")
@@ -260,6 +260,23 @@ func walk(
 			`document.body ? document.body.innerText : ""`))
 		t.Fatalf("walk failed: %v\non screen:\n%s", err, text)
 	}
+}
+
+// arrive waits for the page a click navigated to: its marker visible,
+// then the document loaded. A click does not wait for the load, as
+// Navigate does, and the marker is parsed and visible before the
+// page's stylesheets apply. A Click measured then can land where the
+// element no longer is: seen as a click on <html> at y=-490 that left
+// the walk on the chooser. And at DOMContentLoaded Chrome drops every DOM node
+// id the driver holds, so a step that finds its node before then and
+// uses it after fails "Could not find node with given id". The marker
+// comes first because Poll's script dies with the page it runs in,
+// while WaitVisible keeps looking across the navigation.
+func arrive(marker string) chromedp.Action[chromedp.Void] {
+	return chromedp.Steps(
+		chromedp.WaitVisible(chromedp.CSS(marker)),
+		chromedp.Poll[chromedp.Void](`document.readyState === "complete"`),
+	)
 }
 
 // walkBudget is many times what each leg takes on a quiet machine

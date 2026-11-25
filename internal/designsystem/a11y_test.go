@@ -42,17 +42,20 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/cdproto/emulation"
+	"github.com/chromedp/cdproto/network"
 	"github.com/chromedp/chromedp"
 	"github.com/chromedp/chromedp/kb"
 
 	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/auth"
 	"amadan.net/rastrillo/rastrillo/harness"
+	"amadan.net/rastrillo/rastrillo/internal/designsystem/galleryrig"
 	"amadan.net/rastrillo/rastrillo/ui"
 )
 
@@ -482,17 +485,18 @@ func TestA11yScansTheGallery(t *testing.T) {
 		}
 		for _, scheme := range a11ySchemes {
 			where := tc.name + " (" + scheme + ")"
+			// Styled, because an unstyled page is a different page to
+			// axe: its contrast and its target sizes are the user
+			// agent's, not the theme's.
+			galleryrig.LoadStyled(t, rig, ctx, where, size,
+				rig.Origin+tc.href, chromedp.WaitReady("body"))
 			// Injected per page rather than as a boot script: the
 			// index frames 110 preview documents, and an init script
 			// would parse half a megabyte of engine into every one of
 			// them. The frames get their own pass below.
 			if err := chromedp.Do(ctx,
-				size,
-				chromedp.Navigate(rig.Origin+tc.href),
-				chromedp.WaitReady("body"),
-				chromedp.Evaluate[chromedp.Void](axeJS),
-			); err != nil {
-				t.Fatalf("%s: loading: %v", where, err)
+				chromedp.Evaluate[chromedp.Void](axeJS)); err != nil {
+				t.Fatalf("%s: loading axe: %v", where, err)
 			}
 			paint(t, ctx, scheme)
 			total += report(t, where, scan(t, ctx, where, "window.axe", "document", "false"))
@@ -888,12 +892,14 @@ func TestA11yScansThePreviewDocuments(t *testing.T) {
 	total, scans := 0, 0
 	for _, pg := range pages {
 		for _, kind := range previewPageKinds() {
-			if err := chromedp.Do(ctx,
-				chromedp.Navigate(rig.Origin+pageHref(mountPath, pg.theme, pg.locale, fileOf(kind))),
-				chromedp.WaitReady("body"),
-			); err != nil {
-				t.Fatalf("loading %s/%s %s: %v", pg.theme, pg.locale, kind, err)
-			}
+			// Watched from before the page opens: the frames in view
+			// start loading with it.
+			failed, stopWatching := watchFailures(rig, ctx)
+			url := rig.Origin +
+				pageHref(mountPath, pg.theme, pg.locale, fileOf(kind))
+			galleryrig.LoadStyled(t, rig, ctx,
+				fmt.Sprintf("%s/%s %s", pg.theme, pg.locale, kind),
+				chromedp.EmulateReset(), url, chromedp.WaitReady("body"))
 			frames := pickPreviewFrames(t, ctx, kind)
 			// The select-mode state of each everyState partial, found
 			// among this page's picked frames by its checkboxes.
@@ -915,36 +921,7 @@ func TestA11yScansThePreviewDocuments(t *testing.T) {
 
 			titles := make([]string, len(frames))
 			for i, f := range frames {
-				// Stable, not merely ready: the same document object twice,
-				// 150ms apart, complete and populated both times. A frame
-				// still being replaced fails the second look and the poll
-				// goes round.
-				ready := fmt.Sprintf(`(async () => {
-				  const f = document.querySelector(%q);
-				  f.scrollIntoView({block: "center"});
-				  const settled = () => {
-				    const d = f.contentDocument;
-				    return d && d.URL === f.src && d.readyState === "complete" && d.body && d.body.children.length ? d : null;
-				  };
-				  for (let i = 0; i < 200; i++) {
-				    const d = settled();
-				    if (d) {
-				      await new Promise(r => setTimeout(r, 150));
-				      if (settled() === d) return "ok " + JSON.stringify(d.title);
-				    }
-				    await new Promise(r => setTimeout(r, 50));
-				  }
-				  return "never settled";
-				})()`, f.Sel)
-				state, err := chromedp.Run(ctx, chromedp.Evaluate[string](ready,
-					chromedp.EvalAwaitPromise))
-				if err != nil {
-					t.Fatalf("%s: waiting for the frame: %v", f.Of, err)
-				}
-				if !strings.HasPrefix(state, "ok") {
-					t.Fatalf("%s: preview frame %s %s", f.Of, f.Sel, state)
-				}
-				titles[i] = state[3:]
+				titles[i] = settleFrame(t, ctx, failed, f)
 				// What the second state exists to put under axe. Read off
 				// the settled document, so a picker that quietly went back
 				// to first frames fails here by name instead of scanning a
@@ -1022,11 +999,197 @@ func TestA11yScansThePreviewDocuments(t *testing.T) {
 					scans++
 				}
 			}
+			stopWatching()
 		}
 	}
 	if total == 0 {
 		t.Logf("clean: %d preview scans over %d galleries × 2 pages × %d schemes, %v", scans, len(pages), len(a11ySchemes), axeTags)
 	}
+}
+
+// failures is what Chrome reported failing while a page was open, by
+// the address of the document each request was made for: a preview
+// frame's own document under its address, and the stylesheets and
+// scripts it asked for under the same one. With each, the status the
+// tree answered it with, if any: Chrome reports a 404 stylesheet as
+// net::ERR_ABORTED too, and that is the tree refusing, not a drop.
+type failures struct {
+	mu     sync.Mutex
+	asked  map[network.RequestID][2]string // URL, then its document's
+	status map[network.RequestID]int64
+	failed map[string][]network.RequestID
+	why    map[network.RequestID]string
+}
+
+func watchFailures(
+	rig *harness.Rig, ctx context.Context,
+) (*failures, func()) {
+	seen := &failures{
+		asked:  map[network.RequestID][2]string{},
+		status: map[network.RequestID]int64{},
+		failed: map[string][]network.RequestID{},
+		why:    map[network.RequestID]string{},
+	}
+	stops := []func(){
+		harness.Listen(rig, ctx, network.RequestWillBeSent, seen.ask),
+		harness.Listen(rig, ctx, network.LoadingFailed, seen.fail),
+		// The status comes from the raw headers: for a 404 stylesheet
+		// Chrome sends no responseReceived, only the failure and these.
+		harness.Listen(rig, ctx, network.ResponseReceivedExtraInfo,
+			seen.answer),
+	}
+	return seen, func() {
+		for _, stop := range stops {
+			stop()
+		}
+	}
+}
+
+func (seen *failures) ask(event *network.EventRequestWillBeSent) {
+	doc := event.DocumentURL
+	if event.Type == network.ResourceTypeDocument {
+		doc = event.Request.URL
+	}
+	seen.mu.Lock()
+	defer seen.mu.Unlock()
+	seen.asked[event.RequestID] = [2]string{event.Request.URL, doc}
+}
+
+func (seen *failures) fail(event *network.EventLoadingFailed) {
+	seen.mu.Lock()
+	defer seen.mu.Unlock()
+	if asked, ok := seen.asked[event.RequestID]; ok {
+		seen.failed[asked[1]] = append(seen.failed[asked[1]],
+			event.RequestID)
+		seen.why[event.RequestID] = event.ErrorText
+	}
+}
+
+func (seen *failures) answer(
+	event *network.EventResponseReceivedExtraInfo,
+) {
+	seen.mu.Lock()
+	defer seen.mu.Unlock()
+	seen.status[event.RequestID] = event.StatusCode
+}
+
+// of is every failure Chrome reported for the document at doc: the ones
+// it dropped, and the ones the tree refused with an HTTP error.
+func (seen *failures) of(doc string) (dropped, refused []string) {
+	seen.mu.Lock()
+	defer seen.mu.Unlock()
+	for _, id := range seen.failed[doc] {
+		url := seen.asked[id][0]
+		if status := seen.status[id]; status >= http.StatusBadRequest {
+			refused = append(refused, fmt.Sprintf("%s: HTTP %d", url,
+				status))
+		} else {
+			dropped = append(dropped, url+": "+seen.why[id])
+		}
+	}
+	return dropped, refused
+}
+
+// settleFrame waits until a preview frame holds its own document,
+// complete, populated and styled, and the same document 150ms later,
+// and returns its title as a JSON string. A frame still being replaced
+// fails the second look and the poll goes round.
+//
+// Styled, because a sample scanned without its stylesheets is scanned
+// in the user agent's colours. And loaded once more if it never
+// settles and Chrome reported a request of its document failing that
+// the tree did not refuse: on the fleet one preview frame of a hundred
+// did not settle in ten seconds (rastrillo#427), the frame-sized case
+// of the page loads and stylesheets Chrome drops under load, which
+// galleryrig.LoadStyled tries once more. A frame that does not settle
+// with nothing reported failing, or with a request the tree refused,
+// is not that, and fails at once, saying what it holds.
+func settleFrame(
+	t *testing.T, ctx context.Context, failed *failures, frame previewFrame,
+) string {
+	t.Helper()
+	title, err := settleFrameErr(t, ctx, failed, frame)
+	if err != nil {
+		t.Fatalf("%s: %v", frame.Of, err)
+	}
+	return title
+}
+
+// settleFrameErr is settleFrame without the test, so a test can check
+// its failures.
+func settleFrameErr(
+	t *testing.T, ctx context.Context, failed *failures, frame previewFrame,
+) (string, error) {
+	t.Helper()
+	state, err := frameState(ctx, frame)
+	if err != nil || strings.HasPrefix(state, "ok") {
+		return strings.TrimPrefix(state, "ok "), err
+	}
+	src, err := chromedp.Run(ctx, chromedp.Evaluate[string](
+		fmt.Sprintf(`document.querySelector(%q).src`, frame.Sel)))
+	if err != nil {
+		return "", fmt.Errorf("reading the frame's address: %w", err)
+	}
+	dropped, refused := failed.of(src)
+	if len(refused) > 0 {
+		return "", fmt.Errorf("preview frame %s %s: the tree refused %s",
+			frame.Sel, state, strings.Join(refused, "; "))
+	}
+	if len(dropped) == 0 {
+		return "", fmt.Errorf("preview frame %s %s, and Chrome reported"+
+			" no request of it failing", frame.Sel, state)
+	}
+	t.Logf("%s: preview frame %s %s; Chrome dropped %s; loading the"+
+		" frame once more", frame.Of, frame.Sel, state,
+		strings.Join(dropped, "; "))
+	if err := chromedp.Do(ctx, chromedp.Evaluate[chromedp.Void](
+		fmt.Sprintf(`(f => { f.src = f.src; })(`+
+			`document.querySelector(%q))`, frame.Sel))); err != nil {
+		return "", fmt.Errorf("loading the frame again: %w", err)
+	}
+	if state, err = frameState(ctx, frame); err != nil {
+		return "", err
+	}
+	if !strings.HasPrefix(state, "ok") {
+		return "", fmt.Errorf("preview frame %s %s again, after Chrome"+
+			" dropped %s", frame.Sel, state, strings.Join(dropped, "; "))
+	}
+	return strings.TrimPrefix(state, "ok "), nil
+}
+
+// frameState polls the frame for up to ten seconds and answers "ok"
+// and its title, or "never settled:" and what it holds.
+func frameState(ctx context.Context, frame previewFrame) (string, error) {
+	ready := fmt.Sprintf(`(async () => {
+	  const f = document.querySelector(%q);
+	  f.scrollIntoView({block: "center"});
+	  const styled = d => [...d.querySelectorAll('link[rel~="stylesheet"]')]
+	    .every(l => {
+	      try { return l.sheet.cssRules.length > 0; } catch { return false; }
+	    });
+	  const settled = () => {
+	    const d = f.contentDocument;
+	    return d && d.URL === f.src && d.readyState === "complete" &&
+	      d.body && d.body.children.length && styled(d) ? d : null;
+	  };
+	  for (let i = 0; i < 200; i++) {
+	    const d = settled();
+	    if (d) {
+	      await new Promise(r => setTimeout(r, 150));
+	      if (settled() === d) return "ok " + JSON.stringify(d.title);
+	    }
+	    await new Promise(r => setTimeout(r, 50));
+	  }
+	  const d = f.contentDocument;
+	  return "never settled: " + JSON.stringify(
+	    {src: f.src, holds: d && d.URL, ready: d && d.readyState});
+	})()`, frame.Sel)
+	state, err := chromedp.Run(ctx, chromedp.Evaluate[string](ready,
+		chromedp.EvalAwaitPromise))
+	if err != nil {
+		return "", fmt.Errorf("waiting for the frame: %w", err)
+	}
+	return state, nil
 }
 
 // ── The two axe cannot do ────────────────────────────────────────────
@@ -1099,7 +1262,10 @@ func TestA11yReflowsAt320(t *testing.T) {
 	  return JSON.stringify({doc: de.scrollWidth, client: w, body: document.body.scrollWidth, over: over.slice(0, 8)});
 	})()`
 	for _, p := range pages {
-		if err := chromedp.Do(ctx,
+		// Styled: a page whose stylesheets did not load is the user
+		// agent's layout, 1998px wide here once on the fleet, and that
+		// says nothing about whether the page reflows.
+		galleryrig.LoadStyled(t, rig, ctx, p.name+" at 320px",
 			chromedp.Func(func(
 				c context.Context, target *chromedp.Target,
 			) error {
@@ -1109,11 +1275,7 @@ func TestA11yReflowsAt320(t *testing.T) {
 					})
 				return err
 			}),
-			chromedp.Navigate(rig.Origin+p.href),
-			chromedp.WaitReady("body"),
-		); err != nil {
-			t.Fatalf("%s at 320px: %v", p.name, err)
-		}
+			rig.Origin+p.href, chromedp.WaitReady("body"))
 		raw, err := chromedp.Run(ctx, chromedp.Evaluate[string](measure))
 		if err != nil {
 			t.Fatalf("%s: measuring: %v", p.name, err)

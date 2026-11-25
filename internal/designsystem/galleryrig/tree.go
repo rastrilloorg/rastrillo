@@ -114,21 +114,3 @@ func minifiedFramework(files map[string][]byte) map[string][]byte {
 	}
 	return out
 }
-
-// WithoutAnchorPositioning replaces the page's tokens.css with a copy
-// whose anchor-positioning @supports condition can never hold, which is
-// what an engine without the feature gets: the menu panel positioned
-// absolutely under its summary instead of fixed against it. The match
-// allows any spacing because the tree serves tokens.css minified, as
-// apps do, and the minifier drops the spaces the source has.
-const WithoutAnchorPositioning = `(async () => {
-  const link = document.querySelector('link[href*="/tokens."][href$=".css"]');
-  const css = await (await fetch(link.href)).text();
-  const style = document.createElement("style");
-  style.textContent = css.replace(
-    /@supports\s*\(position-area:\s*block-end\)\s*and\s*` +
-	`\(position-try-fallbacks:\s*flip-block\)/g,
-    "@supports (position-area: rastrillo-no-such-value)");
-  link.replaceWith(style);
-  return true;
-})()`

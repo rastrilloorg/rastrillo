@@ -15,7 +15,6 @@ import (
 
 	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/harness"
-	"amadan.net/rastrillo/rastrillo/internal/designsystem/galleryrig"
 	"amadan.net/rastrillo/rastrillo/ui"
 )
 
@@ -83,7 +82,7 @@ func TestThePinnedBarFitsItsReservation(t *testing.T) {
 		for _, theme := range ui.ThemeNames() {
 			for _, locale := range sweepLocales() {
 				url := rig.Origin + pageHref(mountPath, theme, locale, fileOf("form"))
-				galleryrig.Load(t, tab,
+				load(t, rig, tab,
 					fmt.Sprintf("%s/%s scripts=%v", theme, locale, scripts),
 					1440, 900, url, chromedp.WaitReady(chromedp.CSS(`.ds-top`)))
 				if !scripts {
@@ -167,18 +166,13 @@ func TestTheBarsLanguageMenuStaysOnScreen(t *testing.T) {
 					where := fmt.Sprintf("day/%s at %dpx, scripts %v, anchor positioning %v", locale, w, scripts, anchored)
 					form := pageHref(mountPath, "day", locale, fileOf("form"))
 					menu := chromedp.CSS(`.ds-top__controls [rst-locale]`)
-					galleryrig.Load(t, tab, where, w, 900, rig.Origin+form,
+					load(t, rig, tab, where, w, 900, rig.Origin+form,
 						chromedp.WaitReady(menu))
 					if !scripts {
 						requireScriptsOff(t, tab, where)
 					}
 					if !anchored {
-						if err := chromedp.Do(tab,
-							chromedp.Evaluate[chromedp.Void](
-								withoutAnchorPositioning,
-								chromedp.EvalAwaitPromise)); err != nil {
-							t.Fatalf("%s: switching anchor positioning off: %v", where, err)
-						}
+						switchAnchorPositioningOff(t, tab, where)
 					}
 					requireAnchorPositioning(t, tab, where, ".ds-top__controls [rst-dropdown-menu]", anchored)
 					requireDrawnScrollbar(t, tab, where)

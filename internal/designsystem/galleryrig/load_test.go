@@ -76,7 +76,8 @@ func TestLoadFailsWhenThePageNavigatesItself(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	failure := loadErr(ctx, 800, 600, rig.Origin+"/page",
+	failure := loadErr(ctx, t.Logf, chromedp.EmulateViewport(800, 600),
+		rig.Origin+"/page",
 		chromedp.WaitReady(chromedp.CSS(`#never`)))
 	if failure == nil || !strings.Contains(failure.Error(), "/gone") {
 		t.Fatalf("want a failure naming the page's own navigation to"+

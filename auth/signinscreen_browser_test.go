@@ -417,6 +417,15 @@ func arrive(marker string) chromedp.Action[chromedp.Void] {
 	)
 }
 
+// doorRevealed waits for the passkey door before a click on the email
+// form beside it. The door ships hidden and its module reveals it when
+// an import resolves, which can be after the load. The reveal moves the
+// submit about 50px, so a Click aimed before it and pressed after lands
+// on the email field and nothing is sent.
+func doorRevealed() chromedp.Action[chromedp.Void] {
+	return chromedp.WaitVisible(chromedp.CSS(`[data-rst-passkey]`))
+}
+
 // read is run for one action that returns a value.
 func read[T any](t *testing.T, rig *harness.Rig, action chromedp.Action[T]) T {
 	t.Helper()
@@ -722,7 +731,7 @@ func TestSigninScreenInTheBrowser(t *testing.T) {
 	// Keymail, scripts on: POST → 303 → the continuation page → the
 	// provider, with the page's CSP still form-action 'self'. A CSP
 	// violation is a console error, which the Screen below reports.
-	run(t, rig,
+	run(t, rig, doorRevealed(),
 		chromedp.SendKeys(chromedp.CSS("#rst-signin-email"), "kay@example.org"),
 		chromedp.Click(chromedp.CSS(`form[action="/signin"] button[type="submit"]`)),
 	)
@@ -842,6 +851,7 @@ func TestSigninScreenInTheBrowser(t *testing.T) {
 		}
 		step("asking for a link")
 		run(t, rig, chromedp.Navigate(rig.Origin+"/signin"), chromedp.WaitVisible(chromedp.CSS("#rst-signin-email")),
+			doorRevealed(),
 			chromedp.SetValue(chromedp.CSS("#rst-signin-email"), address),
 			chromedp.Click(chromedp.CSS(`form[action="/signin"] button[type="submit"]`)))
 		step("waiting for Sent")

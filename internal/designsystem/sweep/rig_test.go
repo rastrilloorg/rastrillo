@@ -13,6 +13,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/chromedp/chromedp"
+
 	"amadan.net/rastrillo/rastrillo"
 	"amadan.net/rastrillo/rastrillo/harness"
 	"amadan.net/rastrillo/rastrillo/internal/designsystem"
@@ -63,8 +65,6 @@ func requireAnchorPositioning(t *testing.T, ctx context.Context, where, selector
 	t.Helper()
 	galleryrig.RequireAnchorPositioning(t, ctx, where, selector, want)
 }
-
-const withoutAnchorPositioning = galleryrig.WithoutAnchorPositioning
 
 func phoneRig(t *testing.T, opts ...harness.Option) *harness.Rig {
 	t.Helper()
@@ -132,4 +132,20 @@ func sweepLocales() []string {
 		return rastrillo.BaseLocales()
 	}
 	return []string{"en", "ar", "ru", "vi"}
+}
+
+func load(
+	t *testing.T, rig *harness.Rig, ctx context.Context, where string,
+	width, height int64, url string, ready chromedp.Action[chromedp.Void],
+) {
+	t.Helper()
+	galleryrig.LoadStyled(t, rig, ctx, where,
+		chromedp.EmulateViewport(width, height), url, ready)
+}
+
+func switchAnchorPositioningOff(
+	t *testing.T, ctx context.Context, where string,
+) {
+	t.Helper()
+	galleryrig.SwitchAnchorPositioningOff(t, ctx, where)
 }
