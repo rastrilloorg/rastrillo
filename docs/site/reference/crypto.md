@@ -26,6 +26,16 @@ Derive           HKDF-SHA256, salt=nil, info=context, 32 bytes
 Signatures are raw r‖s, not ASN.1 DER. A verifier expecting DER will
 reject every signature this package produces.
 
+A sealed blob is not unique. Anyone who holds one can create a different
+byte string that `Open` accepts and that produces the same plaintext,
+without a key. Negating the ephemeral point's Y coordinate leaves the
+ECDH shared secret unchanged, and the format does not bind the ephemeral
+key to anything. The plaintext remains confidential and intact. Do not
+use a sealed blob's bytes to stand for its plaintext: not as a cache or
+deduplication key, and not to detect replays. Signing a blob is still
+fine, because the signature covers those exact bytes. Fixing this would
+change the wire format, so it must wait for format v2.
+
 ## Keys
 
 ```go

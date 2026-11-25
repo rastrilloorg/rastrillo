@@ -96,12 +96,16 @@ func isBase62(s string, n int) bool {
 		return false
 	}
 	for i := 0; i < len(s); i++ {
-		c := s[i]
-		if !(c >= '0' && c <= '9' || c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z') {
+		if !isBase62Byte(s[i]) {
 			return false
 		}
 	}
 	return true
+}
+
+func isBase62Byte(char byte) bool {
+	return char >= '0' && char <= '9' || char >= 'A' && char <= 'Z' ||
+		char >= 'a' && char <= 'z'
 }
 
 // parse splits a token into its public ID and secret, or reports that
@@ -127,6 +131,56 @@ func (s *Store) parse(token string) (id, secret string, ok bool) {
 // It matches any run of base62 after the ID, not exactly 43 characters:
 // a token pasted with a character missing or extra is still nearly all
 // of a secret.
+//
+// Every place a token could start is tried, overlapping ones included,
+// and the secret run of each is redacted. A token can begin inside what
+// another reading takes as a secret or even a public ID, and a search
+// that resumes after its last match skips it and logs its secret
+// (#418). Redacting the union never shows less than any reading would.
+// Each run follows its own "_", so no run is scanned twice.
 func (s *Store) Redact(text string) string {
-	return s.redact.ReplaceAllString(text, "${1}[redacted]")
+	head := s.cfg.Prefix + "_"
+	var spans [][2]int
+	for at := 0; ; at++ {
+		found := strings.Index(text[at:], head)
+		if found < 0 {
+			break
+		}
+		at += found
+		if span, ok := secretAfter(text, at+len(head)); ok {
+			spans = append(spans, span)
+		}
+	}
+	var out strings.Builder
+	shown := 0
+	for at := 0; at < len(spans); {
+		from, to := spans[at][0], spans[at][1]
+		// Runs that touch or overlap read as one secret.
+		for at++; at < len(spans) && spans[at][0] <= to; at++ {
+			to = max(to, spans[at][1])
+		}
+		out.WriteString(text[shown:from])
+		out.WriteString("[redacted]")
+		shown = to
+	}
+	out.WriteString(text[shown:])
+	return out.String()
+}
+
+// secretAfter reads a public ID, its "_" and the base62 run after it
+// from text at, and returns where that run starts and ends.
+func secretAfter(text string, at int) ([2]int, bool) {
+	end := at + idLen
+	if end >= len(text) || !isBase62(text[at:end], idLen) ||
+		text[end] != '_' {
+		return [2]int{}, false
+	}
+	run := end + 1
+	for run < len(text) && isBase62Byte(text[run]) {
+		run++
+	}
+	if run == end+1 {
+		return [2]int{}, false
+	}
+	return [2]int{end + 1, run}, true
 }

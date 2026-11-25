@@ -15,6 +15,16 @@
 //	DeriveInvite:    id/wrapKey/claimSecret = Derive(T, context+"-id"/"-wrap"/"-claim"),
 //	                 claimHash = hex SHA-256(claimSecret); WrapKey/UnwrapKey = SealSym in base64url
 //
+// A sealed blob is not unique, so never use its bytes to stand for its
+// plaintext: not as a dedupe or cache key, and not to detect a replay.
+// A signature over a blob is fine, since it covers those exact bytes.
+// The ephemeral public key is in neither the HKDF input nor the GCM
+// associated data, and negating its Y coordinate leaves the ECDH shared
+// X unchanged. So anyone holding a blob can write a second byte string
+// that opens to the same plaintext, without any key. Confidentiality
+// and integrity of the plaintext hold. Binding the key would change the
+// wire format pinned below, so it waits for a format v2 (#419).
+//
 // testdata/golden.json is amadan's pinned cross-implementation fixture
 // (see amadan docs/superpowers/specs/2026-08-03-rastrillo-crypto-prompt.md);
 // this package and its JS twin (js/crypto.mjs, see JS) must pass it, and
@@ -94,7 +104,8 @@ func (kp *Keypair) BoxPub() []byte {
 
 // Seal encrypts plaintext for recipientBoxPub (a 65-byte uncompressed
 // P-256 point) under an ephemeral ECDH keypair, domain-separated by
-// context. The output is ephPub(65) ‖ iv(12) ‖ ciphertext.
+// context. The output is ephPub(65) ‖ iv(12) ‖ ciphertext. It is not
+// unique: see the package doc.
 func Seal(recipientBoxPub []byte, context string, plaintext []byte) ([]byte, error) {
 	curve := ecdh.P256()
 

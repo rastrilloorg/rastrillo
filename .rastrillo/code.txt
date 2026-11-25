@@ -704,7 +704,6 @@ names apitoken/store_test.go newStore/d 1
 names apitoken/store_test.go newStore/s 1
 names apitoken/store_test.go verify/r 1
 names apitoken/store_test.go verify/s 1
-columns apitoken/token.go 401598240bf9 1
 columns apitoken/token.go 5e5e0635c476 1
 columns apitoken/token.go e61f8aba9baf 1
 names apitoken/token.go DerivePrefix/b 1
@@ -715,7 +714,6 @@ names apitoken/token.go Store.Redact/s 1
 names apitoken/token.go Store.parse/s 1
 names apitoken/token.go ValidAgentName/c 1
 names apitoken/token.go ValidAgentName/i 1
-names apitoken/token.go isBase62/c 1
 names apitoken/token.go isBase62/i 1
 names apitoken/token.go isBase62/n 1
 names apitoken/token.go isBase62/s 1

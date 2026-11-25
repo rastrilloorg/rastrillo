@@ -12,6 +12,8 @@ backwards from commits is a guess wearing a date.
 
 **Fixed: malformed passkey registrations could crash the request.** The WebAuthn CBOR reader panicked on some short attestation objects. A body of just 4 bytes was enough. It also accepted a second spelling of the ES256 algorithm and followed nested data without a limit. A 1 MiB body could use 256 MiB of stack space. Any signed-in person could send one of these objects while registering a passkey. The server recovered from each panic, returned a 500 error, and stayed up. The reader now rejects all three cases.
 
+**Fixed: `apitoken.Store.Redact` could log a token's secret.** If one token followed another token's public ID with nothing in between, the second token's secret was not redacted. Both public IDs now stay in the log, and every secret is replaced.
+
 ### Added: fuzz tests for the security packages
 
 - Fuzz tests cover sessions, CSRF, WebAuthn, passkeys, crypto, keyring, TOTP, second factor, grant tokens, API tokens, OAuth, sealed cookies, and the proof-of-work check. Their seed inputs run with every `go test`.
@@ -20,6 +22,10 @@ backwards from commits is a guess wearing a date.
 
 - `rastrillo new` adds two lanes to `make ci` and `.amadan/ci.d/`. `fix-check` fails when `go fix` would change the code; `go fix -tags browser,perf ./...` applies the changes. `lint` runs golangci-lint v2.15.0 with errcheck, errorlint, forcetypeassert and wastedassign, set in the new `.golangci.yml`. errcheck ignores `Close` and `WriteTo`. To add these lanes to an existing app, copy the two targets, their steps and `.golangci.yml` from a fresh scaffold.
 - The scaffold passes both lanes. Its perf test checks the error from `closeAll`, the sign-in tests' `TestMain` checks the one from `os.Setenv`, and the migration check builds its message with a `strings.Builder`.
+
+### Docs
+
+- The `crypto` docs now say that sealed blob bytes are not unique, so they must not stand for the plaintext as a key or a replay check. Signing a blob is still fine. The format is unchanged.
 
 ## v0.47.0
 

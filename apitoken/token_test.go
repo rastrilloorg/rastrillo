@@ -101,6 +101,21 @@ func TestRedact(t *testing.T) {
 	if got := s.Redact(two); strings.Contains(got, fakeSecret) {
 		t.Errorf("Redact left a secret in %q", got)
 	}
+	// A token can start inside what another reading takes as a secret,
+	// or even as a public ID. Every secret goes, and the real token's
+	// ID stays when no other reading covers it (#418).
+	for in, want := range map[string]string{
+		shaped("tickets", exampleID, "") +
+			shaped("tickets", exampleID, fakeSecret): shaped("tickets",
+			exampleID, "[redacted]") + "_" + exampleID + "_[redacted]",
+		"tickets_aaaaaaaaaaaa_tickets_00000" +
+			shaped("tickets", "bbbbbbbbbbbb", fakeSecret): "tickets_" +
+			"aaaaaaaaaaaa_[redacted]_00000tickets_[redacted]_[redacted]",
+	} {
+		if got := s.Redact(in); got != want {
+			t.Errorf("Redact(%q) = %q, want %q", in, got, want)
+		}
+	}
 	// A secret one character too long or too short is still most of a
 	// secret; it is redacted, not left because it misses the grammar.
 	for _, sec := range []string{fakeSecret + "x", fakeSecret[:42]} {
