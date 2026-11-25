@@ -43,8 +43,24 @@ GOTOOLCHAIN=go1.26.11 CGO_ENABLED=0 GOBIN=$bin go install -trimpath \
 cmp "$bin/rastrillo" rastrillo_v0.47.0_linux_amd64/rastrillo
 ```
 
-Rastrillo releases are not signed. `checksums.txt` verifies that a
-download is intact, but not who published it.
+Releases after v0.47.0 are signed with Rastrillo's release key. The
+signature in `checksums.txt.sig` covers `checksums.txt`, which lists the
+release files. The same key signs the release's Git tag. The public key
+is in the repository at `hack/allowed_signers`, with fingerprint
+`SHA256:dZjcvUHtTguEVEMybnLcDLsn5U82UdNIkC6CbD1GUKA`. Save that file
+beside the release's `checksums.txt` and `checksums.txt.sig`, then run:
+
+```sh
+ssh-keygen -Y verify -f allowed_signers -I release@rastrillo.org \
+  -n file -s checksums.txt.sig < checksums.txt
+```
+
+The command prints `Good "file" signature for release@rastrillo.org`.
+Then verify the release files against `checksums.txt` as described
+above. To verify a tag in a clone of the repository, run
+`hack/sign-ssh.sh verify-tag vX.Y.Z`. It accepts only an SSH signature by
+`release@rastrillo.org`. Plain `git verify-tag` would also accept a GPG
+signature your keyring trusts.
 
 ## Scaffold an app
 

@@ -78,12 +78,16 @@ amadan cannot delete a release or edit its notes. Get the CHANGELOG
 section right before you tag; `hack/release.sh -n vX.Y.Z` builds
 everything and prints where, without publishing.
 
-Signing is wired but not chosen: `make release TAG=... SIGN=cmd` runs
-`cmd sign` and `cmd verify` on checksums.txt, and `SIGN_AFTER` in
-`hack/release.sh` says which tags must carry the signature. Leave it
-empty until the method is decided. `hack/release.sh -sign cmd -try-sign`
-rehearses a signer in seconds; it and `-n -sign` really sign, so a
-keyless signer leaves an entry in its public log.
+Releases after v0.47.0 are signed with the release key, an SSH key in
+1Password's "Rastrillo Release" vault (discussion #417). Make the tag
+with `hack/sign-ssh.sh tag vX.Y.Z <sha>`, not `git tag -a`: it signs the
+tag with that key and checks it. `make release` then signs
+checksums.txt with the same key, and refuses a tag the key did not sign.
+The signer reads the key through a service account whose token is in
+`~/.config/agent-secrets/rastrillo-release.op-token`; the key goes into
+a private ssh-agent for five minutes and never touches disk.
+`hack/release.sh -sign hack/sign-ssh.sh -try-sign` checks the signer in
+seconds, and `hack/sign-ssh.sh verify-tag vX.Y.Z` checks a tag. `hack/allowed_signers` holds the public key.
 
 ## The gate
 

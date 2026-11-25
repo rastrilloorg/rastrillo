@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
@@ -59,7 +60,7 @@ func TestReleaseFilesStartAfterTheCut(t *testing.T) {
 	}
 	for _, tag := range []string{"v0.47.1", "v0.48.0", "v0.100.0"} {
 		want := append(tarballs(tag), sboms(tag)...)
-		want = append(want, "checksums.txt")
+		want = append(want, "checksums.txt", "checksums.txt.sig")
 		if got := releaseFiles(t, tag); !slices.Equal(got, want) {
 			t.Errorf("%s carries %v, want %v", tag, got, want)
 		}
@@ -182,5 +183,68 @@ func TestReleaseSignRehearsalRunsTheSigner(t *testing.T) {
 		"-sign", t.TempDir()+"/missing", "-try-sign")
 	if out, err := try.CombinedOutput(); err == nil {
 		t.Errorf("-try-sign passed with no signer at all: %s", out)
+	}
+}
+
+// The committed fixture was signed with the release key itself, so a
+// changed allowed_signers or a broken verify step fails here, not in
+// front of someone checking a download.
+func TestReleaseKeyVerifiesItsFixture(t *testing.T) {
+	if _, err := exec.LookPath("ssh-keygen"); err != nil {
+		t.Skip("no ssh-keygen")
+	}
+	verify := func(file string) error {
+		return exec.Command("sh", "hack/sign-ssh.sh", "verify", file,
+			"testdata/release/signed.txt.sig").Run()
+	}
+	if err := verify("testdata/release/signed.txt"); err != nil {
+		t.Fatalf("the release key's fixture does not verify: %v", err)
+	}
+	changed := filepath.Join(t.TempDir(), "signed.txt")
+	os.WriteFile(changed,
+		[]byte("Rastrillo release key test fixture!\n"), 0o644)
+	if verify(changed) == nil {
+		t.Error("a changed fixture verified against the original signature")
+	}
+}
+
+// release.sh publishes a signed release only from a tag the release
+// key signed. An unsigned tag and one signed by any other SSH key must
+// both be refused; git verify-tag alone would also take a trusted GPG
+// signature.
+func TestReleaseTagNeedsTheReleaseKey(t *testing.T) {
+	for _, tool := range []string{"ssh-keygen", "git"} {
+		if _, err := exec.LookPath(tool); err != nil {
+			t.Skip("no " + tool)
+		}
+	}
+	script, _ := filepath.Abs("hack/sign-ssh.sh")
+	repo := t.TempDir()
+	git := func(args ...string) {
+		t.Helper()
+		run := exec.Command("git", append([]string{"-c", "user.name=t",
+			"-c", "user.email=t@example.org"}, args...)...)
+		run.Dir = repo
+		if out, err := run.CombinedOutput(); err != nil {
+			t.Fatalf("git %v: %v: %s", args, err, out)
+		}
+	}
+	git("init", "-q")
+	git("commit", "-q", "--allow-empty", "-m", "x")
+	git("tag", "-a", "-m", "x", "unsigned")
+	key := filepath.Join(t.TempDir(), "other")
+	keygen := exec.Command("ssh-keygen", "-q", "-t", "ed25519", "-N", "",
+		"-f", key)
+	if out, err := keygen.CombinedOutput(); err != nil {
+		t.Fatalf("ssh-keygen: %v: %s", err, out)
+	}
+	git("-c", "gpg.format=ssh", "-c", "user.signingkey="+key+".pub",
+		"tag", "-s", "-m", "x", "other")
+	for _, tag := range []string{"unsigned", "other"} {
+		verify := exec.Command("sh", script, "verify-tag", tag)
+		verify.Dir = repo
+		if out, err := verify.CombinedOutput(); err == nil {
+			t.Errorf("verify-tag accepted %s: %s", tag, out)
+		}
 	}
 }

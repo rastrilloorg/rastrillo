@@ -460,7 +460,9 @@ mirror-check:
 # part of ci, for the reason mirror is not: publishing is not a runner's
 # job, and a release missing is no branch's fault. Run release after
 # pushing a tag, and release-check whenever you want to know nothing was
-# missed. SIGN=cmd signs checksums.txt; hack/release.sh says how.
+# missed. Releases are signed with hack/sign-ssh.sh (the release key in
+# 1Password); SIGN= with no value releases a tag from before signing.
+SIGN ?= hack/sign-ssh.sh
 release: | $(BIN)/tmp
 	@test -n "$(TAG)" || { echo "usage: make release TAG=vX.Y.Z"; exit 2; }
 	hack/release.sh $(if $(SIGN),-sign '$(SIGN)') $(TAG)

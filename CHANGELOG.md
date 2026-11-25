@@ -22,6 +22,10 @@ backwards from commits is a guess wearing a date.
 
 - Each release now carries a CycloneDX SBOM for each CLI tarball and one for the module, and `checksums.txt` covers them. [Getting started](/docs/getting-started) says how to check a download, and [Writing an addon](/docs/writing-addons) has the recipe for addon releases.
 
+### Added: signed releases
+
+- Releases after v0.47.0 are signed with Rastrillo's release SSH key. The signature in `checksums.txt.sig` covers `checksums.txt`, and the same key signs the release's Git tag. The public key is in `hack/allowed_signers`. [Getting started](/docs/getting-started) explains how to verify a download.
+
 ### Changed: go fix and golangci-lint in a new app's gate
 
 - `rastrillo new` adds two lanes to `make ci` and `.amadan/ci.d/`. `fix-check` fails when `go fix` would change the code; `go fix -tags browser,perf ./...` applies the changes. `lint` runs golangci-lint v2.15.0 with errcheck, errorlint, forcetypeassert and wastedassign, set in the new `.golangci.yml`. errcheck ignores `Close` and `WriteTo`. To add these lanes to an existing app, copy the two targets, their steps and `.golangci.yml` from a fresh scaffold.

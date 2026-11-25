@@ -20,10 +20,11 @@
 # The signature covers checksums.txt, which covers everything else. CMD
 # is run as `CMD sign checksums.txt SIG` to write the signature and as
 # `CMD verify checksums.txt SIG` to check it, so the key's home can
-# change without touching this script. Which method signs is still open
-# (discussion #417); until SIGN_AFTER names a tag, no release needs a
-# signature and -sign is only rehearsed, by -n or -try-sign. Both really
-# sign, so a keyless signer leaves an entry in its public log.
+# change without touching this script. hack/sign-ssh.sh is the signer
+# (discussion #417): Rastrillo's release key, an SSH key held in
+# 1Password, which also signs the tag. Every tag after SIGN_AFTER needs
+# both signatures, and the tag's is checked before anything publishes.
+# -n -sign and -try-sign really sign, without publishing.
 #
 # amadan has no verb to delete a release, edit its notes or replace a
 # file, so a wrong release there is permanent. Everything that can fail
@@ -64,7 +65,7 @@ CYCLONEDX=github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod@v1.12.0
 # cannot replace it. Without the cut, release-check would report every
 # older release as incomplete and release would try to add to them.
 SBOM_AFTER=${SBOM_AFTER:-v0.47.0}
-SIGN_AFTER=${SIGN_AFTER:-}
+SIGN_AFTER=${SIGN_AFTER:-v0.47.0}
 SIGNATURE=${SIGNATURE:-checksums.txt.sig}
 
 die() { echo "release: $*" >&2; exit 1; }
@@ -360,6 +361,13 @@ publish() {
 	[ -z "$m" ] || [ "$m" = "$o" ] ||
 		die "$t is $o on origin and $m on $MIRROR_REMOTE"
 	git fetch -q origin main "refs/tags/$t:refs/tags/$t"
+	# A signed release must come from a tag the same key signed, or the
+	# files would vouch for a commit nobody vouched for.
+	if signed "$t"; then
+		"$(git rev-parse --show-toplevel)/hack/sign-ssh.sh" verify-tag "$t" \
+			>/dev/null 2>&1 ||
+			die "$t is not signed by the release key; tag it with hack/sign-ssh.sh tag"
+	fi
 
 	a=$(state amadan "$t")
 	g=$(state github "$t")
