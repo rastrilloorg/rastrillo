@@ -35,7 +35,7 @@ type env struct {
 	db   *sql.DB
 }
 
-func newEnv(t *testing.T) env {
+func newEnv(t testing.TB) env {
 	t.Helper()
 	d, err := db.Open(filepath.Join(t.TempDir(), "s.db"), nil)
 	if err != nil {

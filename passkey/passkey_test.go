@@ -35,7 +35,7 @@ type env struct {
 func newEnv(t *testing.T) env { return newEnvWith(t, nil) }
 
 // newEnvWith is newEnv with the passkey Config adjusted first.
-func newEnvWith(t *testing.T, mut func(*passkey.Config)) env {
+func newEnvWith(t testing.TB, mut func(*passkey.Config)) env {
 	t.Helper()
 	d, err := db.Open(filepath.Join(t.TempDir(), "p.db"), nil)
 	if err != nil {

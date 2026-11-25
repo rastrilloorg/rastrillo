@@ -40,7 +40,9 @@ func (c *clock) now() time.Time { return c.t }
 
 var t0 = time.Date(2026, 10, 5, 12, 0, 0, 0, time.UTC)
 
-func newStore(t *testing.T, mut func(*apitoken.Config)) (*apitoken.Store, *sql.DB, *clock) {
+func newStore(
+	t testing.TB, mut func(*apitoken.Config),
+) (*apitoken.Store, *sql.DB, *clock) {
 	t.Helper()
 	d := schema.Open(t)
 	c := &clock{t: t0}

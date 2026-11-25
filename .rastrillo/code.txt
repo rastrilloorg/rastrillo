@@ -637,7 +637,6 @@ columns apitoken/store_test.go 8a470ea861e0 1
 columns apitoken/store_test.go 8c89efe3f4d7 1
 columns apitoken/store_test.go 8cf44c0e9a66 1
 columns apitoken/store_test.go 9023874913ac 1
-columns apitoken/store_test.go 91483b445cfd 1
 columns apitoken/store_test.go 9693ed62034a 1
 columns apitoken/store_test.go 9740f2bb33d3 1
 columns apitoken/store_test.go 9b4722e9ef34 1
@@ -25829,18 +25828,13 @@ names webauthn/browser_test.go fixture.signinFinish/w 1
 names webauthn/browser_test.go writeJSON/v 1
 names webauthn/browser_test.go writeJSON/w 1
 columns webauthn/cbor.go 9c045ae73d14 1
-func webauthn/cbor.go cborReader.value 47
 names webauthn/cbor.go cborMap/b 1
 names webauthn/cbor.go cborMap/m 1
 names webauthn/cbor.go cborMap/r 1
 names webauthn/cbor.go cborMap/v 1
 names webauthn/cbor.go cborReader.head/b 1
 names webauthn/cbor.go cborReader.head/r 1
-names webauthn/cbor.go cborReader.value/i 2
-names webauthn/cbor.go cborReader.value/k 1
-names webauthn/cbor.go cborReader.value/m 1
 names webauthn/cbor.go cborReader.value/r 1
-names webauthn/cbor.go cborReader.value/v 2
 names webauthn/cbor.go mapBytes/b 1
 names webauthn/cbor.go mapBytes/m 1
 names webauthn/cbor.go mapInt/i 1

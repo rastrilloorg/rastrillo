@@ -9,7 +9,7 @@
 // every platform authenticator we care about. Anything outside the subset is
 // rejected rather than waved through. The CBOR reader next door covers
 // exactly the subset WebAuthn uses, hand-rolled because a dependency on the
-// authentication path is a far larger surface to audit than eighty lines.
+// authentication path is a far larger surface to audit than 150 lines.
 //
 // The passkey does two jobs, and only one of them is here. This package is
 // the *identity* half — proving the person is who they say — while sealing

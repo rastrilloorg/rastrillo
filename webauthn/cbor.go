@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"math"
 )
 
 // A CBOR reader covering exactly the subset WebAuthn uses: the attestation
@@ -13,13 +14,19 @@ import (
 //
 // Hand-rolled rather than pulled in because the subset is this small and this
 // code sits on the authentication path: a dependency here would be a much
-// larger surface to audit than the eighty lines below.
+// larger surface to audit than the 150 lines below.
 
 var errCBOR = errors.New("malformed CBOR")
 
+// maxDepth bounds nesting. The deepest structure WebAuthn sends, an
+// attestation statement's certificate chain, is three deep; unbounded,
+// one 1 MiB request body nests 750,000 deep and holds a 256 MB stack.
+const maxDepth = 16
+
 type cborReader struct {
-	buf []byte
-	pos int
+	buf   []byte
+	pos   int
+	depth int
 }
 
 const (
@@ -81,10 +88,8 @@ func (r *cborReader) value() (any, error) {
 		return nil, err
 	}
 	switch major {
-	case majUint:
-		return int64(arg), nil
-	case majNegInt:
-		return -1 - int64(arg), nil
+	case majUint, majNegInt:
+		return integer(major, arg)
 	case majBytes, majText:
 		if arg > uint64(len(r.buf)-r.pos) {
 			return nil, errCBOR
@@ -97,32 +102,74 @@ func (r *cborReader) value() (any, error) {
 		out := make([]byte, len(raw))
 		copy(out, raw)
 		return out, nil
-	case majArray:
-		items := make([]any, 0, min(int(arg), 64))
-		for i := uint64(0); i < arg; i++ {
-			v, err := r.value()
-			if err != nil {
-				return nil, err
-			}
-			items = append(items, v)
-		}
-		return items, nil
-	case majMap:
-		m := make(map[any]any, min(int(arg), 64))
-		for i := uint64(0); i < arg; i++ {
-			k, err := r.value()
-			if err != nil {
-				return nil, err
-			}
-			v, err := r.value()
-			if err != nil {
-				return nil, err
-			}
-			m[k] = v
-		}
-		return m, nil
+	case majArray, majMap:
+		return r.nested(major, arg)
 	}
 	return nil, fmt.Errorf("%w: unsupported major type %d", errCBOR, major)
+}
+
+// integer refuses an argument past int64, which would otherwise wrap
+// and read back with the other sign: -7, the ES256 alg, spelled as an
+// unsigned integer.
+func integer(major byte, arg uint64) (any, error) {
+	if arg > math.MaxInt64 {
+		return nil, fmt.Errorf("%w: integer out of range", errCBOR)
+	}
+	if major == majNegInt {
+		return -1 - int64(arg), nil
+	}
+	return int64(arg), nil
+}
+
+func (reader *cborReader) nested(major byte, count uint64) (any, error) {
+	if reader.depth == maxDepth {
+		return nil, fmt.Errorf("%w: nested too deep", errCBOR)
+	}
+	reader.depth++
+	defer func() { reader.depth-- }()
+	if major == majArray {
+		return reader.array(count)
+	}
+	return reader.mapping(count)
+}
+
+// array caps its capacity hint while the count is still a uint64: a
+// count of 2^63 or more converts to a negative int, and make panics.
+func (reader *cborReader) array(count uint64) (any, error) {
+	items := make([]any, 0, min(count, 64))
+	for range count {
+		item, err := reader.value()
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, item)
+	}
+	return items, nil
+}
+
+// mapping takes integer and text keys only, all that COSE and the
+// attestation object use. A byte-string, array or map key is not
+// hashable, and storing one panics.
+func (reader *cborReader) mapping(count uint64) (any, error) {
+	entries := make(map[any]any, min(count, 64))
+	for range count {
+		key, err := reader.value()
+		if err != nil {
+			return nil, err
+		}
+		switch key.(type) {
+		case int64, string:
+		default:
+			return nil, fmt.Errorf("%w: map key is not an integer or "+
+				"text", errCBOR)
+		}
+		entry, err := reader.value()
+		if err != nil {
+			return nil, err
+		}
+		entries[key] = entry
+	}
+	return entries, nil
 }
 
 // cborMap decodes a byte slice expected to hold a single CBOR map.
