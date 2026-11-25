@@ -1,0 +1,10 @@
+working out which equipment is available to borrow
+borrowing an item for a member
+marking a loan returned
+checking a member's or admin's sign-in
+adding a piece of equipment
+retiring a piece of equipment
+listing the overdue loans and who has them
+building the loan history CSV download
+seeding the demo members, equipment and loans
+validating a borrow request before it is saved

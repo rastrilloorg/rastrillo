@@ -1,0 +1,5 @@
+{
+ "command": "go test ./... 2>&1 | tail -8",
+ "is_error": false,
+ "result": "\tgo get groomer/gen/locales\nFAIL\tgroomer/internal/groomer [setup failed]\n# groomer/internal/groomertest\ncmd/groomer/main.go:10:2: missing go.sum entry for module providing package amadan.net/rastrillo/rastrillo (imported by groomer/cmd/groomer); to add:\n\tgo get groomer/cmd/groomer\nFAIL\tgroomer/internal/groomertest [setup failed]\n?   \tgroomer/internal/groomer/icons\t[no test files]\nFAIL"
+}

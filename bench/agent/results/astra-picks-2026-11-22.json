@@ -1,0 +1,249 @@
+{
+  "Pairs": "pairs-2026-11-22.json",
+  "Seed": 20261122,
+  "Model": "gpt-6-astra",
+  "Effort": "high",
+  "PromptHash": "d8228569f633bb9b",
+  "Picks": [
+    {
+      "PairID": 1,
+      "Canonical": "1/groomer-carlos-3: checking the owner's sign-in | weight-1/groomer-carlos-1: checking the owner's sign-in",
+      "Verdict": "right",
+      "At": "2026-11-22T19:52:14.929743333Z"
+    },
+    {
+      "PairID": 2,
+      "Canonical": "accept-1/groomer-carlos-1: saving changes to a service | cost-1/groomer-carlos-3: saving changes to a service",
+      "Verdict": "left",
+      "At": "2026-11-22T19:52:12.959825122Z"
+    },
+    {
+      "PairID": 3,
+      "Canonical": "weight-1/groomer-carlos-1: cancelling a booking | weight-1/groomer-carlos-3: cancelling a booking",
+      "Verdict": "left",
+      "At": "2026-11-22T19:52:14.485233747Z"
+    },
+    {
+      "PairID": 4,
+      "Canonical": "cost-1/groomer-carlos-2: cancelling a booking | cost-1/groomer-carlos-3: cancelling a booking",
+      "Verdict": "left",
+      "At": "2026-11-22T19:52:18.842256243Z"
+    },
+    {
+      "PairID": 5,
+      "Canonical": "cost-1/groomer-carlos-3: listing the bookings for the owner | weight-1/groomer-carlos-1: listing the bookings for the owner",
+      "Verdict": "right",
+      "At": "2026-11-22T19:52:23.89460028Z"
+    },
+    {
+      "PairID": 6,
+      "Canonical": "cost-1/groomer-carlos-2: working out which time slots are free to book | cost-1/groomer-carlos-3: working out which time slots are free to book",
+      "Verdict": "left",
+      "At": "2026-11-22T19:52:21.325397104Z"
+    },
+    {
+      "PairID": 7,
+      "Canonical": "1/groomer-carlos-3: saving changes to a service | cost-1/groomer-carlos-2: saving changes to a service",
+      "Verdict": "left",
+      "At": "2026-11-22T19:52:24.53881763Z"
+    },
+    {
+      "PairID": 8,
+      "Canonical": "accept-1/groomer-carlos-1: listing the bookings for the owner | cost-1/groomer-carlos-2: listing the bookings for the owner",
+      "Verdict": "not-same-job",
+      "At": "2026-11-22T19:52:29.788443258Z"
+    },
+    {
+      "PairID": 9,
+      "Canonical": "cost-1/groomer-carlos-3: saving changes to a service | weight-1/groomer-carlos-3: saving changes to a service",
+      "Verdict": "left",
+      "At": "2026-11-22T19:52:33.996008052Z"
+    },
+    {
+      "PairID": 10,
+      "Canonical": "cost-1/groomer-carlos-3: listing the bookings for the owner | weight-1/groomer-carlos-3: listing the bookings for the owner",
+      "Verdict": "right",
+      "At": "2026-11-22T19:52:29.984462777Z"
+    },
+    {
+      "PairID": 11,
+      "Canonical": "cost-1/groomer-carlos-3: saving the opening hours | weight-1/groomer-carlos-1: saving the opening hours",
+      "Verdict": "not-same-job",
+      "At": "2026-11-22T19:52:36.167822114Z"
+    },
+    {
+      "PairID": 12,
+      "Canonical": "1/groomer-carlos-3: listing the bookings for the owner | accept-1/groomer-carlos-1: listing the bookings for the owner",
+      "Verdict": "not-same-job",
+      "At": "2026-11-22T19:52:37.668764485Z"
+    },
+    {
+      "PairID": 13,
+      "Canonical": "1/groomer-carlos-3: saving changes to a service | weight-1/groomer-carlos-1: saving changes to a service",
+      "Verdict": "left",
+      "At": "2026-11-22T19:52:40.778727184Z"
+    },
+    {
+      "PairID": 14,
+      "Canonical": "cost-1/groomer-carlos-3: validating a booking before it is saved | weight-1/groomer-carlos-1: validating a booking before it is saved",
+      "Verdict": "not-same-job",
+      "At": "2026-11-22T19:52:42.40840085Z"
+    },
+    {
+      "PairID": 15,
+      "Canonical": "cost-1/groomer-carlos-3: saving the opening hours | weight-1/groomer-carlos-3: saving the opening hours",
+      "Verdict": "not-same-job",
+      "At": "2026-11-22T19:52:43.565767441Z"
+    },
+    {
+      "PairID": 16,
+      "Canonical": "accept-1/groomer-carlos-2: saving changes to a service | cost-1/groomer-carlos-1: saving changes to a service",
+      "Verdict": "left",
+      "At": "2026-11-22T19:52:48.526037973Z"
+    },
+    {
+      "PairID": 17,
+      "Canonical": "1/groomer-carlos-1: cancelling a booking | accept-1/groomer-carlos-3: cancelling a booking",
+      "Verdict": "left",
+      "At": "2026-11-22T19:52:50.010880808Z"
+    },
+    {
+      "PairID": 18,
+      "Canonical": "accept-1/groomer-carlos-2: cancelling a booking | weight-1/groomer-carlos-2: cancelling a booking",
+      "Verdict": "right",
+      "At": "2026-11-22T19:52:50.141714719Z"
+    },
+    {
+      "PairID": 19,
+      "Canonical": "1/groomer-carlos-1: saving the opening hours | cost-1/groomer-carlos-1: saving the opening hours",
+      "Verdict": "right",
+      "At": "2026-11-22T19:52:56.292369388Z"
+    },
+    {
+      "PairID": 20,
+      "Canonical": "1/groomer-carlos-2: listing the bookings for the owner | accept-1/groomer-carlos-3: listing the bookings for the owner",
+      "Verdict": "left",
+      "At": "2026-11-22T19:52:56.358285876Z"
+    },
+    {
+      "PairID": 21,
+      "Canonical": "1/groomer-carlos-2: saving changes to a service | accept-1/groomer-carlos-3: saving changes to a service",
+      "Verdict": "right",
+      "At": "2026-11-22T19:52:56.838481329Z"
+    },
+    {
+      "PairID": 22,
+      "Canonical": "1/groomer-carlos-1: saving changes to a service | weight-1/groomer-carlos-2: saving changes to a service",
+      "Verdict": "right",
+      "At": "2026-11-22T19:53:04.32719312Z"
+    },
+    {
+      "PairID": 23,
+      "Canonical": "1/groomer-carlos-2: saving the opening hours | accept-1/groomer-carlos-2: saving the opening hours",
+      "Verdict": "not-same-job",
+      "At": "2026-11-22T19:53:05.767289739Z"
+    },
+    {
+      "PairID": 24,
+      "Canonical": "accept-1/groomer-carlos-2: listing the bookings for the owner | cost-1/groomer-carlos-1: listing the bookings for the owner",
+      "Verdict": "right",
+      "At": "2026-11-22T19:53:12.734374061Z"
+    },
+    {
+      "PairID": 25,
+      "Canonical": "accept-1/groomer-carlos-2: saving the opening hours | cost-1/groomer-carlos-1: saving the opening hours",
+      "Verdict": "not-same-job",
+      "At": "2026-11-22T19:53:12.905501005Z"
+    },
+    {
+      "PairID": 26,
+      "Canonical": "1/groomer-carlos-2: validating a booking before it is saved | accept-1/groomer-carlos-2: validating a booking before it is saved",
+      "Verdict": "not-same-job",
+      "At": "2026-11-22T19:53:10.966256311Z"
+    },
+    {
+      "PairID": 27,
+      "Canonical": "1/groomer-carlos-2: listing the bookings for the owner | cost-1/groomer-carlos-1: listing the bookings for the owner",
+      "Verdict": "left",
+      "At": "2026-11-22T19:53:16.352002446Z"
+    },
+    {
+      "PairID": 28,
+      "Canonical": "1/groomer-carlos-1: saving the opening hours | 1/groomer-carlos-2: saving the opening hours",
+      "Verdict": "left",
+      "At": "2026-11-22T19:53:19.52960404Z"
+    },
+    {
+      "PairID": 29,
+      "Canonical": "accept-1/groomer-carlos-3: saving changes to a service | weight-1/groomer-carlos-2: saving changes to a service",
+      "Verdict": "right",
+      "At": "2026-11-22T19:53:20.010004271Z"
+    },
+    {
+      "PairID": 30,
+      "Canonical": "accept-1/groomer-carlos-2: cancelling a booking | cost-1/groomer-carlos-1: cancelling a booking",
+      "Verdict": "right",
+      "At": "2026-11-22T19:53:22.600274722Z"
+    },
+    {
+      "PairID": 31,
+      "Canonical": "1/groomer-carlos-1: saving changes to a service | accept-1/groomer-carlos-3: saving changes to a service",
+      "Verdict": "right",
+      "At": "2026-11-22T19:53:26.199412065Z"
+    },
+    {
+      "PairID": 32,
+      "Canonical": "1/groomer-carlos-2: saving the opening hours | cost-1/groomer-carlos-1: saving the opening hours",
+      "Verdict": "left",
+      "At": "2026-11-22T19:53:25.768216017Z"
+    },
+    {
+      "PairID": 33,
+      "Canonical": "1/groomer-carlos-2: listing the bookings for the owner | weight-1/groomer-carlos-2: listing the bookings for the owner",
+      "Verdict": "left",
+      "At": "2026-11-22T19:53:28.315591238Z"
+    },
+    {
+      "PairID": 34,
+      "Canonical": "accept-1/groomer-carlos-2: listing the bookings for the owner | accept-1/groomer-carlos-3: listing the bookings for the owner",
+      "Verdict": "right",
+      "At": "2026-11-22T19:53:33.131098879Z"
+    },
+    {
+      "PairID": 35,
+      "Canonical": "accept-1/groomer-carlos-2: cancelling a booking | accept-1/groomer-carlos-3: cancelling a booking",
+      "Verdict": "right",
+      "At": "2026-11-22T19:53:32.32238848Z"
+    },
+    {
+      "PairID": 36,
+      "Canonical": "1/groomer-carlos-1: saving changes to a service | cost-1/groomer-carlos-1: saving changes to a service",
+      "Verdict": "left",
+      "At": "2026-11-22T19:53:34.372958272Z"
+    },
+    {
+      "PairID": 37,
+      "Canonical": "accept-1/groomer-carlos-2: saving the opening hours | accept-1/groomer-carlos-3: saving the opening hours",
+      "Verdict": "right",
+      "At": "2026-11-22T19:53:38.425303991Z"
+    },
+    {
+      "PairID": 38,
+      "Canonical": "1/groomer-carlos-1: saving the opening hours | accept-1/groomer-carlos-2: saving the opening hours",
+      "Verdict": "left",
+      "At": "2026-11-22T19:53:38.572490703Z"
+    },
+    {
+      "PairID": 39,
+      "Canonical": "1/groomer-carlos-1: listing the bookings for the owner | 1/groomer-carlos-2: listing the bookings for the owner",
+      "Verdict": "left",
+      "At": "2026-11-22T19:53:39.459160087Z"
+    },
+    {
+      "PairID": 40,
+      "Canonical": "accept-1/groomer-carlos-2: saving changes to a service | accept-1/groomer-carlos-3: saving changes to a service",
+      "Verdict": "left",
+      "At": "2026-11-22T19:53:43.162256043Z"
+    }
+  ]
+}

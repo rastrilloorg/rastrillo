@@ -68,7 +68,7 @@ func pollLabel() string {
 
 // poll asks what an unguided agent would deploy the brief to, so the
 // control deploys where a person with no framework would end up.
-func poll(args []string) error {
+func poll(ctx context.Context, args []string) error {
 	flags := flag.NewFlagSet("poll", flag.ExitOnError)
 	briefName := flags.String("brief", "groomer", "the brief to ask about")
 	asks := flags.Int("n", 5, "how many fresh sessions to ask")
@@ -115,7 +115,7 @@ func poll(args []string) error {
 				DeployAccount: "no account: this session only answers a question",
 			},
 		}
-		run, err := runner.Ask(context.Background(), spec, "poll",
+		run, err := runner.Ask(ctx, spec, "poll",
 			b.Text+"\n\n"+pollQuestion)
 		if err != nil {
 			return err

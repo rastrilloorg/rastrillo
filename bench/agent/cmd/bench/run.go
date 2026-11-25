@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"crypto/sha256"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -10,6 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"slices"
@@ -29,13 +31,23 @@ import (
 
 const carlokuAccount = `the Carloku account "demo" (short id bdf)`
 
+// goplsArmNote is the carlos-gopls arm's definition, in the round's
+// header.
+const goplsArmNote = "carlos-gopls is carlos with gopls over MCP, set up " +
+	"as gopls's own docs set it up: `gopls mcp` runs behind the bench's " +
+	"goplsmcp wrapper, which starts it again in the app's module once " +
+	"go.mod appears (Claude Code's MCP never lets gopls find a module " +
+	"made after it starts), and the arm's system prompt ends with " +
+	"`gopls mcp -instructions` after the environment notes. The prompt " +
+	"itself is carlos's, word for word."
+
 type job struct {
 	brief brief.Brief
 	arm   brief.Arm
 	n     int
 }
 
-func runRound(args []string) error {
+func runRound(ctx context.Context, args []string) error {
 	flags := flag.NewFlagSet("run", flag.ExitOnError)
 	label := flags.String("round", "", "the round's label, e.g. 1")
 	briefList := flags.String("briefs", "groomer", "comma-separated briefs")
@@ -58,6 +70,8 @@ func runRound(args []string) error {
 		"a service credential for the carlos arm; none by default, since one cannot enable instances")
 	carlokuConsole := flags.String("carloku-console", "https://console.carloku.com",
 		"the console that credential belongs to")
+	goplsFlag := flags.String("gopls", "",
+		"the gopls binary the carlos-gopls arm's MCP server runs; needed with that arm")
 	tokenFile := flags.String("token-file", defaultTokenFile(), "the token from claude setup-token, if CLAUDE_CODE_OAUTH_TOKEN is not set")
 	flags.Parse(args)
 	authToken, err := token(*tokenFile)
@@ -82,6 +96,14 @@ func runRound(args []string) error {
 		return err
 	}
 	cache, err := runsRoot()
+	if err != nil {
+		return err
+	}
+	var roundGopls string
+	if previous, err := loadRound(root, *label); err == nil {
+		roundGopls = previous.Gopls
+	}
+	gopls, err := goplsFor(arms, *goplsFlag, roundGopls)
 	if err != nil {
 		return err
 	}
@@ -128,6 +150,24 @@ func runRound(args []string) error {
 		"control-account": *controlAccount, "control-hosts": *controlHosts,
 		"timeout": timeout.String(), "model": *model, "claude": version,
 	}
+	var goplsWrapper, goplsInstructions string
+	if gopls.version != "" {
+		// Only when gopls runs, so a round without it keeps the
+		// fingerprint it always had.
+		settings["gopls"] = gopls.version
+		settings["gopls-instructions"] = gopls.instructions
+		if settings["gopls-proxy"], err = sourceHash(root, goplsProxySource...); err != nil {
+			return err
+		}
+		if goplsWrapper, err = buildGoplsProxy(root,
+			filepath.Join(cache, *label, "bin")); err != nil {
+			return err
+		}
+		if goplsInstructions, err = pinGoplsInstructions(
+			filepath.Join(cache, *label), gopls.instructions); err != nil {
+			return err
+		}
+	}
 	if contains(arms, brief.Spec) {
 		// The spec arm's requirements are a live page; pin what it said
 		// when the round began, so a revised spec is a new round.
@@ -148,6 +188,8 @@ func runRound(args []string) error {
 			Label: *label, Date: time.Now().UTC().Format("2006-01-02"),
 			Model: *model, ClaudeVersion: version,
 			Rastrillo:            describe(rastrilloSource),
+			Gopls:                gopls.version,
+			GoplsInstructions:    goplsInstructions,
 			Platform:             *platform,
 			Poll:                 *poll,
 			GettingStartedCommit: gettingStartedCommit(),
@@ -158,9 +200,12 @@ func runRound(args []string) error {
 	} else if err != nil {
 		return err
 	}
+	if gopls.version != "" && len(r.Runs) == 0 && !slices.Contains(r.Notes, goplsArmNote) {
+		r.Notes = append(r.Notes, goplsArmNote)
+	}
 	if r.Config != config {
 		return fmt.Errorf("round %s was started with a different Rastrillo, "+
-			"framing, brief, platform or claude: start a new round", r.Label)
+			"gopls, framing, brief, platform or claude: start a new round", r.Label)
 	}
 	if *reuseControl != "" {
 		if err := reuseControlRuns(root, &r, *reuseControl, briefs, *runs,
@@ -170,22 +215,23 @@ func runRound(args []string) error {
 		arms = without(arms, brief.Control)
 	}
 
-	var jobs []job
+	byName := map[string]brief.Brief{}
+	var names []string
 	for _, b := range briefs {
-		for _, arm := range arms {
-			for n := 1; n <= *runs; n++ {
-				if !hasRun(r, b.Name, arm, n) {
-					jobs = append(jobs, job{b, arm, n})
-				}
-			}
-		}
+		byName[b.Name] = b
+		names = append(names, b.Name)
+	}
+	r.Schedule = extendSchedule(r.Schedule, names, arms, *runs)
+	var jobs []job
+	for _, slot := range pendingJobs(r, names, arms, *runs) {
+		jobs = append(jobs, job{byName[slot.Brief], slot.Arm, slot.N})
 	}
 	if err := saveRound(root, r); err != nil {
 		return err
 	}
 	fmt.Printf("round %s: %d runs to do, %d at a time\n", r.Label, len(jobs), *parallel)
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	var mutex sync.Mutex
 	var firstErr error
@@ -218,6 +264,14 @@ func runRound(args []string) error {
 				spec.Vars.DeployAccount = deploy.account
 				spec.ExtraHosts = deploy.hosts
 				spec.DeployEnv = deploy.env
+				if j.arm == brief.CarlosGopls {
+					spec.MCPConfig = goplsServer(goplsWrapper, gopls.path,
+						filepath.Join(spec.Dir, "app"),
+						filepath.Join(spec.Dir, "rec", "goplsmcp.log"),
+						rastrilloSource.GoEnv)
+					spec.SystemPromptExtra = gopls.instructions
+					spec.MCPLog = filepath.Join(spec.Dir, "rec", "goplsmcp.log")
+				}
 				if *carlokuTokenFile != "" {
 					spec.DeniedFiles = []string{*carlokuTokenFile}
 				}
@@ -350,13 +404,13 @@ type deployment struct {
 	env               map[string]string
 }
 
-// withCarloku gives the carlos arm the demo account's service
+// withCarloku gives the Rastrillo arms the demo account's service
 // credential: it draws on its own creation budget rather than the
 // operator's ten a day, shared by every agent on the machine, and it
 // reaches the demo account only. Other arms deploy elsewhere and never
 // see it.
 func (d *deployment) withCarloku(token, console string) {
-	if d.arm != brief.Carlos || token == "" {
+	if !d.arm.BuildsOnRastrillo() || token == "" {
 		return
 	}
 	d.env = map[string]string{
@@ -368,7 +422,7 @@ func (d *deployment) withCarloku(token, console string) {
 // control goes, so the only difference between the two is the bar.
 func deployVars(arm brief.Arm, platform, account, hosts string) deployment {
 	switch arm {
-	case brief.Carlos:
+	case brief.Carlos, brief.CarlosGopls:
 		return deployment{arm: arm, account: carlokuAccount}
 	case brief.Spec:
 		// Only the spec arm may fetch the spec: the shared settings stay
@@ -401,14 +455,18 @@ func setAside(dir string) (int, error) {
 }
 
 // appName is the name a run deploys under. The spec arm deploys where
-// the control does, so its name says so: the two would otherwise build
-// on, or overwrite, each other's app. (Carlos and control keep round 1's
-// names.) A rerun gets a suffix: the earlier attempt's app may be live,
-// and the agent would reuse it.
+// the control does, and carlos-gopls where carlos does, so their names
+// say so: two arms would otherwise build on, or overwrite, each other's
+// app. (Carlos and control keep round 1's names.) A rerun gets a
+// suffix: the earlier attempt's app may be live, and the agent would
+// reuse it.
 func appName(briefName, label string, arm brief.Arm, n, earlier int) string {
 	name := fmt.Sprintf("%s-r%s-%d", briefName, label, n)
-	if arm == brief.Spec {
+	switch arm {
+	case brief.Spec:
 		name = fmt.Sprintf("%s-spec-r%s-%d", briefName, label, n)
+	case brief.CarlosGopls:
+		name = fmt.Sprintf("%s-gopls-r%s-%d", briefName, label, n)
 	}
 	if earlier > 0 {
 		name += fmt.Sprintf("-a%d", earlier+1)
@@ -451,6 +509,9 @@ func fingerprints(
 	delete(inputs, specURL)
 	delete(inputs, "carlos-auth")
 	delete(inputs, "rastrillo")
+	delete(inputs, "gopls")
+	delete(inputs, "gopls-instructions")
+	delete(inputs, "gopls-proxy")
 	return config, round.Fingerprint(inputs), nil
 }
 
@@ -471,7 +532,7 @@ func recordOf(spec runner.Spec, outcome runner.Outcome) round.RunRecord {
 		Measured:      [2]measure.Measurement{outcome.Build.Measured, outcome.Followup.Measured},
 		AgentFailures: outcome.AgentFailures,
 	}
-	if spec.Arm == brief.Carlos {
+	if spec.Arm.BuildsOnRastrillo() {
 		record.RastrilloVersion = requiredRastrillo(filepath.Join(spec.Dir, "app"))
 	}
 	return record
@@ -668,4 +729,195 @@ func carlokuCredential(path string) (string, error) {
 		return "", nil
 	}
 	return cleanenv.ReadTokenFile(path)
+}
+
+// gopls is what the carlos-gopls arm runs: the binary, by absolute
+// path, its version, and its own instructions for agents.
+type gopls struct{ path, version, instructions string }
+
+// goplsFor finds the gopls the carlos-gopls arm runs and reads its
+// version and instructions, which the round records and fingerprints.
+// roundGopls is the version a resumed round recorded: such a round
+// needs gopls whatever -arms says, or its fingerprint cannot match.
+func goplsFor(arms []brief.Arm, path, roundGopls string) (gopls, error) {
+	if !contains(arms, brief.CarlosGopls) && roundGopls == "" {
+		return gopls{}, nil
+	}
+	if path == "" && roundGopls != "" {
+		return gopls{}, fmt.Errorf("this round ran gopls (%s): pass -gopls "+
+			"to resume it", roundGopls)
+	}
+	if path == "" {
+		return gopls{}, errors.New("the carlos-gopls arm needs -gopls")
+	}
+	absolute, err := filepath.Abs(path)
+	if err != nil {
+		return gopls{}, err
+	}
+	found := gopls{path: absolute}
+	for _, read := range []struct {
+		into *string
+		args []string
+	}{
+		{&found.version, []string{"version"}},
+		{&found.instructions, []string{"mcp", "-instructions"}},
+	} {
+		out, err := exec.Command(absolute, read.args...).Output()
+		if err != nil {
+			return gopls{}, fmt.Errorf("%s %s: %w", absolute,
+				strings.Join(read.args, " "), err)
+		}
+		*read.into = strings.TrimSpace(string(out))
+		if *read.into == "" {
+			return gopls{}, fmt.Errorf("%s %s printed nothing", absolute,
+				strings.Join(read.args, " "))
+		}
+	}
+	found.version, _, _ = strings.Cut(found.version, "\n")
+	return found, nil
+}
+
+// goplsServer is the carlos-gopls arm's MCP config: one server, the
+// bench's goplsmcp wrapper around `gopls mcp`, which starts gopls again
+// in the app's module once its go.mod appears. It gets the Go settings
+// the agent's own commands get, so gopls resolves the same Rastrillo.
+func goplsServer(wrapper, goplsPath, app, logFile string, goEnv map[string]string) string {
+	server := map[string]any{
+		"type": "stdio", "command": wrapper,
+		"args": []string{"-gopls", goplsPath, "-dir", app, "-log", logFile},
+	}
+	if len(goEnv) > 0 {
+		server["env"] = goEnv
+	}
+	config, _ := json.Marshal(map[string]any{
+		"mcpServers": map[string]any{"gopls": server},
+	})
+	return string(config)
+}
+
+// goplsProxySource is what the wrapper is built from.
+var goplsProxySource = []string{"cmd/goplsmcp", "internal/mcpproxy"}
+
+// sourceHash is the sha256 of the Go files (tests aside) in dirs, so a
+// changed wrapper is a different round.
+func sourceHash(root string, dirs ...string) (string, error) {
+	hash := sha256.New()
+	for _, dir := range dirs {
+		files, err := filepath.Glob(filepath.Join(root, dir, "*.go"))
+		if err != nil {
+			return "", err
+		}
+		sort.Strings(files)
+		for _, file := range files {
+			if strings.HasSuffix(file, "_test.go") {
+				continue
+			}
+			raw, err := os.ReadFile(file)
+			if err != nil {
+				return "", err
+			}
+			relative, _ := filepath.Rel(root, file)
+			fmt.Fprintf(hash, "%d:%s%d:", len(relative), relative, len(raw))
+			hash.Write(raw)
+		}
+	}
+	return fmt.Sprintf("%x", hash.Sum(nil)), nil
+}
+
+// buildGoplsProxy builds the wrapper into dir and returns its path.
+func buildGoplsProxy(root, dir string) (string, error) {
+	binary := filepath.Join(dir, "goplsmcp")
+	build := exec.Command("go", "build", "-o", binary, "./cmd/goplsmcp")
+	build.Dir = root
+	if out, err := build.CombinedOutput(); err != nil {
+		return "", fmt.Errorf("building goplsmcp: %v: %s", err, out)
+	}
+	return binary, nil
+}
+
+// pinGoplsInstructions saves the instructions the arm's prompt ends
+// with beside the round's runs, and returns their sha256.
+func pinGoplsInstructions(dir, instructions string) (string, error) {
+	sum := fmt.Sprintf("%x", sha256.Sum256([]byte(instructions)))
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return "", err
+	}
+	name := filepath.Join(dir, "gopls-instructions-"+sum[:12]+".md")
+	return sum[:12], os.WriteFile(name, []byte(instructions+"\n"), 0o644)
+}
+
+// extendSchedule adds the runs this command asks for that the saved
+// schedule lacks: run index first, then brief, then arm, so the arms
+// alternate (carlos 1, carlos-gopls 1, carlos 2, ...) and a drift over
+// the round's days falls on every arm alike. The saved order is never
+// changed, so a resume runs in the order the round began.
+func extendSchedule(
+	saved []round.Slot, briefs []string, arms []brief.Arm, runs int,
+) []round.Slot {
+	schedule := slices.Clone(saved)
+	for n := 1; n <= runs; n++ {
+		for _, name := range briefs {
+			for _, arm := range armOrder(saved, arms) {
+				slot := round.Slot{Brief: name, Arm: arm, N: n}
+				if !slices.Contains(schedule, slot) {
+					schedule = append(schedule, slot)
+				}
+			}
+		}
+	}
+	return schedule
+}
+
+// armOrder puts the arms in the order the saved schedule first runs
+// them, then any it has never run, so new slots alternate as the old.
+func armOrder(saved []round.Slot, arms []brief.Arm) []brief.Arm {
+	var ordered []brief.Arm
+	for _, slot := range saved {
+		if contains(arms, slot.Arm) && !contains(ordered, slot.Arm) {
+			ordered = append(ordered, slot.Arm)
+		}
+	}
+	for _, arm := range arms {
+		if !contains(ordered, arm) {
+			ordered = append(ordered, arm)
+		}
+	}
+	return ordered
+}
+
+// pendingJobs are the scheduled runs this command asks for that have
+// not run yet, in the schedule's order.
+func pendingJobs(
+	r round.Round, briefs []string, arms []brief.Arm, runs int,
+) []round.Slot {
+	var pending []round.Slot
+	for _, slot := range r.Schedule {
+		asked := slices.Contains(briefs, slot.Brief) &&
+			contains(arms, slot.Arm) && slot.N <= runs
+		if asked && !hasRun(r, slot.Brief, slot.Arm, slot.N) {
+			pending = append(pending, slot)
+		}
+	}
+	return pending
+}
+
+// cleanupCommands are the commands that delete a round's deployed apps,
+// for a person to read and run.
+func cleanupCommands(r round.Round) []string {
+	commands := []string{
+		"# Nothing is deleted for you. Read, then run what you mean to.",
+	}
+	for _, run := range r.Runs {
+		if run.App == "" || run.ReusedFrom != "" {
+			continue
+		}
+		if run.Arm.BuildsOnRastrillo() {
+			commands = append(commands,
+				"carlos apps delete --account-id bdf --app "+run.App)
+		} else {
+			commands = append(commands, fmt.Sprintf(
+				"# on %s: delete the app %s", r.Platform, run.App))
+		}
+	}
+	return commands
 }

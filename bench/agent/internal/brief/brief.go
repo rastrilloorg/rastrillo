@@ -14,12 +14,29 @@ import (
 type Arm string
 
 const (
-	Carlos  Arm = "carlos"
-	Control Arm = "control"
+	Carlos Arm = "carlos"
+	// CarlosGopls is carlos with gopls over MCP: the same prompt, word
+	// for word, so the server is the only difference.
+	CarlosGopls Arm = "carlos-gopls"
+	Control     Arm = "control"
 	// Spec builds unguided but must meet spec.carlosframework.com: what
 	// meeting the CARLOS bar costs without the framework.
 	Spec Arm = "spec"
 )
+
+// BuildsOnRastrillo is true for the arms that build on Rastrillo and
+// deploy to Carloku's demo account.
+func (arm Arm) BuildsOnRastrillo() bool {
+	return arm == Carlos || arm == CarlosGopls
+}
+
+// framingFile is the arms/ file an arm's framing comes from.
+func (arm Arm) framingFile() string {
+	if arm == CarlosGopls {
+		return string(Carlos) + ".txt"
+	}
+	return string(arm) + ".txt"
+}
 
 type Page struct {
 	Role, Description string
@@ -67,8 +84,8 @@ func Load(dir string) (Brief, error) {
 		return b, err
 	}
 	b.Words = strings.Fields(words)
-	for _, arm := range []Arm{Carlos, Control, Spec} {
-		path := filepath.Join(dir, "..", "..", "arms", string(arm)+".txt")
+	for _, arm := range []Arm{Carlos, CarlosGopls, Control, Spec} {
+		path := filepath.Join(dir, "..", "..", "arms", arm.framingFile())
 		raw, err := os.ReadFile(path)
 		if err != nil {
 			return b, err

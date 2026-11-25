@@ -4,11 +4,14 @@ import (
 	"encoding/json"
 	"flag"
 	"os"
+	"reflect"
 	"strings"
 	"testing"
 
 	"amadan.net/rastrillo/rastrillo/bench/agent/internal/brief"
+	"amadan.net/rastrillo/rastrillo/bench/agent/internal/classify"
 	"amadan.net/rastrillo/rastrillo/bench/agent/internal/measure"
+	"amadan.net/rastrillo/rastrillo/bench/agent/internal/transcript"
 )
 
 var update = flag.Bool("update", false, "rewrite testdata/round.md")
@@ -178,5 +181,72 @@ func TestFingerprintIncludesTheSpecWhenGiven(t *testing.T) {
 	if Fingerprint(inputs) == Fingerprint(withSpec) ||
 		Fingerprint(withSpec) == Fingerprint(changed) {
 		t.Error("a changed specification kept the round's fingerprint")
+	}
+}
+
+func bash(command, result string, isError bool) transcript.Tool {
+	return transcript.Tool{Name: "Bash",
+		Input:  map[string]any{"command": command},
+		Result: result, IsError: isError}
+}
+
+// A failed build or test run is one the output or exit status says
+// failed; a grep for "go test" or a failed go run is neither.
+func TestFailedBuildsAndGoplsCallsAreCounted(t *testing.T) {
+	gopls := func(tool string) transcript.Tool {
+		return transcript.Tool{Name: "mcp__gopls__" + tool, Result: "ok"}
+	}
+	build := transcript.Transcript{Messages: []transcript.Message{
+		{Tools: []transcript.Tool{
+			bash("go build ./...", "./main.go:3:2: undefined: x", true)}},
+		{Tools: []transcript.Tool{gopls("go_workspace"), gopls("go_diagnostics")}},
+		{Tools: []transcript.Tool{bash("go test ./... 2>&1 | tail -3",
+			"--- FAIL: TestHome\nFAIL\tapp\t0.1s", false)}},
+		{Tools: []transcript.Tool{bash("make ci",
+			"make: *** [Makefile:4: lint] Error 1", true)}},
+		{Tools: []transcript.Tool{bash("go vet ./...", "", false)}},
+		{Tools: []transcript.Tool{bash(`grep "go test" README.md`, "", true)}},
+		{Tools: []transcript.Tool{bash("go run ./cmd/x", "exit status 1", true)}},
+		{Tools: []transcript.Tool{gopls("go_workspace"),
+			{Name: "Read", Result: "package main"}}},
+	}}
+
+	cost := CostOf(build, classify.Where{})
+
+	if cost.FailedBuilds != 3 {
+		t.Errorf("FailedBuilds = %d, want 3: the build, the piped test "+
+			"and make ci", cost.FailedBuilds)
+	}
+	want := map[string]int{"go_workspace": 2, "go_diagnostics": 1}
+	if !reflect.DeepEqual(cost.GoplsCalls, want) {
+		t.Errorf("GoplsCalls = %v, want %v", cost.GoplsCalls, want)
+	}
+
+	r := sample()
+	r.Gopls = "golang.org/x/tools/gopls v0.24.0"
+	r.GoplsInstructions = "0123456789ab"
+	withGopls := run(brief.CarlosGopls, 1, 6)
+	withGopls.Build.FailedBuilds = cost.FailedBuilds
+	withGopls.Build.GoplsCalls = cost.GoplsCalls
+	r.Runs = append(r.Runs, withGopls)
+	page := Markdown(r)
+	var missing []string
+	for _, want := range []string{
+		"- gopls: golang.org/x/tools/gopls v0.24.0\n",
+		"- gopls instructions (sha256): 0123456789ab\n",
+		"| | carlos | carlos-gopls | control |",
+		"| build failed builds and test runs | 0 | 3 | 0 |",
+		"| build gopls calls: go_diagnostics | 0 | 1 | 0 |",
+		"| build gopls calls: go_workspace | 0 | 2 | 0 |",
+	} {
+		if !strings.Contains(page, want) {
+			missing = append(missing, want)
+		}
+	}
+	if len(missing) > 0 {
+		t.Errorf("report lacks %q:\n%s", missing, page)
+	}
+	if strings.Contains(Markdown(sample()), "gopls") {
+		t.Error("a round without gopls grew gopls rows or a gopls header")
 	}
 }

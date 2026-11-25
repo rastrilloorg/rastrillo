@@ -137,3 +137,32 @@ func TestSpecArmMeetsTheSpecWithoutTheFramework(t *testing.T) {
 		}
 	}
 }
+
+// The gopls arm differs from carlos only in its MCP config, so its
+// prompt must be carlos's, word for word.
+func TestCarlosGoplsIsFramedExactlyAsCarlos(t *testing.T) {
+	groomer, err := Load(benchRoot + "/briefs/groomer")
+	if err != nil {
+		t.Fatal(err)
+	}
+	vars := Vars{App: "groomer-r1-1", SkillURL: "http://100.1.2.3/SKILL.md",
+		DeployAccount: "the demo account"}
+
+	carlos, err := groomer.Prompt(Carlos, vars)
+	if err != nil {
+		t.Fatal(err)
+	}
+	gopls, err := groomer.Prompt(CarlosGopls, vars)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if gopls != carlos {
+		t.Errorf("carlos-gopls prompt differs from carlos's:\n%s\n---\n%s",
+			gopls, carlos)
+	}
+	if !CarlosGopls.BuildsOnRastrillo() || !Carlos.BuildsOnRastrillo() ||
+		Control.BuildsOnRastrillo() || Spec.BuildsOnRastrillo() {
+		t.Error("only carlos and carlos-gopls build on Rastrillo")
+	}
+}

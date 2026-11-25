@@ -15,7 +15,15 @@ type Tool struct {
 	Name      string
 	Input     map[string]any
 	ResultLen int // characters of the matching tool_result
+	// Result is that result's text; one longer than ResultCap runes
+	// keeps its start and its end. IsError is the result block's own
+	// is_error.
+	Result  string
+	IsError bool
 }
+
+// ResultCap is how much of a tool result's text a Tool keeps.
+const ResultCap = 4000
 
 type Message struct {
 	ID      string
@@ -30,7 +38,12 @@ type Init struct {
 	Version, Model, OutputStyle string
 	Plugins                     []string // installed: the config's
 	BuiltinPlugins              []string // shipped with Claude Code itself
+	MCPServers                  []MCPServer
 }
+
+// MCPServer is a server claude tried to start, and how that went
+// ("connected", "failed", ...).
+type MCPServer struct{ Name, Status string }
 
 type Result struct {
 	NumTurns int
@@ -68,6 +81,7 @@ type block struct {
 	Input     map[string]any  `json:"input"`
 	ToolUseID string          `json:"tool_use_id"`
 	Content   json.RawMessage `json:"content"`
+	IsError   bool            `json:"is_error"`
 }
 
 type line struct {
@@ -79,6 +93,7 @@ type line struct {
 	Model       string            `json:"model"`
 	OutputStyle string            `json:"output_style"`
 	Plugins     []json.RawMessage `json:"plugins"`
+	MCPServers  []MCPServer       `json:"mcp_servers"`
 
 	Message struct {
 		ID      string          `json:"id"`
@@ -139,6 +154,7 @@ func readLine(
 			Version:     event.Version,
 			Model:       event.Model,
 			OutputStyle: event.OutputStyle,
+			MCPServers:  event.MCPServers,
 		}
 		transcript.Init.Plugins, transcript.Init.BuiltinPlugins =
 			pluginNames(event.Plugins)
@@ -235,8 +251,23 @@ func readResults(
 			continue
 		}
 		tool := &transcript.Messages[at[0]].Tools[at[1]]
-		tool.ResultLen = len([]rune(resultText(b.Content)))
+		text := []rune(resultText(b.Content))
+		tool.ResultLen = len(text)
+		tool.Result = capped(text)
+		tool.IsError = b.IsError
 	}
+}
+
+// capped keeps the start and the end of a long result: the end is where
+// a build says how it finished.
+func capped(text []rune) string {
+	if len(text) <= ResultCap {
+		return string(text)
+	}
+	const gap = "\n[...]\n"
+	head := ResultCap / 2
+	tail := ResultCap - head - len(gap)
+	return string(text[:head]) + gap + string(text[len(text)-tail:])
 }
 
 // resultText reads a tool result's content, which arrives either as a

@@ -5,11 +5,13 @@ package runner
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync"
 	"syscall"
@@ -17,6 +19,7 @@ import (
 
 	"amadan.net/rastrillo/rastrillo/bench/agent/internal/brief"
 	"amadan.net/rastrillo/rastrillo/bench/agent/internal/cleanenv"
+	"amadan.net/rastrillo/rastrillo/bench/agent/internal/mcpproxy"
 	"amadan.net/rastrillo/rastrillo/bench/agent/internal/measure"
 	"amadan.net/rastrillo/rastrillo/bench/agent/internal/source"
 	"amadan.net/rastrillo/rastrillo/bench/agent/internal/transcript"
@@ -38,6 +41,9 @@ type Spec struct {
 	TokenFile                    string            // where Token came from, denied to the agent
 	DeployEnv                    map[string]string // the arm's own deploy credential, if any
 	DeniedFiles                  []string          // more files the agent's tools may not read
+	MCPConfig                    string            // --mcp-config; no servers if empty
+	SystemPromptExtra            string            // appended after the environment notes
+	MCPLog                       string            // the gopls wrapper's log; see goplsProblem
 }
 
 type Phase struct {
@@ -63,8 +69,11 @@ var ErrUnclean = errors.New("not a clean run")
 
 // CheckClean refuses a run whose config leaked in. The 2026-10-30 runs
 // loaded the operator's plugins and output style, so this is checked
-// on every run, against what claude itself reported loading.
-func CheckClean(init transcript.Init, roundVersion string) error {
+// on every run, against what claude itself reported loading. servers
+// are the MCP servers the run was given: each must have connected, or
+// the arm ran without what defines it (a harness failure, retried), and
+// any other server is a leaked config.
+func CheckClean(init transcript.Init, roundVersion string, servers []string) error {
 	switch {
 	case init.Version == "":
 		return fmt.Errorf("%w: %w: no init record", ErrHarness, ErrUnclean)
@@ -78,7 +87,101 @@ func CheckClean(init transcript.Init, roundVersion string) error {
 		return fmt.Errorf("%w: %w: claude %s, but the round started on %s",
 			ErrHarness, ErrUnclean, init.Version, roundVersion)
 	}
+	status := map[string]string{}
+	for _, server := range init.MCPServers {
+		if !slices.Contains(servers, server.Name) {
+			return fmt.Errorf("%w: %w: MCP server %s loaded, but the run "+
+				"was given %v", ErrHarness, ErrUnclean, server.Name, servers)
+		}
+		status[server.Name] = server.Status
+	}
+	for _, server := range servers {
+		if status[server] != "connected" {
+			return fmt.Errorf("%w: MCP server %s did not connect (%q)",
+				ErrHarness, server, status[server])
+		}
+	}
 	return nil
+}
+
+// serverNames are the servers an --mcp-config names.
+func serverNames(config string) []string {
+	var parsed struct {
+		MCPServers map[string]json.RawMessage `json:"mcpServers"`
+	}
+	json.Unmarshal([]byte(config), &parsed)
+	var names []string
+	for name := range parsed.MCPServers {
+		names = append(names, name)
+	}
+	slices.Sort(names)
+	return names
+}
+
+// settleGrace is how long after go.mod and go.sum last changed, past
+// mcpproxy.DefaultSettle, the wrapper may take to notice: two of its
+// one-second polls.
+const settleGrace = 2 * time.Second
+
+// goplsProblem says why the wrapper's log does not show gopls there for
+// a whole session, in the app's module, or "". from is where the
+// session's lines start in the log, and end is when it ended. A missing
+// or unreadable log shows nothing, so it is a problem too. A module
+// whose go.mod and go.sum settled too late for the wrapper to restart
+// gopls in it asks for nothing.
+func goplsProblem(log string, from int64, app string, end time.Time) string {
+	raw, err := os.ReadFile(log)
+	if err != nil {
+		return fmt.Sprintf("its log cannot be read: %v", err)
+	}
+	for _, line := range strings.Split(string(raw), "\n") {
+		if strings.Contains(line, mcpproxy.TroubleMarker) {
+			return "gopls was not there for all of it: " + line
+		}
+	}
+	if from > int64(len(raw)) {
+		from = 0
+	}
+	module := mcpproxy.ModuleDir(app)
+	if module == "" ||
+		end.Sub(lastChanged(module)) <= mcpproxy.DefaultSettle+settleGrace {
+		return ""
+	}
+	active := ""
+	for _, line := range strings.Split(string(raw[from:]), "\n") {
+		if _, after, found := strings.Cut(line,
+			mcpproxy.ModuleActiveMarker); found {
+			if i := strings.LastIndex(after, " in "); i >= 0 {
+				active = after[i+len(" in "):]
+			}
+		}
+	}
+	if active != module {
+		return fmt.Sprintf("gopls never ran in the app's module, %s "+
+			"(the log's last module active in this session: %q)",
+			module, active)
+	}
+	return ""
+}
+
+// lastChanged is when the module's go.mod or go.sum last changed.
+func lastChanged(module string) time.Time {
+	var last time.Time
+	for _, name := range []string{"go.mod", "go.sum"} {
+		info, err := os.Stat(filepath.Join(module, name))
+		if err == nil && info.ModTime().After(last) {
+			last = info.ModTime()
+		}
+	}
+	return last
+}
+
+func fileSize(path string) int64 {
+	info, err := os.Stat(path)
+	if err != nil {
+		return 0
+	}
+	return info.Size()
 }
 
 // Run returns the outcome, or an error wrapping ErrHarness. Anything
@@ -168,8 +271,13 @@ func prepare(spec Spec) (*session, error) {
 	if s.env, err = cleanenv.Env(os.Environ(), config, extra); err != nil {
 		return nil, err
 	}
-	s.appendEnv, err = brief.Env(spec.BenchRoot, spec.Vars)
-	return s, err
+	if s.appendEnv, err = brief.Env(spec.BenchRoot, spec.Vars); err != nil {
+		return s, err
+	}
+	if spec.SystemPromptExtra != "" {
+		s.appendEnv += "\n\n" + spec.SystemPromptExtra
+	}
+	return s, nil
 }
 
 // ask runs one prompt. resume continues a session; fork asks a side
@@ -183,7 +291,7 @@ func (s *session) ask(
 		"--model", s.spec.Model,
 		"--output-format", "stream-json", "--verbose",
 		"--dangerously-skip-permissions", "--disable-slash-commands",
-		"--strict-mcp-config", "--mcp-config", `{"mcpServers":{}}`,
+		"--strict-mcp-config", "--mcp-config", s.mcpConfig(),
 		"--settings", s.settings,
 		"--append-system-prompt", s.appendEnv,
 	}
@@ -220,7 +328,9 @@ func (s *session) ask(
 		return syscall.Kill(-command.Process.Pid, syscall.SIGKILL)
 	}
 	command.WaitDelay = 10 * time.Second
+	logFrom := fileSize(s.spec.MCPLog)
 	exitErr := command.Run()
+	ended := time.Now()
 
 	if _, err := out.Seek(0, 0); err != nil {
 		return transcript.Transcript{}, fmt.Errorf("%w: %v", ErrHarness, err)
@@ -234,10 +344,27 @@ func (s *session) ask(
 	}
 	// Every invocation, not only the build: claude can update itself
 	// between prompts, and the agent can write project settings.
-	if err := CheckClean(run.Init, s.spec.ClaudeVersion); err != nil {
+	if err := CheckClean(run.Init, s.spec.ClaudeVersion,
+		serverNames(s.mcpConfig())); err != nil {
 		return run, fmt.Errorf("%s: %w", name, err)
 	}
+	if s.spec.MCPLog != "" {
+		problem := goplsProblem(s.spec.MCPLog, logFrom, s.app, ended)
+		if problem != "" {
+			return run, fmt.Errorf("%w: %s: %s", ErrHarness, name, problem)
+		}
+	}
 	return run, nil
+}
+
+// noServers is the MCP config of every arm that names none.
+const noServers = `{"mcpServers":{}}`
+
+func (s *session) mcpConfig() string {
+	if s.spec.MCPConfig == "" {
+		return noServers
+	}
+	return s.spec.MCPConfig
 }
 
 // harnessProblem separates a run that failed for reasons outside the

@@ -3,6 +3,7 @@
 package main
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/json"
 	"errors"
@@ -11,9 +12,11 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
 	"syscall"
 
 	"amadan.net/rastrillo/rastrillo/bench/agent/internal/classify"
@@ -31,6 +34,14 @@ const usage = `usage: go run ./cmd/bench <command> [flags]
   baseline  make a round the one later rounds are held to (baseline.json)
   check     fail when a round's Rastrillo medians drift above the baseline
   rescore   recompute a round's costs from its transcripts on disk
+  score     count what makes the code agents wrote hard to read
+  waste     sort the mistakes in kept transcripts by kind and turns to fix
+  keys      make an answer key per kept run for its brief's questions
+  read      have Astra answer each question from each kept app's code
+  pairs     cut kept apps into same-job excerpts and choose blind pairs
+  calibrate serve the blind pairs for Paul to judge
+  agree     have Astra pick the pairs; tune the composite and report
+            how often each agrees with Paul
 
 Each command takes -h for its flags.`
 
@@ -39,20 +50,60 @@ func main() {
 		fmt.Fprintln(os.Stderr, usage)
 		os.Exit(2)
 	}
-	commands := map[string]func([]string) error{
-		"run": runRound, "poll": poll, "report": report,
-		"import": importRound, "cleanup": cleanup,
-		"baseline": baselineCommand, "check": checkCommand,
-		"rescore": rescoreCommand,
+	commands := map[string]func(context.Context, []string) error{
+		"run": runRound, "poll": poll, "report": plain(report),
+		"import": plain(importRound), "cleanup": plain(cleanup),
+		"baseline": plain(baselineCommand), "check": plain(checkCommand),
+		"rescore": plain(rescoreCommand), "score": plain(scoreCommand),
+		"waste": plain(wasteCommand),
+		"keys":  keysCommand, "read": readCommand, "pairs": pairsCommand,
+		"calibrate": calibrateCommand, "agree": agreeCommand,
 	}
 	command, known := commands[os.Args[1]]
 	if !known {
 		fmt.Fprintln(os.Stderr, usage)
 		os.Exit(2)
 	}
-	if err := command(os.Args[2:]); err != nil {
+	// Sessions run in their own process groups, so a Ctrl-C at the
+	// terminal never reaches them: an interrupt cancels this instead,
+	// which stops them and lets every scratch directory be removed.
+	ctx, stop := signal.NotifyContext(context.Background(),
+		os.Interrupt, syscall.SIGTERM)
+	err := command(ctx, os.Args[2:])
+	stop()
+	if err != nil {
 		fmt.Fprintln(os.Stderr, "bench:", err)
 		os.Exit(1)
+	}
+}
+
+// eachAtOnce calls work for each of count items, at most jobs at once,
+// and starts none once ctx is done.
+func eachAtOnce(ctx context.Context, count, jobs int, work func(int)) {
+	slots := make(chan struct{}, jobs)
+	var group sync.WaitGroup
+	for index := range count {
+		select {
+		case slots <- struct{}{}:
+		case <-ctx.Done():
+		}
+		if ctx.Err() != nil {
+			break
+		}
+		group.Add(1)
+		go func() {
+			defer group.Done()
+			defer func() { <-slots }()
+			work(index)
+		}()
+	}
+	group.Wait()
+}
+
+// plain is a command that starts nothing an interrupt must stop.
+func plain(command func([]string) error) func(context.Context, []string) error {
+	return func(_ context.Context, args []string) error {
+		return command(args)
 	}
 }
 
@@ -99,7 +150,9 @@ func loadRound(root, label string) (round.Round, error) {
 
 // saveRound replaces the round's files whole: written beside the old
 // ones and renamed over them, so a crash or a full disk mid-write
-// leaves the last good checkpoint, not half a JSON file.
+// leaves the last good checkpoint, not half a JSON file. A decision on
+// the round lives in results/<label>-decision.md, kept by hand and never
+// written here; the round's Markdown points to it.
 func saveRound(root string, r round.Round) error {
 	if err := os.MkdirAll(filepath.Join(root, "results"), 0o755); err != nil {
 		return err
@@ -112,8 +165,15 @@ func saveRound(root string, r round.Round) error {
 		append(encoded, '\n')); err != nil {
 		return err
 	}
-	return replaceFile(resultPath(root, r.Label, ".md"),
-		[]byte(round.Markdown(r)))
+	text := round.Markdown(r)
+	decision := r.Label + "-decision.md"
+	_, err = os.Stat(resultPath(root, r.Label+"-decision", ".md"))
+	if err == nil {
+		text += fmt.Sprintf("\n## Decision\n\nIn [%s](%s), kept by hand: "+
+			"`bench report` and `bench rescore` write this file again and "+
+			"leave that one alone.\n", decision, decision)
+	}
+	return replaceFile(resultPath(root, r.Label, ".md"), []byte(text))
 }
 
 func replaceFile(path string, content []byte) error {
@@ -173,16 +233,8 @@ func cleanup(args []string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println("# Nothing is deleted for you. Read, then run what you mean to.")
-	for _, run := range r.Runs {
-		if run.App == "" || run.ReusedFrom != "" {
-			continue
-		}
-		if run.Arm == "carlos" {
-			fmt.Printf("carlos apps delete --account-id bdf --app %s\n", run.App)
-		} else {
-			fmt.Printf("# on %s: delete the app %s\n", r.Platform, run.App)
-		}
+	for _, command := range cleanupCommands(r) {
+		fmt.Println(command)
 	}
 	return nil
 }

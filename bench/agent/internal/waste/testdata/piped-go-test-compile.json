@@ -1,0 +1,5 @@
+{
+ "command": "cd /home/paulca/.cache/agent-bench/accept-1/groomer-carlos-2/app && go test ./internal/... 2>&1 | grep -v \"^\\s*<\\|^\\s*$\" | head -60",
+ "is_error": false,
+ "result": "# groomer/internal/groomertest [groomer/internal/groomertest.test]\ninternal/groomertest/booking_test.go:134:20: page.ReadFrom undefined (type *strings.Builder has no field or method ReadFrom)\n?   \tgroomer/internal/groomer\t[no test files]\n?   \tgroomer/internal/groomer/icons\t[no test files]\nFAIL\tgroomer/internal/groomertest [build failed]\nFAIL"
+}

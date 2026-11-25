@@ -1,0 +1,3277 @@
+{
+  "Made": "2026-11-22T19:28:26.138512464Z",
+  "Seed": 20261122,
+  "Rounds": [
+    "1",
+    "accept-1",
+    "cost-1",
+    "weight-1"
+  ],
+  "Briefs": [
+    "groomer"
+  ],
+  "Arms": [
+    "carlos"
+  ],
+  "Across": false,
+  "Runs": [
+    {
+      "Run": "1/groomer-carlos-1",
+      "Arm": "carlos",
+      "Jobs": 9,
+      "Shown": 5,
+      "Named": 38,
+      "Authored": 38,
+      "Oversized": {
+        "making a booking": 147,
+        "seeding the demo data": 109,
+        "validating a booking before it is saved": 105,
+        "working out which time slots are free to book": 90
+      },
+      "JobsCostUSD": 0.39787420000000007
+    },
+    {
+      "Run": "1/groomer-carlos-2",
+      "Arm": "carlos",
+      "Jobs": 9,
+      "Shown": 6,
+      "Named": 25,
+      "Authored": 25,
+      "Oversized": {
+        "making a booking": 61,
+        "seeding the demo data": 94,
+        "working out which time slots are free to book": 71
+      },
+      "JobsCostUSD": 0.3149862
+    },
+    {
+      "Run": "1/groomer-carlos-3",
+      "Arm": "carlos",
+      "Jobs": 9,
+      "Shown": 6,
+      "Named": 27,
+      "Authored": 27,
+      "Oversized": {
+        "seeding the demo data": 89,
+        "validating a booking before it is saved": 93,
+        "working out which time slots are free to book": 88
+      },
+      "JobsCostUSD": 0.3833586
+    },
+    {
+      "Run": "accept-1/groomer-carlos-1",
+      "Arm": "carlos",
+      "Jobs": 9,
+      "Shown": 4,
+      "Named": 35,
+      "Authored": 33,
+      "Missing": [
+        "checking the owner's sign-in"
+      ],
+      "Oversized": {
+        "saving the opening hours": 62,
+        "seeding the demo data": 123,
+        "validating a booking before it is saved": 102,
+        "working out which time slots are free to book": 119
+      },
+      "JobsCostUSD": 0.41303100000000004
+    },
+    {
+      "Run": "accept-1/groomer-carlos-2",
+      "Arm": "carlos",
+      "Jobs": 9,
+      "Shown": 5,
+      "Named": 26,
+      "Authored": 24,
+      "Missing": [
+        "checking the owner's sign-in"
+      ],
+      "Oversized": {
+        "making a booking": 61,
+        "seeding the demo data": 69,
+        "working out which time slots are free to book": 104
+      },
+      "JobsCostUSD": 0.37923260000000003
+    },
+    {
+      "Run": "accept-1/groomer-carlos-3",
+      "Arm": "carlos",
+      "Jobs": 9,
+      "Shown": 4,
+      "Named": 34,
+      "Authored": 32,
+      "Missing": [
+        "checking the owner's sign-in"
+      ],
+      "Oversized": {
+        "making a booking": 105,
+        "seeding the demo data": 104,
+        "validating a booking before it is saved": 149,
+        "working out which time slots are free to book": 82
+      },
+      "JobsCostUSD": 0.4203816
+    },
+    {
+      "Run": "cost-1/groomer-carlos-1",
+      "Arm": "carlos",
+      "Jobs": 9,
+      "Shown": 4,
+      "Named": 23,
+      "Authored": 21,
+      "Missing": [
+        "checking the owner's sign-in"
+      ],
+      "Oversized": {
+        "making a booking": 85,
+        "seeding the demo data": 84,
+        "validating a booking before it is saved": 67,
+        "working out which time slots are free to book": 73
+      },
+      "JobsCostUSD": 0.3721496
+    },
+    {
+      "Run": "cost-1/groomer-carlos-2",
+      "Arm": "carlos",
+      "Jobs": 9,
+      "Shown": 5,
+      "Named": 26,
+      "Authored": 24,
+      "Missing": [
+        "checking the owner's sign-in"
+      ],
+      "Oversized": {
+        "saving the opening hours": 78,
+        "seeding the demo data": 93,
+        "validating a booking before it is saved": 85
+      },
+      "JobsCostUSD": 0.3994878
+    },
+    {
+      "Run": "cost-1/groomer-carlos-3",
+      "Arm": "carlos",
+      "Jobs": 9,
+      "Shown": 6,
+      "Named": 23,
+      "Authored": 21,
+      "Missing": [
+        "checking the owner's sign-in"
+      ],
+      "Oversized": {
+        "making a booking": 64,
+        "seeding the demo data": 76
+      },
+      "JobsCostUSD": 0.32120360000000003
+    },
+    {
+      "Run": "weight-1/groomer-carlos-1",
+      "Arm": "carlos",
+      "Jobs": 9,
+      "Shown": 6,
+      "Named": 30,
+      "Authored": 30,
+      "Oversized": {
+        "making a booking": 80,
+        "seeding the demo data": 138,
+        "working out which time slots are free to book": 96
+      },
+      "JobsCostUSD": 0.43120059999999993
+    },
+    {
+      "Run": "weight-1/groomer-carlos-2",
+      "Arm": "carlos",
+      "Jobs": 9,
+      "Shown": 4,
+      "Named": 30,
+      "Authored": 30,
+      "Oversized": {
+        "making a booking": 104,
+        "saving the opening hours": 67,
+        "seeding the demo data": 99,
+        "validating a booking before it is saved": 78,
+        "working out which time slots are free to book": 71
+      },
+      "JobsCostUSD": 0.36079720000000004
+    },
+    {
+      "Run": "weight-1/groomer-carlos-3",
+      "Arm": "carlos",
+      "Jobs": 9,
+      "Shown": 5,
+      "Named": 31,
+      "Authored": 31,
+      "Oversized": {
+        "making a booking": 78,
+        "seeding the demo data": 102,
+        "validating a booking before it is saved": 64,
+        "working out which time slots are free to book": 106
+      },
+      "JobsCostUSD": 0.37085480000000004
+    }
+  ],
+  "Pairs": [
+    {
+      "ID": 1,
+      "Canonical": "1/groomer-carlos-3: checking the owner's sign-in | weight-1/groomer-carlos-1: checking the owner's sign-in",
+      "Job": "checking the owner's sign-in",
+      "Left": {
+        "Run": "weight-1/groomer-carlos-1",
+        "Job": "checking the owner's sign-in",
+        "Text": "// internal/groomer/auth.go\n// lookupUser finds the owner signing in. The password plugin calls its\n// identifier an email and posts it as \"email\"; this app has no email\n// anywhere, so what arrives is a username, lowercased and trimmed.\n// There is no scope: a visitor signing in is owned by nobody yet.\nfunc lookupUser(database *gorm.DB) func(\n\tcontext.Context, string,\n) (int64, string, error) {\n\treturn func(ctx context.Context, username string) (int64, string, error) {\n\t\tvar user User\n\t\terr := database.WithContext(ctx).\n\t\t\tWhere(\"username = ?\", username).First(\u0026user).Error\n\t\tif errors.Is(err, gorm.ErrRecordNotFound) {\n\t\t\treturn 0, \"\", sql.ErrNoRows\n\t\t}\n\t\treturn user.ID, user.PasswordHash, err\n\t}\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/auth.go",
+            "Key": "lookupUser",
+            "Test": false,
+            "Start": 15,
+            "End": 31,
+            "Lines": 17,
+            "Cognitive": 2,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Right": {
+        "Run": "1/groomer-carlos-3",
+        "Job": "checking the owner's sign-in",
+        "Text": "// internal/groomer/auth.go\n// lookupUser finds the owner by username. The plugin calls it an\n// email, but this salon signs in by username and stores no email.\n// No scope: a visitor signing in is owned by nobody yet.\nfunc lookupUser(database *gorm.DB) func(\n\tctx context.Context, username string) (int64, string, error) {\n\treturn func(ctx context.Context, username string) (int64, string, error) {\n\t\tvar user User\n\t\terr := database.WithContext(ctx).\n\t\t\tWhere(\"username = ?\", username).First(\u0026user).Error\n\t\tif errors.Is(err, gorm.ErrRecordNotFound) {\n\t\t\treturn 0, \"\", sql.ErrNoRows\n\t\t}\n\t\treturn user.ID, user.PasswordHash, err\n\t}\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/auth.go",
+            "Key": "lookupUser",
+            "Test": false,
+            "Start": 95,
+            "End": 109,
+            "Lines": 15,
+            "Cognitive": 2,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Set": "tune"
+    },
+    {
+      "ID": 2,
+      "Canonical": "accept-1/groomer-carlos-1: saving changes to a service | cost-1/groomer-carlos-3: saving changes to a service",
+      "Job": "saving changes to a service",
+      "Left": {
+        "Run": "cost-1/groomer-carlos-3",
+        "Job": "saving changes to a service",
+        "Text": "// internal/groomer/salon.go\nfunc (input serviceInput) problems() error {\n\tfields := map[string]string{}\n\tif strings.TrimSpace(input.Name) == \"\" {\n\t\tfields[\"Name\"] = \"Enter the service's name.\"\n\t}\n\tif input.Minutes \u003c 15 || input.Minutes \u003e 480 {\n\t\tfields[\"Minutes\"] = \"Enter a length from 15 to 480 minutes.\"\n\t}\n\tif input.PriceMinor \u003c 0 {\n\t\tfields[\"Price\"] = \"Enter a price of zero or more.\"\n\t}\n\tif len(fields) \u003e 0 {\n\t\treturn op.Invalid{Fields: fields}\n\t}\n\treturn nil\n}\n\n// ChangeService rewrites a service. Bookings already made keep the name,\n// length and price they were made with.\nfunc (salon salon) ChangeService(ctx context.Context, id int64,\n\tinput serviceInput) error {\n\tif err := input.problems(); err != nil {\n\t\treturn err\n\t}\n\tresult := salon.database.WithContext(ctx).Model(\u0026Service{ID: id}).\n\t\tSelect(\"Name\", \"Description\", \"Minutes\", \"PriceMinor\",\n\t\t\t\"Bookable\", \"UpdatedAt\").\n\t\tUpdates(Service{Name: strings.TrimSpace(input.Name),\n\t\t\tDescription: strings.TrimSpace(input.Description),\n\t\t\tMinutes:     input.Minutes, PriceMinor: input.PriceMinor,\n\t\t\tBookable: input.Bookable, UpdatedAt: time.Now()})\n\tif result.Error != nil {\n\t\treturn result.Error\n\t}\n\tif result.RowsAffected == 0 {\n\t\treturn op.NotFound{}\n\t}\n\treturn nil\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/salon.go",
+            "Key": "serviceInput.problems",
+            "Test": false,
+            "Start": 48,
+            "End": 63,
+            "Lines": 16,
+            "Cognitive": 5,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/salon.go",
+            "Key": "salon.ChangeService",
+            "Test": false,
+            "Start": 105,
+            "End": 126,
+            "Lines": 22,
+            "Cognitive": 3,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Right": {
+        "Run": "accept-1/groomer-carlos-1",
+        "Job": "saving changes to a service",
+        "Text": "// internal/groomer/services.go\nfunc (input serviceInput) check() error {\n\tfields := map[string]string{}\n\tif problem := checkName(input.Name, \"a name\"); problem != \"\" {\n\t\tfields[\"name\"] = problem\n\t}\n\tif utf8.RuneCountInString(input.Description) \u003e 500 {\n\t\tfields[\"description\"] = \"Shorten the description to 500 \" +\n\t\t\t\"characters or fewer.\"\n\t}\n\tif !slices.Contains(visitLengths, input.Minutes) {\n\t\tfields[\"minutes\"] = \"Choose how long the service takes.\"\n\t}\n\tif len(fields) \u003e 0 {\n\t\treturn op.Invalid{Fields: fields}\n\t}\n\treturn nil\n}\n\n// Change rewrites a service. Bookings already made keep the name and\n// times they were made with.\nfunc (menu services) Change(ctx context.Context, id int64,\n\tinput serviceInput) error {\n\tif err := input.check(); err != nil {\n\t\treturn err\n\t}\n\tresult := menu.database.WithContext(ctx).Model(\u0026Service{ID: id}).\n\t\tSelect(\"Name\", \"Description\", \"Minutes\", \"Price\", \"Bookable\").\n\t\tUpdates(map[string]any{\"Name\": input.Name,\n\t\t\t\"Description\": input.Description, \"Minutes\": input.Minutes,\n\t\t\t\"Price\": input.Price, \"Bookable\": input.Bookable})\n\tif result.Error != nil {\n\t\treturn result.Error\n\t}\n\tif result.RowsAffected == 0 {\n\t\treturn op.NotFound{}\n\t}\n\treturn nil\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/services.go",
+            "Key": "serviceInput.check",
+            "Test": false,
+            "Start": 39,
+            "End": 55,
+            "Lines": 17,
+            "Cognitive": 4,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/services.go",
+            "Key": "services.Change",
+            "Test": false,
+            "Start": 96,
+            "End": 115,
+            "Lines": 20,
+            "Cognitive": 3,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Set": "tune"
+    },
+    {
+      "ID": 3,
+      "Canonical": "weight-1/groomer-carlos-1: cancelling a booking | weight-1/groomer-carlos-3: cancelling a booking",
+      "Job": "cancelling a booking",
+      "Left": {
+        "Run": "weight-1/groomer-carlos-1",
+        "Job": "cancelling a booking",
+        "Text": "// internal/groomer/bookings.go\n// Cancel frees the booking's time. A booking already in the past\n// cannot be cancelled: it happened, or it was a no-show.\nfunc (bookings *Bookings) Cancel(ctx context.Context, booking Booking) error {\n\tif !booking.StartsAt.After(bookings.now()) {\n\t\treturn op.Conflict{Message: \"This appointment has already started.\"}\n\t}\n\tif booking.Cancelled {\n\t\treturn nil\n\t}\n\treturn bookings.database.WithContext(ctx).Model(\u0026booking).\n\t\tSelect(\"Cancelled\").Updates(Booking{Cancelled: true}).Error\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/bookings.go",
+            "Key": "Bookings.Cancel",
+            "Test": false,
+            "Start": 99,
+            "End": 110,
+            "Lines": 12,
+            "Cognitive": 2,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Right": {
+        "Run": "weight-1/groomer-carlos-3",
+        "Job": "cancelling a booking",
+        "Text": "// internal/groomer/ledger.go\n// CancelBooking frees a booking's time for someone else. Cancelling\n// one already cancelled changes nothing, so a double click is\n// harmless.\nfunc (salon *Salon) CancelBooking(ctx context.Context, id int64) error {\n\tcancelled := salon.now().UTC()\n\tresult := salon.database.WithContext(ctx).Model(\u0026Booking{}).\n\t\tWhere(\"id = ? AND cancelled_at IS NULL\", id).\n\t\tSelect(\"CancelledAt\").Updates(map[string]any{\n\t\t\"CancelledAt\": \u0026cancelled,\n\t})\n\tif result.Error != nil {\n\t\treturn result.Error\n\t}\n\tif result.RowsAffected == 1 {\n\t\treturn nil\n\t}\n\t_, err := salon.Booking(ctx, id)\n\treturn err\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/ledger.go",
+            "Key": "Salon.CancelBooking",
+            "Test": false,
+            "Start": 84,
+            "End": 102,
+            "Lines": 19,
+            "Cognitive": 2,
+            "Nesting": 1,
+            "FarShortNames": 1,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Set": "tune"
+    },
+    {
+      "ID": 4,
+      "Canonical": "cost-1/groomer-carlos-2: cancelling a booking | cost-1/groomer-carlos-3: cancelling a booking",
+      "Job": "cancelling a booking",
+      "Left": {
+        "Run": "cost-1/groomer-carlos-2",
+        "Job": "cancelling a booking",
+        "Text": "// internal/groomer/appointments.go\n// Cancel frees a booking's time. The row stays, so the owner can still\n// see who had booked.\nfunc (bookings Bookings) Cancel(ctx context.Context, id int64) error {\n\tresult := bookings.database.WithContext(ctx).Model(\u0026Booking{ID: id}).\n\t\tSelect(\"Cancelled\").Updates(map[string]any{\"Cancelled\": true})\n\tif result.Error != nil {\n\t\treturn result.Error\n\t}\n\tif result.RowsAffected == 0 {\n\t\treturn op.NotFound{}\n\t}\n\treturn nil\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/appointments.go",
+            "Key": "Bookings.Cancel",
+            "Test": false,
+            "Start": 59,
+            "End": 71,
+            "Lines": 13,
+            "Cognitive": 2,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Right": {
+        "Run": "cost-1/groomer-carlos-3",
+        "Job": "cancelling a booking",
+        "Text": "// internal/groomer/bookings.go\n// Cancel frees a booking's slot. Cancelling twice is not an error: the\n// second press finds the work already done.\nfunc (salon salon) Cancel(ctx context.Context, id int64,\n\tnow time.Time) error {\n\tif _, err := salon.Booking(ctx, id); err != nil {\n\t\treturn err\n\t}\n\tstamp := now.UTC()\n\treturn salon.database.WithContext(ctx).Model(\u0026Booking{ID: id}).\n\t\tWhere(\"cancelled_at IS NULL\").Select(\"CancelledAt\").\n\t\tUpdates(Booking{CancelledAt: \u0026stamp}).Error\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/bookings.go",
+            "Key": "salon.Cancel",
+            "Test": false,
+            "Start": 244,
+            "End": 255,
+            "Lines": 12,
+            "Cognitive": 1,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Set": "tune"
+    },
+    {
+      "ID": 5,
+      "Canonical": "cost-1/groomer-carlos-3: listing the bookings for the owner | weight-1/groomer-carlos-1: listing the bookings for the owner",
+      "Job": "listing the bookings for the owner",
+      "Left": {
+        "Run": "weight-1/groomer-carlos-1",
+        "Job": "listing the bookings for the owner",
+        "Text": "// internal/groomer/agenda.go\n// List is the bookings on one of the owner's lists: upcoming soonest\n// first, the other two most recent first.\nfunc (bookings *Bookings) List(\n\tctx context.Context, agenda Agenda,\n) ([]Booking, error) {\n\tvar rows []Booking\n\tquery := agendaQuery(bookings.database.WithContext(ctx), agenda,\n\t\tbookings.now().UTC())\n\terr := query.Find(\u0026rows).Error\n\treturn rows, err\n}\n\nfunc agendaQuery(query *gorm.DB, agenda Agenda, now time.Time) *gorm.DB {\n\tswitch agenda {\n\tcase AgendaPast:\n\t\treturn query.Where(\"cancelled = ? AND ends_at \u003c= ?\", false, now).\n\t\t\tOrder(\"starts_at DESC\").Limit(agendaLimit)\n\tcase AgendaCancelled:\n\t\treturn query.Where(\"cancelled = ?\", true).\n\t\t\tOrder(\"starts_at DESC\").Limit(agendaLimit)\n\tdefault:\n\t\treturn query.Where(\"cancelled = ? AND ends_at \u003e ?\", false, now).\n\t\t\tOrder(\"starts_at\")\n\t}\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/agenda.go",
+            "Key": "Bookings.List",
+            "Test": false,
+            "Start": 24,
+            "End": 34,
+            "Lines": 11,
+            "Cognitive": 0,
+            "Nesting": 0,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/agenda.go",
+            "Key": "agendaQuery",
+            "Test": false,
+            "Start": 36,
+            "End": 48,
+            "Lines": 13,
+            "Cognitive": 1,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Right": {
+        "Run": "cost-1/groomer-carlos-3",
+        "Job": "listing the bookings for the owner",
+        "Text": "// internal/groomer/bookings.go\n// Upcoming is every booking that has not finished yet, soonest first,\n// cancelled ones included so the owner sees what changed.\nfunc (salon salon) Upcoming(ctx context.Context, now time.Time) (\n\t[]Booking, error) {\n\tvar bookings []Booking\n\terr := salon.database.WithContext(ctx).Where(\"ends_at \u003e ?\",\n\t\tnow.UTC()).Order(\"starts_at\").Limit(500).Find(\u0026bookings).Error\n\treturn bookings, err\n}\n\n// Past is the finished bookings, most recent first.\nfunc (salon salon) Past(ctx context.Context, now time.Time) (\n\t[]Booking, error) {\n\tvar bookings []Booking\n\terr := salon.database.WithContext(ctx).Where(\"ends_at \u003c= ?\",\n\t\tnow.UTC()).Order(\"starts_at desc\").Limit(200).\n\t\tFind(\u0026bookings).Error\n\treturn bookings, err\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/bookings.go",
+            "Key": "salon.Upcoming",
+            "Test": false,
+            "Start": 224,
+            "End": 232,
+            "Lines": 9,
+            "Cognitive": 0,
+            "Nesting": 0,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/bookings.go",
+            "Key": "salon.Past",
+            "Test": false,
+            "Start": 234,
+            "End": 242,
+            "Lines": 9,
+            "Cognitive": 0,
+            "Nesting": 0,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Set": "tune"
+    },
+    {
+      "ID": 6,
+      "Canonical": "cost-1/groomer-carlos-2: working out which time slots are free to book | cost-1/groomer-carlos-3: working out which time slots are free to book",
+      "Job": "working out which time slots are free to book",
+      "Left": {
+        "Run": "cost-1/groomer-carlos-3",
+        "Job": "working out which time slots are free to book",
+        "Text": "// internal/groomer/bookings.go\n// Slots is every start time on day that fits service around the\n// bookings already made and is not yet past.\nfunc (salon salon) Slots(ctx context.Context, service Service,\n\tday, now time.Time) ([]time.Time, error) {\n\tdatabase := salon.database.WithContext(ctx)\n\tweek, err := weekOf(database)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\ttaken, err := takenOn(database, day)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\thours := week[day.Weekday()]\n\treturn freeSlots(hours, day, service.Minutes, taken, now), nil\n}\n\n// takenOn is every booking still standing that touches day.\nfunc takenOn(database *gorm.DB, day time.Time) ([]Booking, error) {\n\tvar taken []Booking\n\terr := database.Where(\"cancelled_at IS NULL AND starts_at \u003c ? \"+\n\t\t\"AND ends_at \u003e ?\", day.AddDate(0, 0, 1).UTC(), day.UTC()).\n\t\tFind(\u0026taken).Error\n\treturn taken, err\n}\n\n// freeSlots is the arithmetic behind Slots. The salon has one grooming\n// table, so any overlap with a standing booking rules a slot out.\nfunc freeSlots(hours OpeningDay, day time.Time, minutes int,\n\ttaken []Booking, now time.Time) []time.Time {\n\tif !hours.Open || minutes \u003c= 0 {\n\t\treturn nil\n\t}\n\tlength := time.Duration(minutes) * time.Minute\n\topens, closes := atMinute(day, hours.OpensAt), atMinute(day,\n\t\thours.ClosesAt)\n\tvar free []time.Time\n\tfor start := opens; !start.Add(length).After(closes); start =\n\t\tstart.Add(slotStep) {\n\t\tif start.Before(now) || overlaps(start, start.Add(length),\n\t\t\ttaken) {\n\t\t\tcontinue\n\t\t}\n\t\tfree = append(free, start)\n\t}\n\treturn free\n}\n\nfunc overlaps(start, end time.Time, taken []Booking) bool {\n\treturn slices.ContainsFunc(taken, func(booking Booking) bool {\n\t\treturn booking.StartsAt.Before(end) \u0026\u0026 booking.EndsAt.After(start)\n\t})\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/bookings.go",
+            "Key": "salon.Slots",
+            "Test": false,
+            "Start": 84,
+            "End": 99,
+            "Lines": 16,
+            "Cognitive": 2,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/bookings.go",
+            "Key": "takenOn",
+            "Test": false,
+            "Start": 101,
+            "End": 108,
+            "Lines": 8,
+            "Cognitive": 0,
+            "Nesting": 0,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/bookings.go",
+            "Key": "freeSlots",
+            "Test": false,
+            "Start": 110,
+            "End": 130,
+            "Lines": 21,
+            "Cognitive": 6,
+            "Nesting": 2,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/bookings.go",
+            "Key": "overlaps",
+            "Test": false,
+            "Start": 132,
+            "End": 136,
+            "Lines": 5,
+            "Cognitive": 1,
+            "Nesting": 0,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Right": {
+        "Run": "cost-1/groomer-carlos-2",
+        "Job": "working out which time slots are free to book",
+        "Text": "// internal/groomer/bookings.go\n// OpenTimes is every start time on day that service still fits into:\n// inside opening hours, after now, and clear of every booking.\nfunc (bookings Bookings) OpenTimes(ctx context.Context, service Service,\n\tday, now time.Time) ([]time.Time, error) {\n\thour, err := bookings.hours.On(ctx, day)\n\tif err != nil || !hour.Open {\n\t\treturn nil, err\n\t}\n\ttaken, err := bookings.takenOn(ctx, day)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\tlength := time.Duration(service.Minutes) * time.Minute\n\tcloses := atMinute(day, hour.ClosesAt)\n\tvar open []time.Time\n\tfor start := atMinute(day, hour.OpensAt); !start.Add(length).\n\t\tAfter(closes); start = start.Add(slotStep) {\n\t\tif start.After(now) \u0026\u0026 !overlaps(taken, start, start.Add(length)) {\n\t\t\topen = append(open, start)\n\t\t}\n\t}\n\treturn open, nil\n}\n\nfunc (bookings Bookings) takenOn(ctx context.Context, day time.Time) (\n\t[]Booking, error) {\n\tvar taken []Booking\n\terr := bookings.database.WithContext(ctx).\n\t\tWhere(\"cancelled = ? AND starts_at \u003c ? AND ends_at \u003e ?\", false,\n\t\t\tday.AddDate(0, 0, 1).UTC(), day.UTC()).Find(\u0026taken).Error\n\treturn taken, err\n}\n\nfunc overlaps(taken []Booking, starts, ends time.Time) bool {\n\tfor _, booking := range taken {\n\t\tif booking.StartsAt.Before(ends) \u0026\u0026 booking.EndsAt.After(starts) {\n\t\t\treturn true\n\t\t}\n\t}\n\treturn false\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/bookings.go",
+            "Key": "Bookings.OpenTimes",
+            "Test": false,
+            "Start": 48,
+            "End": 70,
+            "Lines": 23,
+            "Cognitive": 7,
+            "Nesting": 2,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/bookings.go",
+            "Key": "Bookings.takenOn",
+            "Test": false,
+            "Start": 72,
+            "End": 79,
+            "Lines": 8,
+            "Cognitive": 0,
+            "Nesting": 0,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/bookings.go",
+            "Key": "overlaps",
+            "Test": false,
+            "Start": 81,
+            "End": 88,
+            "Lines": 8,
+            "Cognitive": 4,
+            "Nesting": 2,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Set": "tune"
+    },
+    {
+      "ID": 7,
+      "Canonical": "1/groomer-carlos-3: saving changes to a service | cost-1/groomer-carlos-2: saving changes to a service",
+      "Job": "saving changes to a service",
+      "Left": {
+        "Run": "1/groomer-carlos-3",
+        "Job": "saving changes to a service",
+        "Text": "// internal/groomer/salon.go\n// check reads the length and refuses what the salon cannot offer.\nfunc (details serviceDetails) check() (int, error) {\n\tproblems := map[string]string{}\n\tif strings.TrimSpace(details.Name) == \"\" {\n\t\tproblems[\"Name\"] = \"Enter the service's name.\"\n\t}\n\tminutes, err := strconv.Atoi(strings.TrimSpace(details.Minutes))\n\tif err != nil || minutes \u003c 5 || minutes \u003e 480 {\n\t\tproblems[\"Minutes\"] = \"Enter a length from 5 to 480 minutes.\"\n\t}\n\tif details.PriceMinor \u003c 0 {\n\t\tproblems[\"Price\"] = \"A price cannot be below zero.\"\n\t}\n\tif len(problems) \u003e 0 {\n\t\treturn 0, op.Invalid{Fields: problems}\n\t}\n\treturn minutes, nil\n}\n\n// UpdateService changes a service. Bookings already made keep the name\n// and length they were made with.\nfunc (salon *salon) UpdateService(\n\tctx context.Context, id int64, details serviceDetails,\n) error {\n\tminutes, err := details.check()\n\tif err != nil {\n\t\treturn err\n\t}\n\tservice, err := salon.Service(ctx, id)\n\tif err != nil {\n\t\treturn err\n\t}\n\treturn salon.rows(ctx).Model(\u0026service).\n\t\tSelect(\"Name\", \"Description\", \"Minutes\", \"PriceMinor\", \"Offered\").\n\t\tUpdates(Service{\n\t\t\tName:        strings.TrimSpace(details.Name),\n\t\t\tDescription: strings.TrimSpace(details.Description),\n\t\t\tMinutes:     minutes, PriceMinor: details.PriceMinor,\n\t\t\tOffered: details.Offered,\n\t\t}).Error\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/salon.go",
+            "Key": "serviceDetails.check",
+            "Test": false,
+            "Start": 93,
+            "End": 110,
+            "Lines": 18,
+            "Cognitive": 5,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/salon.go",
+            "Key": "salon.UpdateService",
+            "Test": false,
+            "Start": 130,
+            "End": 151,
+            "Lines": 22,
+            "Cognitive": 2,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Right": {
+        "Run": "cost-1/groomer-carlos-2",
+        "Job": "saving changes to a service",
+        "Text": "// internal/groomer/owner_services.go\nfunc serviceInput(parsed *form.Parsed) ServiceInput {\n\tminutes, _ := strconv.Atoi(parsed.String(\"Minutes\"))\n\tprice, _ := parsed.Minor(\"Price\")\n\treturn ServiceInput{Name: parsed.String(\"Name\"),\n\t\tDescription: parsed.String(\"Description\"), Minutes: minutes,\n\t\tPriceMinor: price, Offered: parsed.String(\"Offered\") != \"\"}\n}\n\n// internal/groomer/services.go\n// Change rewrites a service. Bookings already made keep the times they\n// were given, even when the service now runs longer.\nfunc (services Services) Change(ctx context.Context, id int64,\n\tinput ServiceInput) error {\n\tinput, err := input.checked()\n\tif err != nil {\n\t\treturn err\n\t}\n\tresult := services.database.WithContext(ctx).Model(\u0026Service{ID: id}).\n\t\tSelect(\"Name\", \"Description\", \"Minutes\", \"PriceMinor\", \"Offered\").\n\t\tUpdates(map[string]any{\"Name\": input.Name,\n\t\t\t\"Description\": input.Description, \"Minutes\": input.Minutes,\n\t\t\t\"PriceMinor\": input.PriceMinor, \"Offered\": input.Offered})\n\tif result.Error != nil {\n\t\treturn result.Error\n\t}\n\tif result.RowsAffected == 0 {\n\t\treturn op.NotFound{}\n\t}\n\treturn nil\n}\n\n// checked trims input and refuses what a booking page could not show.\nfunc (input ServiceInput) checked() (ServiceInput, error) {\n\tinput.Name = strings.TrimSpace(input.Name)\n\tinput.Description = strings.TrimSpace(input.Description)\n\tfields := map[string]string{}\n\tif input.Name == \"\" || utf8.RuneCountInString(input.Name) \u003e 60 {\n\t\tfields[\"Name\"] = \"Enter a name of up to 60 characters.\"\n\t}\n\tif utf8.RuneCountInString(input.Description) \u003e 400 {\n\t\tfields[\"Description\"] = \"Keep the description to 400 characters.\"\n\t}\n\tif input.Minutes \u003c serviceMinutesStep ||\n\t\tinput.Minutes \u003e serviceMinutesMost ||\n\t\tinput.Minutes%serviceMinutesStep != 0 {\n\t\tfields[\"Minutes\"] = \"Pick how long the service takes.\"\n\t}\n\tif input.PriceMinor \u003c 0 {\n\t\tfields[\"Price\"] = \"Enter a price of zero or more.\"\n\t}\n\tif len(fields) \u003e 0 {\n\t\treturn input, op.Invalid{Fields: fields}\n\t}\n\treturn input, nil\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/owner_services.go",
+            "Key": "serviceInput",
+            "Test": false,
+            "Start": 133,
+            "End": 139,
+            "Lines": 7,
+            "Cognitive": 0,
+            "Nesting": 0,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/services.go",
+            "Key": "Services.Change",
+            "Test": false,
+            "Start": 87,
+            "End": 107,
+            "Lines": 21,
+            "Cognitive": 3,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/services.go",
+            "Key": "ServiceInput.checked",
+            "Test": false,
+            "Start": 109,
+            "End": 132,
+            "Lines": 24,
+            "Cognitive": 7,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Set": "tune"
+    },
+    {
+      "ID": 8,
+      "Canonical": "accept-1/groomer-carlos-1: listing the bookings for the owner | cost-1/groomer-carlos-2: listing the bookings for the owner",
+      "Job": "listing the bookings for the owner",
+      "Left": {
+        "Run": "cost-1/groomer-carlos-2",
+        "Job": "listing the bookings for the owner",
+        "Text": "// internal/groomer/appointments.go\n// List is one view of the book: upcoming soonest first, past and\n// cancelled most recent first.\nfunc (bookings Bookings) List(ctx context.Context, view string,\n\tnow time.Time) ([]BookingLine, error) {\n\tquery := bookings.lines(ctx)\n\tswitch view {\n\tcase showPast:\n\t\tquery = query.Where(\"bookings.cancelled = ? AND \"+\n\t\t\t\"bookings.ends_at \u003c= ?\", false, now.UTC()).\n\t\t\tOrder(\"bookings.starts_at DESC\").Limit(longestList)\n\tcase showCancelled:\n\t\tquery = query.Where(\"bookings.cancelled = ?\", true).\n\t\t\tOrder(\"bookings.starts_at DESC\").Limit(longestList)\n\tdefault:\n\t\tquery = query.Where(\"bookings.cancelled = ? AND \"+\n\t\t\t\"bookings.ends_at \u003e ?\", false, now.UTC()).\n\t\t\tOrder(\"bookings.starts_at\")\n\t}\n\tvar lines []BookingLine\n\terr := query.Scan(\u0026lines).Error\n\treturn lines, err\n}\n\nfunc (bookings Bookings) lines(ctx context.Context) *gorm.DB {\n\treturn bookings.database.WithContext(ctx).Model(\u0026Booking{}).\n\t\tSelect(\"bookings.*, services.name AS service_name\").\n\t\tJoins(\"LEFT JOIN services ON services.id = bookings.service_id\")\n}\n\n// bookView reads ?show=. An unknown value is an old or hand-typed link,\n// so it shows the upcoming list rather than an error.\nfunc bookView(value string) string {\n\tswitch value {\n\tcase showPast, showCancelled:\n\t\treturn value\n\t}\n\treturn showUpcoming\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/appointments.go",
+            "Key": "Bookings.List",
+            "Test": false,
+            "Start": 23,
+            "End": 44,
+            "Lines": 22,
+            "Cognitive": 1,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/appointments.go",
+            "Key": "Bookings.lines",
+            "Test": false,
+            "Start": 73,
+            "End": 77,
+            "Lines": 5,
+            "Cognitive": 0,
+            "Nesting": 0,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/appointments.go",
+            "Key": "bookView",
+            "Test": false,
+            "Start": 90,
+            "End": 98,
+            "Lines": 9,
+            "Cognitive": 1,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Right": {
+        "Run": "accept-1/groomer-carlos-1",
+        "Job": "listing the bookings for the owner",
+        "Text": "// internal/groomer/bookings.go\n// upcoming is every booking still to come, cancelled ones included,\n// soonest first; past is every one already started, latest first.\nfunc (book bookings) upcoming(ctx context.Context) ([]Booking, error) {\n\tvar list []Booking\n\terr := book.database.WithContext(ctx).\n\t\tWhere(\"ends_at \u003e ?\", book.now().UTC()).\n\t\tOrder(\"starts_at\").Find(\u0026list).Error\n\treturn list, err\n}\n\nfunc (book bookings) past(ctx context.Context) ([]Booking, error) {\n\tvar list []Booking\n\terr := book.database.WithContext(ctx).\n\t\tWhere(\"ends_at \u003c= ?\", book.now().UTC()).\n\t\tOrder(\"starts_at DESC\").Limit(200).Find(\u0026list).Error\n\treturn list, err\n}\n\n// internal/groomer/owner.go\n// byDay groups bookings, already in order, under their salon day.\nfunc byDay(list []Booking) []bookingDay {\n\tvar days []bookingDay\n\tfor _, booking := range list {\n\t\tday := longDay(booking.StartsAt)\n\t\tif len(days) == 0 || days[len(days)-1].Day != day {\n\t\t\tdays = append(days, bookingDay{Day: day})\n\t\t}\n\t\trow := bookingRow{Href: bookingPath(booking.ID),\n\t\t\tMain: shortTime(booking.StartsAt) + \" · \" + booking.DogName,\n\t\t\tSub: booking.ServiceName + \" for \" + booking.CustomerName +\n\t\t\t\t\", \" + booking.Phone,\n\t\t\tStatus: \"Booked\", Tone: \"positive\"}\n\t\tif booking.CancelledAt != nil {\n\t\t\trow.Status, row.Tone = \"Cancelled\", \"negative\"\n\t\t}\n\t\tlast := \u0026days[len(days)-1]\n\t\tlast.Rows = append(last.Rows, row)\n\t}\n\treturn days\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/bookings.go",
+            "Key": "bookings.upcoming",
+            "Test": false,
+            "Start": 154,
+            "End": 162,
+            "Lines": 9,
+            "Cognitive": 0,
+            "Nesting": 0,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/bookings.go",
+            "Key": "bookings.past",
+            "Test": false,
+            "Start": 164,
+            "End": 170,
+            "Lines": 7,
+            "Cognitive": 0,
+            "Nesting": 0,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/owner.go",
+            "Key": "byDay",
+            "Test": false,
+            "Start": 103,
+            "End": 123,
+            "Lines": 21,
+            "Cognitive": 6,
+            "Nesting": 2,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Set": "tune"
+    },
+    {
+      "ID": 9,
+      "Canonical": "cost-1/groomer-carlos-3: saving changes to a service | weight-1/groomer-carlos-3: saving changes to a service",
+      "Job": "saving changes to a service",
+      "Left": {
+        "Run": "weight-1/groomer-carlos-3",
+        "Job": "saving changes to a service",
+        "Text": "// internal/groomer/services.go\nfunc (input ServiceInput) check() error {\n\tproblems := checkText(\n\t\ttextRule{\"Name\", input.Name, \"Give the service a name.\", 80},\n\t\ttextRule{\"Description\", input.Description, \"\", 500},\n\t)\n\tif !slices.Contains(Durations, input.DurationMinutes) {\n\t\tproblems[\"Duration\"] = \"Pick one of the lengths listed.\"\n\t}\n\tif input.PriceMinor \u003c 0 {\n\t\tproblems[\"Price\"] = \"A price cannot be below zero.\"\n\t}\n\treturn invalidOrNil(problems)\n}\n\nfunc (input ServiceInput) columns() map[string]any {\n\treturn map[string]any{\n\t\t\"Name\":            input.Name,\n\t\t\"Description\":     input.Description,\n\t\t\"DurationMinutes\": input.DurationMinutes,\n\t\t\"PriceMinor\":      input.PriceMinor,\n\t\t\"Offered\":         input.Offered,\n\t}\n}\n\n// ChangeService rewrites a service's details.\nfunc (salon *Salon) ChangeService(\n\tctx context.Context, id int64, input ServiceInput,\n) error {\n\tif err := input.check(); err != nil {\n\t\treturn err\n\t}\n\tservice, err := salon.Service(ctx, id)\n\tif err != nil {\n\t\treturn err\n\t}\n\treturn salon.database.WithContext(ctx).Model(\u0026service).\n\t\tSelect(serviceColumns).Updates(input.columns()).Error\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/services.go",
+            "Key": "ServiceInput.check",
+            "Test": false,
+            "Start": 24,
+            "End": 36,
+            "Lines": 13,
+            "Cognitive": 2,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/services.go",
+            "Key": "ServiceInput.columns",
+            "Test": false,
+            "Start": 38,
+            "End": 46,
+            "Lines": 9,
+            "Cognitive": 0,
+            "Nesting": 0,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/services.go",
+            "Key": "Salon.ChangeService",
+            "Test": false,
+            "Start": 107,
+            "End": 120,
+            "Lines": 14,
+            "Cognitive": 2,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Right": {
+        "Run": "cost-1/groomer-carlos-3",
+        "Job": "saving changes to a service",
+        "Text": "// internal/groomer/salon.go\nfunc (input serviceInput) problems() error {\n\tfields := map[string]string{}\n\tif strings.TrimSpace(input.Name) == \"\" {\n\t\tfields[\"Name\"] = \"Enter the service's name.\"\n\t}\n\tif input.Minutes \u003c 15 || input.Minutes \u003e 480 {\n\t\tfields[\"Minutes\"] = \"Enter a length from 15 to 480 minutes.\"\n\t}\n\tif input.PriceMinor \u003c 0 {\n\t\tfields[\"Price\"] = \"Enter a price of zero or more.\"\n\t}\n\tif len(fields) \u003e 0 {\n\t\treturn op.Invalid{Fields: fields}\n\t}\n\treturn nil\n}\n\n// ChangeService rewrites a service. Bookings already made keep the name,\n// length and price they were made with.\nfunc (salon salon) ChangeService(ctx context.Context, id int64,\n\tinput serviceInput) error {\n\tif err := input.problems(); err != nil {\n\t\treturn err\n\t}\n\tresult := salon.database.WithContext(ctx).Model(\u0026Service{ID: id}).\n\t\tSelect(\"Name\", \"Description\", \"Minutes\", \"PriceMinor\",\n\t\t\t\"Bookable\", \"UpdatedAt\").\n\t\tUpdates(Service{Name: strings.TrimSpace(input.Name),\n\t\t\tDescription: strings.TrimSpace(input.Description),\n\t\t\tMinutes:     input.Minutes, PriceMinor: input.PriceMinor,\n\t\t\tBookable: input.Bookable, UpdatedAt: time.Now()})\n\tif result.Error != nil {\n\t\treturn result.Error\n\t}\n\tif result.RowsAffected == 0 {\n\t\treturn op.NotFound{}\n\t}\n\treturn nil\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/salon.go",
+            "Key": "serviceInput.problems",
+            "Test": false,
+            "Start": 48,
+            "End": 63,
+            "Lines": 16,
+            "Cognitive": 5,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/salon.go",
+            "Key": "salon.ChangeService",
+            "Test": false,
+            "Start": 105,
+            "End": 126,
+            "Lines": 22,
+            "Cognitive": 3,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Set": "tune"
+    },
+    {
+      "ID": 10,
+      "Canonical": "cost-1/groomer-carlos-3: listing the bookings for the owner | weight-1/groomer-carlos-3: listing the bookings for the owner",
+      "Job": "listing the bookings for the owner",
+      "Left": {
+        "Run": "weight-1/groomer-carlos-3",
+        "Job": "listing the bookings for the owner",
+        "Text": "// internal/groomer/ledger.go\n// Upcoming is every booking from the start of today on, soonest first,\n// cancelled ones included so the owner can see what changed.\nfunc (salon *Salon) Upcoming(ctx context.Context) ([]BookingView, error) {\n\ttoday := midnight(salon.Now()).UTC()\n\treturn salon.views(ctx, func(query *gorm.DB) *gorm.DB {\n\t\treturn query.Where(\"starts_at \u003e= ?\", today).Order(\"starts_at\")\n\t})\n}\n\n// Past is every booking before today, latest first.\nfunc (salon *Salon) Past(ctx context.Context) ([]BookingView, error) {\n\ttoday := midnight(salon.Now()).UTC()\n\treturn salon.views(ctx, func(query *gorm.DB) *gorm.DB {\n\t\treturn query.Where(\"starts_at \u003c ?\", today).Order(\"starts_at desc\")\n\t})\n}\n\nfunc (salon *Salon) views(\n\tctx context.Context, narrow func(*gorm.DB) *gorm.DB,\n) ([]BookingView, error) {\n\tvar bookings []Booking\n\tquery := narrow(salon.database.WithContext(ctx)).Limit(listLimit)\n\tif err := query.Find(\u0026bookings).Error; err != nil {\n\t\treturn nil, err\n\t}\n\tservices, err := salon.AllServices(ctx)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\tbyID := map[int64]Service{}\n\tfor _, service := range services {\n\t\tbyID[service.ID] = service\n\t}\n\tviews := make([]BookingView, 0, len(bookings))\n\tfor _, booking := range bookings {\n\t\tviews = append(views, BookingView{booking, byID[booking.ServiceID]})\n\t}\n\treturn views, nil\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/ledger.go",
+            "Key": "Salon.Upcoming",
+            "Test": false,
+            "Start": 14,
+            "End": 21,
+            "Lines": 8,
+            "Cognitive": 0,
+            "Nesting": 0,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/ledger.go",
+            "Key": "Salon.Past",
+            "Test": false,
+            "Start": 23,
+            "End": 29,
+            "Lines": 7,
+            "Cognitive": 0,
+            "Nesting": 0,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/ledger.go",
+            "Key": "Salon.views",
+            "Test": false,
+            "Start": 31,
+            "End": 52,
+            "Lines": 22,
+            "Cognitive": 4,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Right": {
+        "Run": "cost-1/groomer-carlos-3",
+        "Job": "listing the bookings for the owner",
+        "Text": "// internal/groomer/bookings.go\n// Upcoming is every booking that has not finished yet, soonest first,\n// cancelled ones included so the owner sees what changed.\nfunc (salon salon) Upcoming(ctx context.Context, now time.Time) (\n\t[]Booking, error) {\n\tvar bookings []Booking\n\terr := salon.database.WithContext(ctx).Where(\"ends_at \u003e ?\",\n\t\tnow.UTC()).Order(\"starts_at\").Limit(500).Find(\u0026bookings).Error\n\treturn bookings, err\n}\n\n// Past is the finished bookings, most recent first.\nfunc (salon salon) Past(ctx context.Context, now time.Time) (\n\t[]Booking, error) {\n\tvar bookings []Booking\n\terr := salon.database.WithContext(ctx).Where(\"ends_at \u003c= ?\",\n\t\tnow.UTC()).Order(\"starts_at desc\").Limit(200).\n\t\tFind(\u0026bookings).Error\n\treturn bookings, err\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/bookings.go",
+            "Key": "salon.Upcoming",
+            "Test": false,
+            "Start": 224,
+            "End": 232,
+            "Lines": 9,
+            "Cognitive": 0,
+            "Nesting": 0,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/bookings.go",
+            "Key": "salon.Past",
+            "Test": false,
+            "Start": 234,
+            "End": 242,
+            "Lines": 9,
+            "Cognitive": 0,
+            "Nesting": 0,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Set": "tune"
+    },
+    {
+      "ID": 11,
+      "Canonical": "cost-1/groomer-carlos-3: saving the opening hours | weight-1/groomer-carlos-1: saving the opening hours",
+      "Job": "saving the opening hours",
+      "Left": {
+        "Run": "weight-1/groomer-carlos-1",
+        "Job": "saving the opening hours",
+        "Text": "// internal/groomer/hours.go\n// Set changes one day's hours. A closed day keeps the times it had, so\n// opening it again later starts from the hours it used to keep.\nfunc (hours *Hours) Set(ctx context.Context, day OpeningDay) error {\n\tif day.Weekday \u003c 0 || day.Weekday \u003e 6 {\n\t\treturn op.NotFound{}\n\t}\n\tif day.Open \u0026\u0026 day.Closes \u003c= day.Opens {\n\t\treturn op.Invalid{Fields: map[string]string{\n\t\t\t\"Closes\": \"Closing time must be after opening time.\",\n\t\t}}\n\t}\n\tcurrent, err := hours.On(ctx, time.Weekday(day.Weekday))\n\tif err != nil {\n\t\treturn err\n\t}\n\tif !day.Open {\n\t\tday.Opens, day.Closes = current.Opens, current.Closes\n\t}\n\tday.ID = current.ID\n\tif day.ID == 0 {\n\t\treturn hours.database.WithContext(ctx).Create(\u0026day).Error\n\t}\n\treturn hours.database.WithContext(ctx).Model(\u0026day).\n\t\tSelect(\"Open\", \"Opens\", \"Closes\").Updates(\u0026day).Error\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/hours.go",
+            "Key": "Hours.Set",
+            "Test": false,
+            "Start": 55,
+            "End": 79,
+            "Lines": 25,
+            "Cognitive": 7,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Right": {
+        "Run": "cost-1/groomer-carlos-3",
+        "Job": "saving the opening hours",
+        "Text": "// internal/groomer/salon.go\n// SetWeek replaces the opening hours for all seven days at once.\nfunc (salon salon) SetWeek(ctx context.Context, week [7]OpeningDay) error {\n\tfields := map[string]string{}\n\tfor day, hours := range week {\n\t\tif hours.Open \u0026\u0026 hours.ClosesAt \u003c= hours.OpensAt {\n\t\t\tfields[dayField(day)] = \"Closing time must be after opening.\"\n\t\t}\n\t}\n\tif len(fields) \u003e 0 {\n\t\treturn op.Invalid{Fields: fields}\n\t}\n\treturn salon.database.WithContext(ctx).Transaction(\n\t\tfunc(tx *gorm.DB) error {\n\t\t\tfor day, hours := range week {\n\t\t\t\tif err := saveDay(tx, day, hours); err != nil {\n\t\t\t\t\treturn err\n\t\t\t\t}\n\t\t\t}\n\t\t\treturn nil\n\t\t})\n}\n\nfunc saveDay(tx *gorm.DB, day int, hours OpeningDay) error {\n\trow := OpeningDay{Weekday: day}\n\tif err := tx.Where(\"weekday = ?\", day).FirstOrCreate(\u0026row).\n\t\tError; err != nil {\n\t\treturn err\n\t}\n\treturn tx.Model(\u0026row).Select(\"Open\", \"OpensAt\", \"ClosesAt\").\n\t\tUpdates(OpeningDay{Open: hours.Open, OpensAt: hours.OpensAt,\n\t\t\tClosesAt: hours.ClosesAt}).Error\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/salon.go",
+            "Key": "salon.SetWeek",
+            "Test": false,
+            "Start": 151,
+            "End": 171,
+            "Lines": 21,
+            "Cognitive": 10,
+            "Nesting": 2,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/salon.go",
+            "Key": "saveDay",
+            "Test": false,
+            "Start": 173,
+            "End": 182,
+            "Lines": 10,
+            "Cognitive": 1,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Set": "tune"
+    },
+    {
+      "ID": 12,
+      "Canonical": "1/groomer-carlos-3: listing the bookings for the owner | accept-1/groomer-carlos-1: listing the bookings for the owner",
+      "Job": "listing the bookings for the owner",
+      "Left": {
+        "Run": "1/groomer-carlos-3",
+        "Job": "listing the bookings for the owner",
+        "Text": "// internal/groomer/bookings.go\n// BookingsFrom is every booking starting at or after from, soonest\n// first, cancelled ones included so the owner sees what changed.\nfunc (salon *salon) BookingsFrom(\n\tctx context.Context, from time.Time,\n) ([]Booking, error) {\n\tvar bookings []Booking\n\terr := salon.rows(ctx).Where(\"starts_at \u003e= ?\", from.UTC()).\n\t\tOrder(\"starts_at\").Find(\u0026bookings).Error\n\treturn bookings, err\n}\n\n// internal/groomer/owner_handlers.go\n// bookings is the owner's diary: today's bookings and everything after.\nfunc (app *app) bookings(visit *action.Visit) {\n\tsalon := app.ownSalon(visit)\n\tfrom := dayStart(time.Now(), app.zone)\n\tfound, err := salon.BookingsFrom(visit.Context(), from)\n\tif visit.Refused(err) {\n\t\treturn\n\t}\n\tvisit.Render(\"bookings\", http.StatusOK, map[string]any{\n\t\t\"Days\": app.byDay(found), \"Count\": len(found),\n\t})\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/bookings.go",
+            "Key": "salon.BookingsFrom",
+            "Test": false,
+            "Start": 179,
+            "End": 188,
+            "Lines": 10,
+            "Cognitive": 0,
+            "Nesting": 0,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/owner_handlers.go",
+            "Key": "app.bookings",
+            "Test": false,
+            "Start": 16,
+            "End": 27,
+            "Lines": 12,
+            "Cognitive": 1,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Right": {
+        "Run": "accept-1/groomer-carlos-1",
+        "Job": "listing the bookings for the owner",
+        "Text": "// internal/groomer/bookings.go\n// upcoming is every booking still to come, cancelled ones included,\n// soonest first; past is every one already started, latest first.\nfunc (book bookings) upcoming(ctx context.Context) ([]Booking, error) {\n\tvar list []Booking\n\terr := book.database.WithContext(ctx).\n\t\tWhere(\"ends_at \u003e ?\", book.now().UTC()).\n\t\tOrder(\"starts_at\").Find(\u0026list).Error\n\treturn list, err\n}\n\nfunc (book bookings) past(ctx context.Context) ([]Booking, error) {\n\tvar list []Booking\n\terr := book.database.WithContext(ctx).\n\t\tWhere(\"ends_at \u003c= ?\", book.now().UTC()).\n\t\tOrder(\"starts_at DESC\").Limit(200).Find(\u0026list).Error\n\treturn list, err\n}\n\n// internal/groomer/owner.go\n// byDay groups bookings, already in order, under their salon day.\nfunc byDay(list []Booking) []bookingDay {\n\tvar days []bookingDay\n\tfor _, booking := range list {\n\t\tday := longDay(booking.StartsAt)\n\t\tif len(days) == 0 || days[len(days)-1].Day != day {\n\t\t\tdays = append(days, bookingDay{Day: day})\n\t\t}\n\t\trow := bookingRow{Href: bookingPath(booking.ID),\n\t\t\tMain: shortTime(booking.StartsAt) + \" · \" + booking.DogName,\n\t\t\tSub: booking.ServiceName + \" for \" + booking.CustomerName +\n\t\t\t\t\", \" + booking.Phone,\n\t\t\tStatus: \"Booked\", Tone: \"positive\"}\n\t\tif booking.CancelledAt != nil {\n\t\t\trow.Status, row.Tone = \"Cancelled\", \"negative\"\n\t\t}\n\t\tlast := \u0026days[len(days)-1]\n\t\tlast.Rows = append(last.Rows, row)\n\t}\n\treturn days\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/bookings.go",
+            "Key": "bookings.upcoming",
+            "Test": false,
+            "Start": 154,
+            "End": 162,
+            "Lines": 9,
+            "Cognitive": 0,
+            "Nesting": 0,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/bookings.go",
+            "Key": "bookings.past",
+            "Test": false,
+            "Start": 164,
+            "End": 170,
+            "Lines": 7,
+            "Cognitive": 0,
+            "Nesting": 0,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/owner.go",
+            "Key": "byDay",
+            "Test": false,
+            "Start": 103,
+            "End": 123,
+            "Lines": 21,
+            "Cognitive": 6,
+            "Nesting": 2,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Set": "tune"
+    },
+    {
+      "ID": 13,
+      "Canonical": "1/groomer-carlos-3: saving changes to a service | weight-1/groomer-carlos-1: saving changes to a service",
+      "Job": "saving changes to a service",
+      "Left": {
+        "Run": "weight-1/groomer-carlos-1",
+        "Job": "saving changes to a service",
+        "Text": "// internal/groomer/services.go\n// Change rewrites a service. Bookings already made keep the length\n// they were made with, because each stores its own end time.\nfunc (services *Services) Change(\n\tctx context.Context, id int64, details ServiceDetails,\n) error {\n\tif err := details.check(); err != nil {\n\t\treturn err\n\t}\n\tservice, err := services.Find(ctx, id)\n\tif err != nil {\n\t\treturn err\n\t}\n\treturn services.database.WithContext(ctx).Model(\u0026service).\n\t\tSelect(\"Name\", \"Description\", \"Minutes\", \"Price\", \"Offered\").\n\t\tUpdates(Service{\n\t\t\tName: details.Name, Description: details.Description,\n\t\t\tMinutes: details.Minutes, Price: details.Price,\n\t\t\tOffered: details.Offered,\n\t\t}).Error\n}\n\nfunc (details *ServiceDetails) check() error {\n\tdetails.Name = strings.TrimSpace(details.Name)\n\tdetails.Description = strings.TrimSpace(details.Description)\n\tproblems := map[string]string{}\n\tif details.Name == \"\" || len(details.Name) \u003e 80 {\n\t\tproblems[\"Name\"] = \"Enter a name of up to 80 characters.\"\n\t}\n\tif len(details.Description) \u003e 500 {\n\t\tproblems[\"Description\"] = \"Keep the description under 500 characters.\"\n\t}\n\tif !validLength(details.Minutes) {\n\t\tproblems[\"Minutes\"] = \"Choose how long the service takes.\"\n\t}\n\tif details.Price \u003c 0 {\n\t\tproblems[\"Price\"] = \"Enter a price of zero or more.\"\n\t}\n\tif len(problems) \u003e 0 {\n\t\treturn op.Invalid{Fields: problems}\n\t}\n\treturn nil\n}\n\nfunc validLength(minutes int) bool {\n\tfor _, length := range serviceLengths {\n\t\tif length == minutes {\n\t\t\treturn true\n\t\t}\n\t}\n\treturn false\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/services.go",
+            "Key": "Services.Change",
+            "Test": false,
+            "Start": 82,
+            "End": 101,
+            "Lines": 20,
+            "Cognitive": 2,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/services.go",
+            "Key": "ServiceDetails.check",
+            "Test": false,
+            "Start": 103,
+            "End": 123,
+            "Lines": 21,
+            "Cognitive": 6,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/services.go",
+            "Key": "validLength",
+            "Test": false,
+            "Start": 125,
+            "End": 132,
+            "Lines": 8,
+            "Cognitive": 3,
+            "Nesting": 2,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Right": {
+        "Run": "1/groomer-carlos-3",
+        "Job": "saving changes to a service",
+        "Text": "// internal/groomer/salon.go\n// check reads the length and refuses what the salon cannot offer.\nfunc (details serviceDetails) check() (int, error) {\n\tproblems := map[string]string{}\n\tif strings.TrimSpace(details.Name) == \"\" {\n\t\tproblems[\"Name\"] = \"Enter the service's name.\"\n\t}\n\tminutes, err := strconv.Atoi(strings.TrimSpace(details.Minutes))\n\tif err != nil || minutes \u003c 5 || minutes \u003e 480 {\n\t\tproblems[\"Minutes\"] = \"Enter a length from 5 to 480 minutes.\"\n\t}\n\tif details.PriceMinor \u003c 0 {\n\t\tproblems[\"Price\"] = \"A price cannot be below zero.\"\n\t}\n\tif len(problems) \u003e 0 {\n\t\treturn 0, op.Invalid{Fields: problems}\n\t}\n\treturn minutes, nil\n}\n\n// UpdateService changes a service. Bookings already made keep the name\n// and length they were made with.\nfunc (salon *salon) UpdateService(\n\tctx context.Context, id int64, details serviceDetails,\n) error {\n\tminutes, err := details.check()\n\tif err != nil {\n\t\treturn err\n\t}\n\tservice, err := salon.Service(ctx, id)\n\tif err != nil {\n\t\treturn err\n\t}\n\treturn salon.rows(ctx).Model(\u0026service).\n\t\tSelect(\"Name\", \"Description\", \"Minutes\", \"PriceMinor\", \"Offered\").\n\t\tUpdates(Service{\n\t\t\tName:        strings.TrimSpace(details.Name),\n\t\t\tDescription: strings.TrimSpace(details.Description),\n\t\t\tMinutes:     minutes, PriceMinor: details.PriceMinor,\n\t\t\tOffered: details.Offered,\n\t\t}).Error\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/salon.go",
+            "Key": "serviceDetails.check",
+            "Test": false,
+            "Start": 93,
+            "End": 110,
+            "Lines": 18,
+            "Cognitive": 5,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/salon.go",
+            "Key": "salon.UpdateService",
+            "Test": false,
+            "Start": 130,
+            "End": 151,
+            "Lines": 22,
+            "Cognitive": 2,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Set": "tune"
+    },
+    {
+      "ID": 14,
+      "Canonical": "cost-1/groomer-carlos-3: validating a booking before it is saved | weight-1/groomer-carlos-1: validating a booking before it is saved",
+      "Job": "validating a booking before it is saved",
+      "Left": {
+        "Run": "cost-1/groomer-carlos-3",
+        "Job": "validating a booking before it is saved",
+        "Text": "// internal/groomer/bookings.go\nfunc (input bookingInput) problems() error {\n\tfields := map[string]string{}\n\tif strings.TrimSpace(input.CustomerName) == \"\" {\n\t\tfields[\"CustomerName\"] = \"Enter your name.\"\n\t}\n\tif !validPhone(input.Phone) {\n\t\tfields[\"Phone\"] = \"Enter a phone number we can call, \" +\n\t\t\t\"such as 087 123 4567.\"\n\t}\n\tif strings.TrimSpace(input.DogName) == \"\" {\n\t\tfields[\"DogName\"] = \"Enter your dog's name.\"\n\t}\n\tif len(fields) \u003e 0 {\n\t\treturn op.Invalid{Fields: fields}\n\t}\n\treturn nil\n}\n\n// validPhone accepts what people write a phone number with: digits,\n// spaces, dashes, brackets and a leading plus, with 7 to 15 digits.\nfunc validPhone(phone string) bool {\n\tdigits := 0\n\tfor _, char := range strings.TrimSpace(phone) {\n\t\tswitch {\n\t\tcase char \u003e= '0' \u0026\u0026 char \u003c= '9':\n\t\t\tdigits++\n\t\tcase !strings.ContainsRune(\"+ -()\", char):\n\t\t\treturn false\n\t\t}\n\t}\n\treturn digits \u003e= 7 \u0026\u0026 digits \u003c= 15\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/bookings.go",
+            "Key": "bookingInput.problems",
+            "Test": false,
+            "Start": 32,
+            "End": 48,
+            "Lines": 17,
+            "Cognitive": 4,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/bookings.go",
+            "Key": "validPhone",
+            "Test": false,
+            "Start": 50,
+            "End": 63,
+            "Lines": 14,
+            "Cognitive": 5,
+            "Nesting": 2,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Right": {
+        "Run": "weight-1/groomer-carlos-1",
+        "Job": "validating a booking before it is saved",
+        "Text": "// internal/groomer/bookings.go\nfunc (bookings *Bookings) stillFree(\n\tctx context.Context, tx *gorm.DB, request Request,\n) bool {\n\tday := localDay(request.StartsAt)\n\tif !bookings.inWindow(day) {\n\t\treturn false\n\t}\n\tplan, err := loadSchedule(ctx, tx, bookings.now(),\n\t\tday, day.AddDate(0, 0, 1))\n\tif err != nil {\n\t\treturn false\n\t}\n\tfree := plan.freeOn(request.Service, day)\n\treturn slices.ContainsFunc(free, request.StartsAt.Equal)\n}\n\nfunc (request *Request) check() error {\n\trequest.CustomerName = strings.TrimSpace(request.CustomerName)\n\trequest.Phone = strings.TrimSpace(request.Phone)\n\trequest.DogName = strings.TrimSpace(request.DogName)\n\trequest.Notes = strings.TrimSpace(request.Notes)\n\tproblems := map[string]string{}\n\tif request.CustomerName == \"\" || len(request.CustomerName) \u003e 80 {\n\t\tproblems[\"CustomerName\"] = \"Enter your name.\"\n\t}\n\tif !validPhone(request.Phone) {\n\t\tproblems[\"Phone\"] = \"Enter a phone number we can call, \" +\n\t\t\t\"such as 07700 900123.\"\n\t}\n\tif request.DogName == \"\" || len(request.DogName) \u003e 40 {\n\t\tproblems[\"DogName\"] = \"Enter your dog's name.\"\n\t}\n\tif len(request.Notes) \u003e 500 {\n\t\tproblems[\"Notes\"] = \"Keep notes under 500 characters.\"\n\t}\n\tif len(problems) \u003e 0 {\n\t\treturn op.Invalid{Fields: problems}\n\t}\n\treturn nil\n}\n\n// validPhone accepts the ways people write phone numbers: digits with\n// spaces, dashes, dots, brackets and a leading plus.\nfunc validPhone(phone string) bool {\n\tdigits := 0\n\tfor index, char := range phone {\n\t\tswitch {\n\t\tcase char \u003e= '0' \u0026\u0026 char \u003c= '9':\n\t\t\tdigits++\n\t\tcase char == '+' \u0026\u0026 index == 0:\n\t\tcase strings.ContainsRune(\" -.()\", char):\n\t\tdefault:\n\t\t\treturn false\n\t\t}\n\t}\n\treturn digits \u003e= 7 \u0026\u0026 digits \u003c= 15\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/bookings.go",
+            "Key": "Bookings.stillFree",
+            "Test": false,
+            "Start": 58,
+            "End": 72,
+            "Lines": 15,
+            "Cognitive": 2,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/bookings.go",
+            "Key": "Request.check",
+            "Test": false,
+            "Start": 117,
+            "End": 140,
+            "Lines": 24,
+            "Cognitive": 7,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/bookings.go",
+            "Key": "validPhone",
+            "Test": false,
+            "Start": 142,
+            "End": 157,
+            "Lines": 16,
+            "Cognitive": 6,
+            "Nesting": 2,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Set": "tune"
+    },
+    {
+      "ID": 15,
+      "Canonical": "cost-1/groomer-carlos-3: saving the opening hours | weight-1/groomer-carlos-3: saving the opening hours",
+      "Job": "saving the opening hours",
+      "Left": {
+        "Run": "cost-1/groomer-carlos-3",
+        "Job": "saving the opening hours",
+        "Text": "// internal/groomer/salon.go\n// SetWeek replaces the opening hours for all seven days at once.\nfunc (salon salon) SetWeek(ctx context.Context, week [7]OpeningDay) error {\n\tfields := map[string]string{}\n\tfor day, hours := range week {\n\t\tif hours.Open \u0026\u0026 hours.ClosesAt \u003c= hours.OpensAt {\n\t\t\tfields[dayField(day)] = \"Closing time must be after opening.\"\n\t\t}\n\t}\n\tif len(fields) \u003e 0 {\n\t\treturn op.Invalid{Fields: fields}\n\t}\n\treturn salon.database.WithContext(ctx).Transaction(\n\t\tfunc(tx *gorm.DB) error {\n\t\t\tfor day, hours := range week {\n\t\t\t\tif err := saveDay(tx, day, hours); err != nil {\n\t\t\t\t\treturn err\n\t\t\t\t}\n\t\t\t}\n\t\t\treturn nil\n\t\t})\n}\n\nfunc saveDay(tx *gorm.DB, day int, hours OpeningDay) error {\n\trow := OpeningDay{Weekday: day}\n\tif err := tx.Where(\"weekday = ?\", day).FirstOrCreate(\u0026row).\n\t\tError; err != nil {\n\t\treturn err\n\t}\n\treturn tx.Model(\u0026row).Select(\"Open\", \"OpensAt\", \"ClosesAt\").\n\t\tUpdates(OpeningDay{Open: hours.Open, OpensAt: hours.OpensAt,\n\t\t\tClosesAt: hours.ClosesAt}).Error\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/salon.go",
+            "Key": "salon.SetWeek",
+            "Test": false,
+            "Start": 151,
+            "End": 171,
+            "Lines": 21,
+            "Cognitive": 10,
+            "Nesting": 2,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/salon.go",
+            "Key": "saveDay",
+            "Test": false,
+            "Start": 173,
+            "End": 182,
+            "Lines": 10,
+            "Cognitive": 1,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Right": {
+        "Run": "weight-1/groomer-carlos-3",
+        "Job": "saving the opening hours",
+        "Text": "// internal/groomer/hours.go\nfunc (input HoursInput) check() error {\n\tif input.Open \u0026\u0026 input.ClosesMinute \u003c= input.OpensMinute {\n\t\treturn op.Invalid{Fields: map[string]string{\n\t\t\t\"Closes\": \"Closing time must be after opening time.\",\n\t\t}}\n\t}\n\treturn nil\n}\n\n// SetHours sets when the salon opens on one weekday. Bookings already\n// made outside the new hours stay: the owner decides what to do with\n// them, and the bookings page still lists them.\nfunc (salon *Salon) SetHours(\n\tctx context.Context, weekday time.Weekday, input HoursInput,\n) error {\n\tif err := input.check(); err != nil {\n\t\treturn err\n\t}\n\tday, err := salon.Day(ctx, weekday)\n\tif err != nil {\n\t\treturn err\n\t}\n\tday.Open = input.Open\n\tif input.Open {\n\t\tday.OpensMinute = input.OpensMinute\n\t\tday.ClosesMinute = input.ClosesMinute\n\t}\n\treturn salon.database.WithContext(ctx).\n\t\tSelect(\"Weekday\", \"Open\", \"OpensMinute\", \"ClosesMinute\").\n\t\tSave(\u0026day).Error\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/hours.go",
+            "Key": "HoursInput.check",
+            "Test": false,
+            "Start": 25,
+            "End": 32,
+            "Lines": 8,
+            "Cognitive": 2,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/hours.go",
+            "Key": "Salon.SetHours",
+            "Test": false,
+            "Start": 78,
+            "End": 99,
+            "Lines": 22,
+            "Cognitive": 3,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Set": "tune"
+    },
+    {
+      "ID": 16,
+      "Canonical": "accept-1/groomer-carlos-2: saving changes to a service | cost-1/groomer-carlos-1: saving changes to a service",
+      "Job": "saving changes to a service",
+      "Left": {
+        "Run": "cost-1/groomer-carlos-1",
+        "Job": "saving changes to a service",
+        "Text": "// internal/groomer/services.go\n// ChangeService rewrites a service. Bookings already made keep the\n// price they were quoted (Booking.PriceMinor).\nfunc (salon salon) ChangeService(ctx context.Context, id int64,\n\tinput serviceInput) error {\n\tif _, err := salon.service(ctx, id); err != nil {\n\t\treturn err\n\t}\n\tservice, err := input.service()\n\tif err != nil {\n\t\treturn err\n\t}\n\treturn salon.database.WithContext(ctx).Model(\u0026Service{ID: id}).\n\t\tSelect(serviceColumns).Updates(\u0026service).Error\n}\n\n// service checks input and turns it into the row it describes.\nfunc (input serviceInput) service() (Service, error) {\n\tproblems := map[string]string{}\n\tif input.Name == \"\" {\n\t\tproblems[\"name\"] = \"Enter a name.\"\n\t} else if len(input.Name) \u003e 60 {\n\t\tproblems[\"name\"] = \"Use 60 characters or fewer.\"\n\t}\n\tif len(input.Description) \u003e 300 {\n\t\tproblems[\"description\"] = \"Use 300 characters or fewer.\"\n\t}\n\tminutes, err := strconv.Atoi(input.Minutes)\n\tif err != nil || minutes \u003c 15 || minutes \u003e 480 || minutes%15 != 0 {\n\t\tproblems[\"minutes\"] = \"Enter minutes from 15 to 480, \" +\n\t\t\t\"in steps of 15.\"\n\t}\n\tif input.PriceMinor == nil {\n\t\tproblems[\"price\"] = \"Enter a price.\"\n\t}\n\tif len(problems) \u003e 0 {\n\t\treturn Service{}, op.Invalid{Fields: problems}\n\t}\n\treturn Service{Name: input.Name, Description: input.Description,\n\t\tMinutes: minutes, PriceMinor: *input.PriceMinor,\n\t\tCurrency: salonCurrency}, nil\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/services.go",
+            "Key": "salon.ChangeService",
+            "Test": false,
+            "Start": 73,
+            "End": 86,
+            "Lines": 14,
+            "Cognitive": 2,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/services.go",
+            "Key": "serviceInput.service",
+            "Test": false,
+            "Start": 98,
+            "End": 123,
+            "Lines": 26,
+            "Cognitive": 7,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Right": {
+        "Run": "accept-1/groomer-carlos-2",
+        "Job": "saving changes to a service",
+        "Text": "// internal/groomer/services.go\n// Change rewrites a service's details. Bookings already made keep the\n// name and length they were made with.\nfunc (services services) Change(ctx context.Context, id int64,\n\tinput serviceInput) error {\n\tinput, err := input.checked()\n\tif err != nil {\n\t\treturn err\n\t}\n\tresult := services.database.WithContext(ctx).Model(\u0026Service{ID: id}).\n\t\tSelect(\"Name\", \"Description\", \"Minutes\", \"PriceMinor\",\n\t\t\t\"Currency\", \"Offered\", \"UpdatedAt\").\n\t\tUpdates(map[string]any{\"Name\": input.Name,\n\t\t\t\"Description\": input.Description, \"Minutes\": input.Minutes,\n\t\t\t\"PriceMinor\": input.PriceMinor, \"Currency\": salonCurrency,\n\t\t\t\"Offered\": input.Offered})\n\tif result.Error != nil {\n\t\treturn result.Error\n\t}\n\tif result.RowsAffected == 0 {\n\t\treturn op.NotFound{}\n\t}\n\treturn nil\n}\n\n// checked trims the input and refuses what the menu cannot show.\nfunc (input serviceInput) checked() (serviceInput, error) {\n\tinput.Name = strings.TrimSpace(input.Name)\n\tinput.Description = strings.TrimSpace(input.Description)\n\tfields := map[string]string{}\n\tif input.Name == \"\" || len(input.Name) \u003e 80 {\n\t\tfields[\"Name\"] = \"Enter a name of up to 80 characters.\"\n\t}\n\tif len(input.Description) \u003e 400 {\n\t\tfields[\"Description\"] = \"Keep the description under 400 characters.\"\n\t}\n\tif !slices.Contains(serviceLengths, input.Minutes) {\n\t\tfields[\"Minutes\"] = \"Choose how long the appointment takes.\"\n\t}\n\tif input.PriceMinor \u003c 0 {\n\t\tfields[\"Price\"] = \"Enter a price of 0 or more.\"\n\t}\n\tif len(fields) \u003e 0 {\n\t\treturn input, op.Invalid{Fields: fields}\n\t}\n\treturn input, nil\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/services.go",
+            "Key": "services.Change",
+            "Test": false,
+            "Start": 91,
+            "End": 113,
+            "Lines": 23,
+            "Cognitive": 3,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/services.go",
+            "Key": "serviceInput.checked",
+            "Test": false,
+            "Start": 115,
+            "End": 136,
+            "Lines": 22,
+            "Cognitive": 6,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Set": "check"
+    },
+    {
+      "ID": 17,
+      "Canonical": "1/groomer-carlos-1: cancelling a booking | accept-1/groomer-carlos-3: cancelling a booking",
+      "Job": "cancelling a booking",
+      "Left": {
+        "Run": "1/groomer-carlos-1",
+        "Job": "cancelling a booking",
+        "Text": "// internal/groomer/appointments.go\n// Cancel frees the booking's time for someone else. The row stays, so\n// the owner can still see who had it.\nfunc (book *diary) Cancel(ctx context.Context, id int64) error {\n\tresult := book.database.WithContext(ctx).\n\t\tModel(\u0026Booking{ID: id}).Select(\"Cancelled\", \"UpdatedAt\").\n\t\tUpdates(map[string]any{\n\t\t\t\"Cancelled\": true, \"UpdatedAt\": time.Now(),\n\t\t})\n\tif result.Error != nil {\n\t\treturn result.Error\n\t}\n\tif result.RowsAffected == 0 {\n\t\treturn op.NotFound{}\n\t}\n\treturn nil\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/appointments.go",
+            "Key": "diary.Cancel",
+            "Test": false,
+            "Start": 67,
+            "End": 82,
+            "Lines": 16,
+            "Cognitive": 2,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Right": {
+        "Run": "accept-1/groomer-carlos-3",
+        "Job": "cancelling a booking",
+        "Text": "// internal/groomer/bookings.go\n// Cancel frees the booking's time. Cancelling twice is not an error:\n// a customer who presses the button twice has still cancelled once.\nfunc (bookings bookings) Cancel(ctx context.Context, booking Booking) error {\n\tif booking.StartsAt.Before(bookings.schedule.now()) {\n\t\treturn op.Conflict{Message: \"This appointment has already \" +\n\t\t\t\"started, so it can no longer be cancelled here.\"}\n\t}\n\treturn bookings.database.WithContext(ctx).Model(\u0026booking).\n\t\tSelect(\"Cancelled\", \"UpdatedAt\").\n\t\tUpdates(map[string]any{\"Cancelled\": true,\n\t\t\t\"UpdatedAt\": bookings.schedule.now()}).Error\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/bookings.go",
+            "Key": "bookings.Cancel",
+            "Test": false,
+            "Start": 189,
+            "End": 200,
+            "Lines": 12,
+            "Cognitive": 1,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Set": "check"
+    },
+    {
+      "ID": 18,
+      "Canonical": "accept-1/groomer-carlos-2: cancelling a booking | weight-1/groomer-carlos-2: cancelling a booking",
+      "Job": "cancelling a booking",
+      "Left": {
+        "Run": "accept-1/groomer-carlos-2",
+        "Job": "cancelling a booking",
+        "Text": "// internal/groomer/bookings.go\n// Cancel frees the booking's time. The row stays, marked, because the\n// owner still wants to see who cancelled. Cancelling twice, or after\n// the appointment, is a refusal rather than a silent success.\nfunc (bookings bookings) Cancel(ctx context.Context, id int64) error {\n\tnow := bookings.calendar.now().UTC()\n\tresult := live(bookings.calendar.database.WithContext(ctx).\n\t\tModel(\u0026Booking{})).Where(\"id = ? AND ends_at \u003e ?\", id, now).\n\t\tSelect(\"CancelledAt\").Updates(map[string]any{\"CancelledAt\": now})\n\tif result.Error != nil || result.RowsAffected \u003e 0 {\n\t\treturn result.Error\n\t}\n\tif _, err := bookings.ByID(ctx, id); err != nil {\n\t\treturn err\n\t}\n\treturn op.Conflict{Message: \"This booking is already cancelled \" +\n\t\t\"or over.\"}\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/bookings.go",
+            "Key": "bookings.Cancel",
+            "Test": false,
+            "Start": 125,
+            "End": 141,
+            "Lines": 17,
+            "Cognitive": 3,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Right": {
+        "Run": "weight-1/groomer-carlos-2",
+        "Job": "cancelling a booking",
+        "Text": "// internal/groomer/bookings.go\n// Cancel frees a booking's time. Cancelling twice is not an error.\nfunc (salon *Salon) Cancel(ctx context.Context, id int64) error {\n\tresult := salon.database.WithContext(ctx).Model(\u0026Booking{ID: id}).\n\t\tSelect(\"Cancelled\", \"UpdatedAt\").\n\t\tUpdates(map[string]any{\n\t\t\t\"Cancelled\": true, \"UpdatedAt\": salon.now(),\n\t\t})\n\tif result.Error != nil {\n\t\treturn result.Error\n\t}\n\tif result.RowsAffected == 0 {\n\t\treturn op.NotFound{}\n\t}\n\treturn nil\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/bookings.go",
+            "Key": "Salon.Cancel",
+            "Test": false,
+            "Start": 99,
+            "End": 113,
+            "Lines": 15,
+            "Cognitive": 2,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Set": "check"
+    },
+    {
+      "ID": 19,
+      "Canonical": "1/groomer-carlos-1: saving the opening hours | cost-1/groomer-carlos-1: saving the opening hours",
+      "Job": "saving the opening hours",
+      "Left": {
+        "Run": "cost-1/groomer-carlos-1",
+        "Job": "saving the opening hours",
+        "Text": "// internal/groomer/services.go\n// SetHours changes one weekday's opening hours. Bookings already made\n// stand: the owner cancels any that no longer fit.\nfunc (salon salon) SetHours(ctx context.Context, weekday int,\n\tinput hoursInput) error {\n\tif weekday \u003c 0 || weekday \u003e 6 {\n\t\treturn op.NotFound{}\n\t}\n\tif problems := input.problems(); len(problems) \u003e 0 {\n\t\treturn op.Invalid{Fields: problems}\n\t}\n\tcolumns := []string{\"Open\", \"UpdatedAt\"}\n\tif input.OpensAt \u003e= 0 \u0026\u0026 input.ClosesAt \u003e= 0 {\n\t\tcolumns = append(columns, \"OpensAt\", \"ClosesAt\")\n\t}\n\treturn salon.database.WithContext(ctx).Transaction(\n\t\tfunc(transaction *gorm.DB) error {\n\t\t\thours := OpeningHours{Weekday: weekday}\n\t\t\terr := transaction.Where(\"weekday = ?\", weekday).\n\t\t\t\tFirstOrCreate(\u0026hours).Error\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\t\t\treturn transaction.Model(\u0026hours).Select(columns).\n\t\t\t\tUpdates(OpeningHours{Open: input.Open,\n\t\t\t\t\tOpensAt: input.OpensAt, ClosesAt: input.ClosesAt}).Error\n\t\t})\n}\n\nfunc (input hoursInput) problems() map[string]string {\n\tproblems := map[string]string{}\n\tswitch {\n\tcase !input.Open \u0026\u0026 (input.OpensAt \u003c 0) != (input.ClosesAt \u003c 0):\n\t\tproblems[\"closes\"] = \"Give both times, or neither.\"\n\tcase !input.Open:\n\tcase input.OpensAt \u003c 0:\n\t\tproblems[\"opens\"] = \"Enter the time you open.\"\n\tcase input.ClosesAt \u003c 0:\n\t\tproblems[\"closes\"] = \"Enter the time you close.\"\n\tcase input.ClosesAt \u003c= input.OpensAt:\n\t\tproblems[\"closes\"] = \"Closing time must be after opening time.\"\n\t}\n\tif input.OpensAt \u003e= 0 \u0026\u0026 input.ClosesAt \u003e input.OpensAt \u0026\u0026\n\t\tinput.ClosesAt-input.OpensAt \u003c 15 {\n\t\tproblems[\"closes\"] = \"Stay open at least 15 minutes.\"\n\t}\n\treturn problems\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/services.go",
+            "Key": "salon.SetHours",
+            "Test": false,
+            "Start": 133,
+            "End": 159,
+            "Lines": 27,
+            "Cognitive": 7,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/services.go",
+            "Key": "hoursInput.problems",
+            "Test": false,
+            "Start": 161,
+            "End": 179,
+            "Lines": 19,
+            "Cognitive": 4,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Right": {
+        "Run": "1/groomer-carlos-1",
+        "Job": "saving the opening hours",
+        "Text": "// internal/groomer/hours.go\n// Save replaces the whole week. Bookings already made are kept even\n// when they now fall outside the hours; the owner sees them and\n// decides.\nfunc (hours *openingHours) Save(\n\tctx context.Context, week []OpeningDay,\n) error {\n\tif err := checkWeek(week); err != nil {\n\t\treturn err\n\t}\n\trows := make([]OpeningDay, 0, len(week))\n\tfor _, day := range week {\n\t\tday.ID = 0\n\t\trows = append(rows, day)\n\t}\n\tchanged := []string{\"open\", \"opens\", \"closes\"}\n\treturn hours.database.WithContext(ctx).Clauses(clause.OnConflict{\n\t\tColumns:   []clause.Column{{Name: \"weekday\"}},\n\t\tDoUpdates: clause.AssignmentColumns(changed),\n\t}).Create(\u0026rows).Error\n}\n\nfunc checkWeek(week []OpeningDay) error {\n\tproblems := map[string]string{}\n\tfor _, day := range week {\n\t\tif !day.Open {\n\t\t\tcontinue\n\t\t}\n\t\tname := time.Weekday(day.Weekday).String()\n\t\tif day.Closes \u003c= day.Opens {\n\t\t\tproblems[name+\"Closes\"] = \"Closing time must be after \" +\n\t\t\t\t\"opening time.\"\n\t\t}\n\t}\n\tif len(problems) \u003e 0 {\n\t\treturn op.Invalid{Fields: problems}\n\t}\n\treturn nil\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/hours.go",
+            "Key": "openingHours.Save",
+            "Test": false,
+            "Start": 53,
+            "End": 72,
+            "Lines": 20,
+            "Cognitive": 2,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/hours.go",
+            "Key": "checkWeek",
+            "Test": false,
+            "Start": 74,
+            "End": 90,
+            "Lines": 17,
+            "Cognitive": 6,
+            "Nesting": 2,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Set": "check"
+    },
+    {
+      "ID": 20,
+      "Canonical": "1/groomer-carlos-2: listing the bookings for the owner | accept-1/groomer-carlos-3: listing the bookings for the owner",
+      "Job": "listing the bookings for the owner",
+      "Left": {
+        "Run": "1/groomer-carlos-2",
+        "Job": "listing the bookings for the owner",
+        "Text": "// internal/groomer/bookings.go\n// Upcoming is every booking that has not ended yet, soonest first,\n// cancelled ones included so the owner sees what changed.\nfunc (bookings *Bookings) Upcoming(\n\tctx context.Context, now time.Time,\n) ([]Booking, error) {\n\tvar found []Booking\n\terr := bookings.database.WithContext(ctx).\n\t\tWhere(\"ends_at \u003e ?\", now.UTC()).Order(\"starts_at\").\n\t\tFind(\u0026found).Error\n\treturn found, err\n}\n\n// Past is the most recent hundred bookings that have ended.\nfunc (bookings *Bookings) Past(\n\tctx context.Context, now time.Time,\n) ([]Booking, error) {\n\tvar found []Booking\n\terr := bookings.database.WithContext(ctx).\n\t\tWhere(\"ends_at \u003c= ?\", now.UTC()).Order(\"starts_at DESC\").\n\t\tLimit(100).Find(\u0026found).Error\n\treturn found, err\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/bookings.go",
+            "Key": "Bookings.Upcoming",
+            "Test": false,
+            "Start": 149,
+            "End": 159,
+            "Lines": 11,
+            "Cognitive": 0,
+            "Nesting": 0,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/bookings.go",
+            "Key": "Bookings.Past",
+            "Test": false,
+            "Start": 161,
+            "End": 170,
+            "Lines": 10,
+            "Cognitive": 0,
+            "Nesting": 0,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Right": {
+        "Run": "accept-1/groomer-carlos-3",
+        "Job": "listing the bookings for the owner",
+        "Text": "// internal/groomer/bookings.go\n// Agenda is the owner's list of bookings: upcoming ones soonest first,\n// past or cancelled ones latest first.\nfunc (bookings bookings) Agenda(ctx context.Context, view string) (\n\t[]Booking, error) {\n\tnow := bookings.schedule.now().UTC()\n\tquery := bookings.database.WithContext(ctx).Preload(\"Service\")\n\tswitch view {\n\tcase \"past\":\n\t\tquery = query.Where(\"cancelled = ? AND starts_at \u003c ?\", false, now).\n\t\t\tOrder(\"starts_at desc\").Limit(200)\n\tcase \"cancelled\":\n\t\tquery = query.Where(\"cancelled = ?\", true).\n\t\t\tOrder(\"starts_at desc\").Limit(200)\n\tdefault:\n\t\tquery = query.Where(\"cancelled = ? AND ends_at \u003e= ?\", false, now).\n\t\t\tOrder(\"starts_at\")\n\t}\n\tvar found []Booking\n\terr := query.Find(\u0026found).Error\n\treturn found, err\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/bookings.go",
+            "Key": "bookings.Agenda",
+            "Test": false,
+            "Start": 202,
+            "End": 222,
+            "Lines": 21,
+            "Cognitive": 1,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Set": "check"
+    },
+    {
+      "ID": 21,
+      "Canonical": "1/groomer-carlos-2: saving changes to a service | accept-1/groomer-carlos-3: saving changes to a service",
+      "Job": "saving changes to a service",
+      "Left": {
+        "Run": "accept-1/groomer-carlos-3",
+        "Job": "saving changes to a service",
+        "Text": "// internal/groomer/services.go\n// Change rewrites a service. Bookings already made keep their own end\n// time, so a new length applies to new bookings only.\nfunc (services services) Change(ctx context.Context, id int64,\n\tinput ServiceInput) error {\n\tif err := input.check(); err != nil {\n\t\treturn err\n\t}\n\tresult := services.database.WithContext(ctx).\n\t\tModel(\u0026Service{ID: id}).\n\t\tSelect(\"Name\", \"Description\", \"Minutes\", \"PriceMinor\", \"Offered\",\n\t\t\t\"UpdatedAt\").\n\t\tUpdates(map[string]any{\n\t\t\t\"Name\":        strings.TrimSpace(input.Name),\n\t\t\t\"Description\": strings.TrimSpace(input.Description),\n\t\t\t\"Minutes\":     input.Minutes, \"PriceMinor\": input.PriceMinor,\n\t\t\t\"Offered\": input.Offered, \"UpdatedAt\": services.now(),\n\t\t})\n\tif result.Error != nil {\n\t\treturn result.Error\n\t}\n\tif result.RowsAffected == 0 {\n\t\treturn op.NotFound{}\n\t}\n\treturn nil\n}\n\nfunc (input ServiceInput) check() error {\n\tif fields := input.problems(); len(fields) \u003e 0 {\n\t\treturn op.Invalid{Fields: fields}\n\t}\n\treturn nil\n}\n\n// problems is what is wrong with the input, by field.\nfunc (input ServiceInput) problems() map[string]string {\n\tfields := map[string]string{}\n\tname := strings.TrimSpace(input.Name)\n\tif name == \"\" || len(name) \u003e 60 {\n\t\tfields[\"Name\"] = \"Enter a name, up to 60 characters.\"\n\t}\n\tif len(input.Description) \u003e 300 {\n\t\tfields[\"Description\"] = \"Keep the description to 300 characters.\"\n\t}\n\tif input.Minutes \u003c 15 || input.Minutes \u003e 480 || input.Minutes%15 != 0 {\n\t\tfields[\"Minutes\"] = \"Enter a length from 15 to 480 minutes, \" +\n\t\t\t\"in steps of 15.\"\n\t}\n\tif input.PriceMinor \u003c 0 {\n\t\tfields[\"Price\"] = \"A price cannot be below zero.\"\n\t}\n\treturn fields\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/services.go",
+            "Key": "services.Change",
+            "Test": false,
+            "Start": 80,
+            "End": 104,
+            "Lines": 25,
+            "Cognitive": 3,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/services.go",
+            "Key": "ServiceInput.check",
+            "Test": false,
+            "Start": 106,
+            "End": 111,
+            "Lines": 6,
+            "Cognitive": 1,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/services.go",
+            "Key": "ServiceInput.problems",
+            "Test": false,
+            "Start": 113,
+            "End": 131,
+            "Lines": 19,
+            "Cognitive": 6,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Right": {
+        "Run": "1/groomer-carlos-2",
+        "Job": "saving changes to a service",
+        "Text": "// internal/groomer/services.go\n// Change rewrites a service's details. Bookings already made keep\n// their own start and end, so a new length only affects new bookings.\nfunc (services *Services) Change(\n\tctx context.Context, id int64, input serviceInput,\n) error {\n\tif err := input.check(); err != nil {\n\t\treturn err\n\t}\n\tresult := services.database.WithContext(ctx).\n\t\tModel(\u0026Service{ID: id}).\n\t\tSelect(\"Name\", \"Description\", \"Minutes\", \"Price\", \"Active\",\n\t\t\t\"UpdatedAt\").\n\t\tUpdates(map[string]any{\n\t\t\t\"Name\": input.Name, \"Description\": input.Description,\n\t\t\t\"Minutes\": input.Minutes, \"Price\": input.Price,\n\t\t\t\"Active\": input.Active, \"UpdatedAt\": time.Now(),\n\t\t})\n\tif result.Error != nil {\n\t\treturn result.Error\n\t}\n\tif result.RowsAffected == 0 {\n\t\treturn op.NotFound{}\n\t}\n\treturn nil\n}\n\nfunc (input serviceInput) check() error {\n\tproblems := map[string]string{}\n\tif strings.TrimSpace(input.Name) == \"\" {\n\t\tproblems[\"Name\"] = \"Enter the service's name.\"\n\t}\n\tif input.Minutes \u003c 15 || input.Minutes \u003e 8*60 {\n\t\tproblems[\"Minutes\"] = \"Enter a length from 15 to 480 minutes.\"\n\t} else if input.Minutes%15 != 0 {\n\t\tproblems[\"Minutes\"] = \"Use a multiple of 15 minutes.\"\n\t}\n\tif input.Price \u003c 0 {\n\t\tproblems[\"Price\"] = \"A price cannot be below zero.\"\n\t}\n\tif len(problems) \u003e 0 {\n\t\treturn op.Invalid{Fields: problems}\n\t}\n\treturn nil\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/services.go",
+            "Key": "Services.Change",
+            "Test": false,
+            "Start": 82,
+            "End": 106,
+            "Lines": 25,
+            "Cognitive": 3,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/services.go",
+            "Key": "serviceInput.check",
+            "Test": false,
+            "Start": 108,
+            "End": 125,
+            "Lines": 18,
+            "Cognitive": 6,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Set": "check"
+    },
+    {
+      "ID": 22,
+      "Canonical": "1/groomer-carlos-1: saving changes to a service | weight-1/groomer-carlos-2: saving changes to a service",
+      "Job": "saving changes to a service",
+      "Left": {
+        "Run": "1/groomer-carlos-1",
+        "Job": "saving changes to a service",
+        "Text": "// internal/groomer/services.go\n// Change rewrites a service's name, description, length and price.\n// Bookings already made keep the times they were given.\nfunc (services *catalog) Change(\n\tctx context.Context, id int64, input serviceInput,\n) error {\n\tif err := input.check(); err != nil {\n\t\treturn err\n\t}\n\treturn services.set(ctx, id, map[string]any{\n\t\t\"Name\": input.Name, \"Description\": input.Description,\n\t\t\"Minutes\": input.Minutes, \"PriceMinor\": input.PriceMinor,\n\t})\n}\n\nfunc (services *catalog) set(\n\tctx context.Context, id int64, columns map[string]any,\n) error {\n\tnames := make([]string, 0, len(columns)+1)\n\tfor name := range columns {\n\t\tnames = append(names, name)\n\t}\n\tcolumns[\"UpdatedAt\"] = time.Now()\n\tnames = append(names, \"UpdatedAt\")\n\tresult := services.database.WithContext(ctx).\n\t\tModel(\u0026Service{ID: id}).Select(names).Updates(columns)\n\tif result.Error != nil {\n\t\treturn result.Error\n\t}\n\tif result.RowsAffected == 0 {\n\t\treturn op.NotFound{}\n\t}\n\treturn nil\n}\n\nfunc (input *serviceInput) check() error {\n\tinput.Name = strings.TrimSpace(input.Name)\n\tinput.Description = strings.TrimSpace(input.Description)\n\tproblems := map[string]string{}\n\tif input.Name == \"\" {\n\t\tproblems[\"Name\"] = \"Enter a name for the service.\"\n\t} else if len(input.Name) \u003e 80 {\n\t\tproblems[\"Name\"] = \"Keep the name under 80 characters.\"\n\t}\n\tif len(input.Description) \u003e 500 {\n\t\tproblems[\"Description\"] = \"Keep the description under 500 \" +\n\t\t\t\"characters.\"\n\t}\n\tif !slices.Contains(serviceLengths, input.Minutes) {\n\t\tproblems[\"Minutes\"] = \"Choose how long the service takes.\"\n\t}\n\tif input.PriceMinor \u003c 0 {\n\t\tproblems[\"Price\"] = \"A price cannot be below zero.\"\n\t}\n\tif len(problems) \u003e 0 {\n\t\treturn op.Invalid{Fields: problems}\n\t}\n\treturn nil\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/services.go",
+            "Key": "catalog.Change",
+            "Test": false,
+            "Start": 84,
+            "End": 96,
+            "Lines": 13,
+            "Cognitive": 1,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/services.go",
+            "Key": "catalog.set",
+            "Test": false,
+            "Start": 109,
+            "End": 127,
+            "Lines": 19,
+            "Cognitive": 3,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/services.go",
+            "Key": "serviceInput.check",
+            "Test": false,
+            "Start": 129,
+            "End": 152,
+            "Lines": 24,
+            "Cognitive": 6,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Right": {
+        "Run": "weight-1/groomer-carlos-2",
+        "Job": "saving changes to a service",
+        "Text": "// internal/groomer/services.go\n// ChangeService rewrites a service's details. Bookings already made\n// keep their own start and end, so a new length only affects new ones.\nfunc (salon *Salon) ChangeService(\n\tctx context.Context, id int64, input ServiceInput,\n) error {\n\tif err := input.check(); err != nil {\n\t\treturn err\n\t}\n\tresult := salon.database.WithContext(ctx).Model(\u0026Service{ID: id}).\n\t\tSelect(\"Name\", \"Description\", \"Minutes\", \"PriceMinor\",\n\t\t\t\"Offered\", \"UpdatedAt\").\n\t\tUpdates(map[string]any{\n\t\t\t\"Name\": input.Name, \"Description\": input.Description,\n\t\t\t\"Minutes\": input.Minutes, \"PriceMinor\": input.PriceMinor,\n\t\t\t\"Offered\": input.Offered, \"UpdatedAt\": salon.now(),\n\t\t})\n\tif result.Error != nil {\n\t\treturn result.Error\n\t}\n\tif result.RowsAffected == 0 {\n\t\treturn op.NotFound{}\n\t}\n\treturn nil\n}\n\nfunc (input ServiceInput) check() error {\n\tproblems := map[string]string{}\n\tif strings.TrimSpace(input.Name) == \"\" {\n\t\tproblems[\"Name\"] = \"Enter the service's name.\"\n\t}\n\tif input.Minutes \u003c 15 || input.Minutes \u003e 480 || input.Minutes%15 != 0 {\n\t\tproblems[\"Minutes\"] =\n\t\t\t\"Enter a length from 15 to 480 minutes, in steps of 15.\"\n\t}\n\tif input.PriceMinor \u003c 0 {\n\t\tproblems[\"Price\"] = \"Enter a price of zero or more.\"\n\t}\n\tif len(problems) \u003e 0 {\n\t\treturn op.Invalid{Fields: problems}\n\t}\n\treturn nil\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/services.go",
+            "Key": "Salon.ChangeService",
+            "Test": false,
+            "Start": 91,
+            "End": 114,
+            "Lines": 24,
+            "Cognitive": 3,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/services.go",
+            "Key": "ServiceInput.check",
+            "Test": false,
+            "Start": 116,
+            "End": 132,
+            "Lines": 17,
+            "Cognitive": 5,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Set": "check"
+    },
+    {
+      "ID": 23,
+      "Canonical": "1/groomer-carlos-2: saving the opening hours | accept-1/groomer-carlos-2: saving the opening hours",
+      "Job": "saving the opening hours",
+      "Left": {
+        "Run": "1/groomer-carlos-2",
+        "Job": "saving the opening hours",
+        "Text": "// internal/groomer/hours.go\n// Set stores one weekday's hours. Bookings already made on that day\n// stand: the owner can cancel them one by one if the salon now closes.\nfunc (hours *Hours) Set(\n\tctx context.Context, weekday int, input hoursInput,\n) error {\n\tif weekday \u003c 0 || weekday \u003e 6 {\n\t\treturn op.NotFound{}\n\t}\n\tif err := input.check(); err != nil {\n\t\treturn err\n\t}\n\treturn hours.database.WithContext(ctx).Transaction(\n\t\tfunc(tx *gorm.DB) error {\n\t\t\treturn saveDay(tx, weekday, input)\n\t\t})\n}\n\nfunc saveDay(tx *gorm.DB, weekday int, input hoursInput) error {\n\tvar day OpeningDay\n\terr := tx.Where(\"weekday = ?\", weekday).First(\u0026day).Error\n\tif errors.Is(err, gorm.ErrRecordNotFound) {\n\t\treturn tx.Create(\u0026OpeningDay{Weekday: weekday, Open: input.Open,\n\t\t\tOpens: input.Opens, Closes: input.Closes}).Error\n\t}\n\tif err != nil {\n\t\treturn err\n\t}\n\treturn tx.Model(\u0026day).Select(\"Open\", \"Opens\", \"Closes\").\n\t\tUpdates(map[string]any{\"Open\": input.Open,\n\t\t\t\"Opens\": input.Opens, \"Closes\": input.Closes}).Error\n}\n\nfunc (input hoursInput) check() error {\n\tif !input.Open {\n\t\treturn nil\n\t}\n\tproblems := map[string]string{}\n\tif !input.OpensSet {\n\t\tproblems[\"Opens\"] = \"Enter the opening time.\"\n\t}\n\tif !input.ClosesSet {\n\t\tproblems[\"Closes\"] = \"Enter the closing time.\"\n\t}\n\tif len(problems) == 0 \u0026\u0026 input.Closes \u003c= input.Opens {\n\t\tproblems[\"Closes\"] = \"Closing time must be after opening time.\"\n\t}\n\tif len(problems) \u003e 0 {\n\t\treturn op.Invalid{Fields: problems}\n\t}\n\treturn nil\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/hours.go",
+            "Key": "Hours.Set",
+            "Test": false,
+            "Start": 61,
+            "End": 76,
+            "Lines": 16,
+            "Cognitive": 3,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/hours.go",
+            "Key": "saveDay",
+            "Test": false,
+            "Start": 78,
+            "End": 91,
+            "Lines": 14,
+            "Cognitive": 2,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/hours.go",
+            "Key": "hoursInput.check",
+            "Test": false,
+            "Start": 93,
+            "End": 111,
+            "Lines": 19,
+            "Cognitive": 6,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Right": {
+        "Run": "accept-1/groomer-carlos-2",
+        "Job": "saving the opening hours",
+        "Text": "// internal/groomer/hours.go\n// Save replaces the opening times for all seven days at once, so the\n// week is never half-saved.\nfunc (hours hours) Save(ctx context.Context, days week) error {\n\tif err := days.check(); err != nil {\n\t\treturn err\n\t}\n\treturn hours.database.WithContext(ctx).Transaction(\n\t\tfunc(tx *gorm.DB) error {\n\t\t\tfor _, day := range days {\n\t\t\t\tif err := saveDay(tx, day); err != nil {\n\t\t\t\t\treturn err\n\t\t\t\t}\n\t\t\t}\n\t\t\treturn nil\n\t\t})\n}\n\nfunc saveDay(tx *gorm.DB, day OpeningDay) error {\n\tresult := tx.Model(\u0026OpeningDay{}).Where(\"weekday = ?\", day.Weekday).\n\t\tSelect(\"Open\", \"Opens\", \"Closes\").\n\t\tUpdates(map[string]any{\"Open\": day.Open, \"Opens\": day.Opens,\n\t\t\t\"Closes\": day.Closes})\n\tif result.Error != nil || result.RowsAffected \u003e 0 {\n\t\treturn result.Error\n\t}\n\trow := OpeningDay{Weekday: day.Weekday, Open: day.Open,\n\t\tOpens: day.Opens, Closes: day.Closes}\n\treturn tx.Create(\u0026row).Error\n}\n\n// check refuses an open day that closes before it opens. A closed\n// day's times are kept as typed, so reopening it later starts from\n// them.\nfunc (days week) check() error {\n\tfields := map[string]string{}\n\tfor _, day := range days {\n\t\tif day.Open \u0026\u0026 day.Closes-day.Opens \u003c 30 {\n\t\t\tfields[fmt.Sprintf(\"closes_%d\", day.Weekday)] =\n\t\t\t\t\"Close at least 30 minutes after opening.\"\n\t\t}\n\t}\n\tif len(fields) \u003e 0 {\n\t\treturn op.Invalid{Fields: fields}\n\t}\n\treturn nil\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/hours.go",
+            "Key": "hours.Save",
+            "Test": false,
+            "Start": 39,
+            "End": 54,
+            "Lines": 16,
+            "Cognitive": 6,
+            "Nesting": 2,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/hours.go",
+            "Key": "saveDay",
+            "Test": false,
+            "Start": 56,
+            "End": 67,
+            "Lines": 12,
+            "Cognitive": 2,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/hours.go",
+            "Key": "week.check",
+            "Test": false,
+            "Start": 69,
+            "End": 84,
+            "Lines": 16,
+            "Cognitive": 5,
+            "Nesting": 2,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Set": "check"
+    },
+    {
+      "ID": 24,
+      "Canonical": "accept-1/groomer-carlos-2: listing the bookings for the owner | cost-1/groomer-carlos-1: listing the bookings for the owner",
+      "Job": "listing the bookings for the owner",
+      "Left": {
+        "Run": "cost-1/groomer-carlos-1",
+        "Job": "listing the bookings for the owner",
+        "Text": "// internal/groomer/bookings.go\n// bookings is one of the owner's lists: upcoming soonest first, the\n// others most recent first, each capped so a busy year stays quick.\nfunc (salon salon) bookings(ctx context.Context, list bookingList,\n\tnow time.Time) ([]Booking, error) {\n\tquery := salon.database.WithContext(ctx).Preload(\"Service\").Limit(200)\n\ttoday := midnight(now, salon.zone).UTC()\n\tswitch list {\n\tcase pastBookings:\n\t\tquery = query.Where(\"cancelled_at IS NULL AND starts_at \u003c ?\",\n\t\t\ttoday).Order(\"starts_at DESC\")\n\tcase cancelledBookings:\n\t\tquery = query.Where(\"cancelled_at IS NOT NULL\").\n\t\t\tOrder(\"starts_at DESC\")\n\tdefault:\n\t\tquery = query.Where(\"cancelled_at IS NULL AND starts_at \u003e= ?\",\n\t\t\ttoday).Order(\"starts_at\")\n\t}\n\tvar bookings []Booking\n\terr := query.Find(\u0026bookings).Error\n\tfor index := range bookings {\n\t\tbookings[index] = salon.local(bookings[index])\n\t}\n\treturn bookings, err\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/bookings.go",
+            "Key": "salon.bookings",
+            "Test": false,
+            "Start": 218,
+            "End": 241,
+            "Lines": 24,
+            "Cognitive": 2,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Right": {
+        "Run": "accept-1/groomer-carlos-2",
+        "Job": "listing the bookings for the owner",
+        "Text": "// internal/groomer/bookings.go\n// Upcoming is every booking that has not finished yet, soonest first,\n// cancelled ones included so the owner sees what changed.\nfunc (bookings bookings) Upcoming(ctx context.Context) ([]Booking, error) {\n\tvar list []Booking\n\terr := bookings.calendar.database.WithContext(ctx).\n\t\tWhere(\"ends_at \u003e ?\", bookings.calendar.now().UTC()).\n\t\tOrder(\"starts_at, id\").Find(\u0026list).Error\n\treturn list, err\n}\n\n// Earlier is the most recent finished bookings, latest first.\nfunc (bookings bookings) Earlier(ctx context.Context) ([]Booking, error) {\n\tvar list []Booking\n\terr := bookings.calendar.database.WithContext(ctx).\n\t\tWhere(\"ends_at \u003c= ?\", bookings.calendar.now().UTC()).\n\t\tOrder(\"starts_at desc, id desc\").Limit(100).Find(\u0026list).Error\n\treturn list, err\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/bookings.go",
+            "Key": "bookings.Upcoming",
+            "Test": false,
+            "Start": 106,
+            "End": 114,
+            "Lines": 9,
+            "Cognitive": 0,
+            "Nesting": 0,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/bookings.go",
+            "Key": "bookings.Earlier",
+            "Test": false,
+            "Start": 116,
+            "End": 123,
+            "Lines": 8,
+            "Cognitive": 0,
+            "Nesting": 0,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Set": "check"
+    },
+    {
+      "ID": 25,
+      "Canonical": "accept-1/groomer-carlos-2: saving the opening hours | cost-1/groomer-carlos-1: saving the opening hours",
+      "Job": "saving the opening hours",
+      "Left": {
+        "Run": "cost-1/groomer-carlos-1",
+        "Job": "saving the opening hours",
+        "Text": "// internal/groomer/services.go\n// SetHours changes one weekday's opening hours. Bookings already made\n// stand: the owner cancels any that no longer fit.\nfunc (salon salon) SetHours(ctx context.Context, weekday int,\n\tinput hoursInput) error {\n\tif weekday \u003c 0 || weekday \u003e 6 {\n\t\treturn op.NotFound{}\n\t}\n\tif problems := input.problems(); len(problems) \u003e 0 {\n\t\treturn op.Invalid{Fields: problems}\n\t}\n\tcolumns := []string{\"Open\", \"UpdatedAt\"}\n\tif input.OpensAt \u003e= 0 \u0026\u0026 input.ClosesAt \u003e= 0 {\n\t\tcolumns = append(columns, \"OpensAt\", \"ClosesAt\")\n\t}\n\treturn salon.database.WithContext(ctx).Transaction(\n\t\tfunc(transaction *gorm.DB) error {\n\t\t\thours := OpeningHours{Weekday: weekday}\n\t\t\terr := transaction.Where(\"weekday = ?\", weekday).\n\t\t\t\tFirstOrCreate(\u0026hours).Error\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\t\t\treturn transaction.Model(\u0026hours).Select(columns).\n\t\t\t\tUpdates(OpeningHours{Open: input.Open,\n\t\t\t\t\tOpensAt: input.OpensAt, ClosesAt: input.ClosesAt}).Error\n\t\t})\n}\n\nfunc (input hoursInput) problems() map[string]string {\n\tproblems := map[string]string{}\n\tswitch {\n\tcase !input.Open \u0026\u0026 (input.OpensAt \u003c 0) != (input.ClosesAt \u003c 0):\n\t\tproblems[\"closes\"] = \"Give both times, or neither.\"\n\tcase !input.Open:\n\tcase input.OpensAt \u003c 0:\n\t\tproblems[\"opens\"] = \"Enter the time you open.\"\n\tcase input.ClosesAt \u003c 0:\n\t\tproblems[\"closes\"] = \"Enter the time you close.\"\n\tcase input.ClosesAt \u003c= input.OpensAt:\n\t\tproblems[\"closes\"] = \"Closing time must be after opening time.\"\n\t}\n\tif input.OpensAt \u003e= 0 \u0026\u0026 input.ClosesAt \u003e input.OpensAt \u0026\u0026\n\t\tinput.ClosesAt-input.OpensAt \u003c 15 {\n\t\tproblems[\"closes\"] = \"Stay open at least 15 minutes.\"\n\t}\n\treturn problems\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/services.go",
+            "Key": "salon.SetHours",
+            "Test": false,
+            "Start": 133,
+            "End": 159,
+            "Lines": 27,
+            "Cognitive": 7,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/services.go",
+            "Key": "hoursInput.problems",
+            "Test": false,
+            "Start": 161,
+            "End": 179,
+            "Lines": 19,
+            "Cognitive": 4,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Right": {
+        "Run": "accept-1/groomer-carlos-2",
+        "Job": "saving the opening hours",
+        "Text": "// internal/groomer/hours.go\n// Save replaces the opening times for all seven days at once, so the\n// week is never half-saved.\nfunc (hours hours) Save(ctx context.Context, days week) error {\n\tif err := days.check(); err != nil {\n\t\treturn err\n\t}\n\treturn hours.database.WithContext(ctx).Transaction(\n\t\tfunc(tx *gorm.DB) error {\n\t\t\tfor _, day := range days {\n\t\t\t\tif err := saveDay(tx, day); err != nil {\n\t\t\t\t\treturn err\n\t\t\t\t}\n\t\t\t}\n\t\t\treturn nil\n\t\t})\n}\n\nfunc saveDay(tx *gorm.DB, day OpeningDay) error {\n\tresult := tx.Model(\u0026OpeningDay{}).Where(\"weekday = ?\", day.Weekday).\n\t\tSelect(\"Open\", \"Opens\", \"Closes\").\n\t\tUpdates(map[string]any{\"Open\": day.Open, \"Opens\": day.Opens,\n\t\t\t\"Closes\": day.Closes})\n\tif result.Error != nil || result.RowsAffected \u003e 0 {\n\t\treturn result.Error\n\t}\n\trow := OpeningDay{Weekday: day.Weekday, Open: day.Open,\n\t\tOpens: day.Opens, Closes: day.Closes}\n\treturn tx.Create(\u0026row).Error\n}\n\n// check refuses an open day that closes before it opens. A closed\n// day's times are kept as typed, so reopening it later starts from\n// them.\nfunc (days week) check() error {\n\tfields := map[string]string{}\n\tfor _, day := range days {\n\t\tif day.Open \u0026\u0026 day.Closes-day.Opens \u003c 30 {\n\t\t\tfields[fmt.Sprintf(\"closes_%d\", day.Weekday)] =\n\t\t\t\t\"Close at least 30 minutes after opening.\"\n\t\t}\n\t}\n\tif len(fields) \u003e 0 {\n\t\treturn op.Invalid{Fields: fields}\n\t}\n\treturn nil\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/hours.go",
+            "Key": "hours.Save",
+            "Test": false,
+            "Start": 39,
+            "End": 54,
+            "Lines": 16,
+            "Cognitive": 6,
+            "Nesting": 2,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/hours.go",
+            "Key": "saveDay",
+            "Test": false,
+            "Start": 56,
+            "End": 67,
+            "Lines": 12,
+            "Cognitive": 2,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/hours.go",
+            "Key": "week.check",
+            "Test": false,
+            "Start": 69,
+            "End": 84,
+            "Lines": 16,
+            "Cognitive": 5,
+            "Nesting": 2,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Set": "check"
+    },
+    {
+      "ID": 26,
+      "Canonical": "1/groomer-carlos-2: validating a booking before it is saved | accept-1/groomer-carlos-2: validating a booking before it is saved",
+      "Job": "validating a booking before it is saved",
+      "Left": {
+        "Run": "accept-1/groomer-carlos-2",
+        "Job": "validating a booking before it is saved",
+        "Text": "// internal/groomer/bookings.go\n// checked trims what the customer typed and refuses what the salon\n// could not use to reach them.\nfunc (who customer) checked() (customer, error) {\n\twho.Name = strings.TrimSpace(who.Name)\n\twho.Phone = strings.TrimSpace(who.Phone)\n\twho.DogName = strings.TrimSpace(who.DogName)\n\tfields := map[string]string{}\n\tif who.Name == \"\" || len(who.Name) \u003e 80 {\n\t\tfields[\"Name\"] = \"Enter your name, up to 80 characters.\"\n\t}\n\tif !phoneLike(who.Phone) {\n\t\tfields[\"Phone\"] = \"Enter a phone number we can call, like \" +\n\t\t\t\"07700 900123.\"\n\t}\n\tif who.DogName == \"\" || len(who.DogName) \u003e 40 {\n\t\tfields[\"DogName\"] = \"Enter your dog's name, up to 40 characters.\"\n\t}\n\tif len(fields) \u003e 0 {\n\t\treturn who, op.Invalid{Fields: fields}\n\t}\n\treturn who, nil\n}\n\n// phoneLike accepts 7 to 15 digits with the spacing and punctuation\n// people write phone numbers with, and nothing else.\nfunc phoneLike(phone string) bool {\n\tdigits := 0\n\tfor _, character := range phone {\n\t\tswitch {\n\t\tcase unicode.IsDigit(character):\n\t\t\tdigits++\n\t\tcase !strings.ContainsRune(\" +-().\", character):\n\t\t\treturn false\n\t\t}\n\t}\n\treturn digits \u003e= 7 \u0026\u0026 digits \u003c= 15\n}\n\n// internal/groomer/calendar.go\n// IsFree reports whether service can start at starts: on the grid,\n// inside opening hours, in the window and clear of every booking.\nfunc (calendar calendar) IsFree(ctx context.Context, service Service,\n\tstarts time.Time) (bool, error) {\n\tslots, err := calendar.Slots(ctx, service, calendar.dateOf(starts))\n\tfor _, slot := range slots {\n\t\tif slot.Equal(starts) {\n\t\t\treturn true, err\n\t\t}\n\t}\n\treturn false, err\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/bookings.go",
+            "Key": "customer.checked",
+            "Test": false,
+            "Start": 149,
+            "End": 170,
+            "Lines": 22,
+            "Cognitive": 6,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/bookings.go",
+            "Key": "phoneLike",
+            "Test": false,
+            "Start": 172,
+            "End": 185,
+            "Lines": 14,
+            "Cognitive": 4,
+            "Nesting": 2,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/calendar.go",
+            "Key": "calendar.IsFree",
+            "Test": false,
+            "Start": 70,
+            "End": 81,
+            "Lines": 12,
+            "Cognitive": 3,
+            "Nesting": 2,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Right": {
+        "Run": "1/groomer-carlos-2",
+        "Job": "validating a booking before it is saved",
+        "Text": "// internal/groomer/bookings.go\nfunc (request bookingRequest) check() error {\n\tproblems := map[string]string{}\n\tif request.CustomerName == \"\" {\n\t\tproblems[\"CustomerName\"] = \"Enter your name.\"\n\t}\n\tif request.DogName == \"\" {\n\t\tproblems[\"DogName\"] = \"Enter your dog's name.\"\n\t}\n\tif !plausiblePhone(request.Phone) {\n\t\tproblems[\"Phone\"] = \"Enter a phone number we can call, \" +\n\t\t\t\"such as 07700 900123.\"\n\t}\n\tif len(problems) \u003e 0 {\n\t\treturn op.Invalid{Fields: problems}\n\t}\n\treturn nil\n}\n\n// plausiblePhone accepts the ways people write a number: digits with\n// spaces, dashes, brackets and a leading plus, seven digits or more.\nfunc plausiblePhone(phone string) bool {\n\tdigits := 0\n\tfor index, character := range phone {\n\t\tswitch {\n\t\tcase unicode.IsDigit(character):\n\t\t\tdigits++\n\t\tcase character == '+' \u0026\u0026 index == 0:\n\t\tcase strings.ContainsRune(\" -().\", character):\n\t\tdefault:\n\t\t\treturn false\n\t\t}\n\t}\n\treturn digits \u003e= 7 \u0026\u0026 digits \u003c= 15\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/bookings.go",
+            "Key": "bookingRequest.check",
+            "Test": false,
+            "Start": 188,
+            "End": 204,
+            "Lines": 17,
+            "Cognitive": 4,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/bookings.go",
+            "Key": "plausiblePhone",
+            "Test": false,
+            "Start": 206,
+            "End": 221,
+            "Lines": 16,
+            "Cognitive": 5,
+            "Nesting": 2,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Set": "check"
+    },
+    {
+      "ID": 27,
+      "Canonical": "1/groomer-carlos-2: listing the bookings for the owner | cost-1/groomer-carlos-1: listing the bookings for the owner",
+      "Job": "listing the bookings for the owner",
+      "Left": {
+        "Run": "1/groomer-carlos-2",
+        "Job": "listing the bookings for the owner",
+        "Text": "// internal/groomer/bookings.go\n// Upcoming is every booking that has not ended yet, soonest first,\n// cancelled ones included so the owner sees what changed.\nfunc (bookings *Bookings) Upcoming(\n\tctx context.Context, now time.Time,\n) ([]Booking, error) {\n\tvar found []Booking\n\terr := bookings.database.WithContext(ctx).\n\t\tWhere(\"ends_at \u003e ?\", now.UTC()).Order(\"starts_at\").\n\t\tFind(\u0026found).Error\n\treturn found, err\n}\n\n// Past is the most recent hundred bookings that have ended.\nfunc (bookings *Bookings) Past(\n\tctx context.Context, now time.Time,\n) ([]Booking, error) {\n\tvar found []Booking\n\terr := bookings.database.WithContext(ctx).\n\t\tWhere(\"ends_at \u003c= ?\", now.UTC()).Order(\"starts_at DESC\").\n\t\tLimit(100).Find(\u0026found).Error\n\treturn found, err\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/bookings.go",
+            "Key": "Bookings.Upcoming",
+            "Test": false,
+            "Start": 149,
+            "End": 159,
+            "Lines": 11,
+            "Cognitive": 0,
+            "Nesting": 0,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/bookings.go",
+            "Key": "Bookings.Past",
+            "Test": false,
+            "Start": 161,
+            "End": 170,
+            "Lines": 10,
+            "Cognitive": 0,
+            "Nesting": 0,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Right": {
+        "Run": "cost-1/groomer-carlos-1",
+        "Job": "listing the bookings for the owner",
+        "Text": "// internal/groomer/bookings.go\n// bookings is one of the owner's lists: upcoming soonest first, the\n// others most recent first, each capped so a busy year stays quick.\nfunc (salon salon) bookings(ctx context.Context, list bookingList,\n\tnow time.Time) ([]Booking, error) {\n\tquery := salon.database.WithContext(ctx).Preload(\"Service\").Limit(200)\n\ttoday := midnight(now, salon.zone).UTC()\n\tswitch list {\n\tcase pastBookings:\n\t\tquery = query.Where(\"cancelled_at IS NULL AND starts_at \u003c ?\",\n\t\t\ttoday).Order(\"starts_at DESC\")\n\tcase cancelledBookings:\n\t\tquery = query.Where(\"cancelled_at IS NOT NULL\").\n\t\t\tOrder(\"starts_at DESC\")\n\tdefault:\n\t\tquery = query.Where(\"cancelled_at IS NULL AND starts_at \u003e= ?\",\n\t\t\ttoday).Order(\"starts_at\")\n\t}\n\tvar bookings []Booking\n\terr := query.Find(\u0026bookings).Error\n\tfor index := range bookings {\n\t\tbookings[index] = salon.local(bookings[index])\n\t}\n\treturn bookings, err\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/bookings.go",
+            "Key": "salon.bookings",
+            "Test": false,
+            "Start": 218,
+            "End": 241,
+            "Lines": 24,
+            "Cognitive": 2,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Set": "check"
+    },
+    {
+      "ID": 28,
+      "Canonical": "1/groomer-carlos-1: saving the opening hours | 1/groomer-carlos-2: saving the opening hours",
+      "Job": "saving the opening hours",
+      "Left": {
+        "Run": "1/groomer-carlos-1",
+        "Job": "saving the opening hours",
+        "Text": "// internal/groomer/hours.go\n// Save replaces the whole week. Bookings already made are kept even\n// when they now fall outside the hours; the owner sees them and\n// decides.\nfunc (hours *openingHours) Save(\n\tctx context.Context, week []OpeningDay,\n) error {\n\tif err := checkWeek(week); err != nil {\n\t\treturn err\n\t}\n\trows := make([]OpeningDay, 0, len(week))\n\tfor _, day := range week {\n\t\tday.ID = 0\n\t\trows = append(rows, day)\n\t}\n\tchanged := []string{\"open\", \"opens\", \"closes\"}\n\treturn hours.database.WithContext(ctx).Clauses(clause.OnConflict{\n\t\tColumns:   []clause.Column{{Name: \"weekday\"}},\n\t\tDoUpdates: clause.AssignmentColumns(changed),\n\t}).Create(\u0026rows).Error\n}\n\nfunc checkWeek(week []OpeningDay) error {\n\tproblems := map[string]string{}\n\tfor _, day := range week {\n\t\tif !day.Open {\n\t\t\tcontinue\n\t\t}\n\t\tname := time.Weekday(day.Weekday).String()\n\t\tif day.Closes \u003c= day.Opens {\n\t\t\tproblems[name+\"Closes\"] = \"Closing time must be after \" +\n\t\t\t\t\"opening time.\"\n\t\t}\n\t}\n\tif len(problems) \u003e 0 {\n\t\treturn op.Invalid{Fields: problems}\n\t}\n\treturn nil\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/hours.go",
+            "Key": "openingHours.Save",
+            "Test": false,
+            "Start": 53,
+            "End": 72,
+            "Lines": 20,
+            "Cognitive": 2,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/hours.go",
+            "Key": "checkWeek",
+            "Test": false,
+            "Start": 74,
+            "End": 90,
+            "Lines": 17,
+            "Cognitive": 6,
+            "Nesting": 2,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Right": {
+        "Run": "1/groomer-carlos-2",
+        "Job": "saving the opening hours",
+        "Text": "// internal/groomer/hours.go\n// Set stores one weekday's hours. Bookings already made on that day\n// stand: the owner can cancel them one by one if the salon now closes.\nfunc (hours *Hours) Set(\n\tctx context.Context, weekday int, input hoursInput,\n) error {\n\tif weekday \u003c 0 || weekday \u003e 6 {\n\t\treturn op.NotFound{}\n\t}\n\tif err := input.check(); err != nil {\n\t\treturn err\n\t}\n\treturn hours.database.WithContext(ctx).Transaction(\n\t\tfunc(tx *gorm.DB) error {\n\t\t\treturn saveDay(tx, weekday, input)\n\t\t})\n}\n\nfunc saveDay(tx *gorm.DB, weekday int, input hoursInput) error {\n\tvar day OpeningDay\n\terr := tx.Where(\"weekday = ?\", weekday).First(\u0026day).Error\n\tif errors.Is(err, gorm.ErrRecordNotFound) {\n\t\treturn tx.Create(\u0026OpeningDay{Weekday: weekday, Open: input.Open,\n\t\t\tOpens: input.Opens, Closes: input.Closes}).Error\n\t}\n\tif err != nil {\n\t\treturn err\n\t}\n\treturn tx.Model(\u0026day).Select(\"Open\", \"Opens\", \"Closes\").\n\t\tUpdates(map[string]any{\"Open\": input.Open,\n\t\t\t\"Opens\": input.Opens, \"Closes\": input.Closes}).Error\n}\n\nfunc (input hoursInput) check() error {\n\tif !input.Open {\n\t\treturn nil\n\t}\n\tproblems := map[string]string{}\n\tif !input.OpensSet {\n\t\tproblems[\"Opens\"] = \"Enter the opening time.\"\n\t}\n\tif !input.ClosesSet {\n\t\tproblems[\"Closes\"] = \"Enter the closing time.\"\n\t}\n\tif len(problems) == 0 \u0026\u0026 input.Closes \u003c= input.Opens {\n\t\tproblems[\"Closes\"] = \"Closing time must be after opening time.\"\n\t}\n\tif len(problems) \u003e 0 {\n\t\treturn op.Invalid{Fields: problems}\n\t}\n\treturn nil\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/hours.go",
+            "Key": "Hours.Set",
+            "Test": false,
+            "Start": 61,
+            "End": 76,
+            "Lines": 16,
+            "Cognitive": 3,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/hours.go",
+            "Key": "saveDay",
+            "Test": false,
+            "Start": 78,
+            "End": 91,
+            "Lines": 14,
+            "Cognitive": 2,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/hours.go",
+            "Key": "hoursInput.check",
+            "Test": false,
+            "Start": 93,
+            "End": 111,
+            "Lines": 19,
+            "Cognitive": 6,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Set": "check"
+    },
+    {
+      "ID": 29,
+      "Canonical": "accept-1/groomer-carlos-3: saving changes to a service | weight-1/groomer-carlos-2: saving changes to a service",
+      "Job": "saving changes to a service",
+      "Left": {
+        "Run": "accept-1/groomer-carlos-3",
+        "Job": "saving changes to a service",
+        "Text": "// internal/groomer/services.go\n// Change rewrites a service. Bookings already made keep their own end\n// time, so a new length applies to new bookings only.\nfunc (services services) Change(ctx context.Context, id int64,\n\tinput ServiceInput) error {\n\tif err := input.check(); err != nil {\n\t\treturn err\n\t}\n\tresult := services.database.WithContext(ctx).\n\t\tModel(\u0026Service{ID: id}).\n\t\tSelect(\"Name\", \"Description\", \"Minutes\", \"PriceMinor\", \"Offered\",\n\t\t\t\"UpdatedAt\").\n\t\tUpdates(map[string]any{\n\t\t\t\"Name\":        strings.TrimSpace(input.Name),\n\t\t\t\"Description\": strings.TrimSpace(input.Description),\n\t\t\t\"Minutes\":     input.Minutes, \"PriceMinor\": input.PriceMinor,\n\t\t\t\"Offered\": input.Offered, \"UpdatedAt\": services.now(),\n\t\t})\n\tif result.Error != nil {\n\t\treturn result.Error\n\t}\n\tif result.RowsAffected == 0 {\n\t\treturn op.NotFound{}\n\t}\n\treturn nil\n}\n\nfunc (input ServiceInput) check() error {\n\tif fields := input.problems(); len(fields) \u003e 0 {\n\t\treturn op.Invalid{Fields: fields}\n\t}\n\treturn nil\n}\n\n// problems is what is wrong with the input, by field.\nfunc (input ServiceInput) problems() map[string]string {\n\tfields := map[string]string{}\n\tname := strings.TrimSpace(input.Name)\n\tif name == \"\" || len(name) \u003e 60 {\n\t\tfields[\"Name\"] = \"Enter a name, up to 60 characters.\"\n\t}\n\tif len(input.Description) \u003e 300 {\n\t\tfields[\"Description\"] = \"Keep the description to 300 characters.\"\n\t}\n\tif input.Minutes \u003c 15 || input.Minutes \u003e 480 || input.Minutes%15 != 0 {\n\t\tfields[\"Minutes\"] = \"Enter a length from 15 to 480 minutes, \" +\n\t\t\t\"in steps of 15.\"\n\t}\n\tif input.PriceMinor \u003c 0 {\n\t\tfields[\"Price\"] = \"A price cannot be below zero.\"\n\t}\n\treturn fields\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/services.go",
+            "Key": "services.Change",
+            "Test": false,
+            "Start": 80,
+            "End": 104,
+            "Lines": 25,
+            "Cognitive": 3,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/services.go",
+            "Key": "ServiceInput.check",
+            "Test": false,
+            "Start": 106,
+            "End": 111,
+            "Lines": 6,
+            "Cognitive": 1,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/services.go",
+            "Key": "ServiceInput.problems",
+            "Test": false,
+            "Start": 113,
+            "End": 131,
+            "Lines": 19,
+            "Cognitive": 6,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Right": {
+        "Run": "weight-1/groomer-carlos-2",
+        "Job": "saving changes to a service",
+        "Text": "// internal/groomer/services.go\n// ChangeService rewrites a service's details. Bookings already made\n// keep their own start and end, so a new length only affects new ones.\nfunc (salon *Salon) ChangeService(\n\tctx context.Context, id int64, input ServiceInput,\n) error {\n\tif err := input.check(); err != nil {\n\t\treturn err\n\t}\n\tresult := salon.database.WithContext(ctx).Model(\u0026Service{ID: id}).\n\t\tSelect(\"Name\", \"Description\", \"Minutes\", \"PriceMinor\",\n\t\t\t\"Offered\", \"UpdatedAt\").\n\t\tUpdates(map[string]any{\n\t\t\t\"Name\": input.Name, \"Description\": input.Description,\n\t\t\t\"Minutes\": input.Minutes, \"PriceMinor\": input.PriceMinor,\n\t\t\t\"Offered\": input.Offered, \"UpdatedAt\": salon.now(),\n\t\t})\n\tif result.Error != nil {\n\t\treturn result.Error\n\t}\n\tif result.RowsAffected == 0 {\n\t\treturn op.NotFound{}\n\t}\n\treturn nil\n}\n\nfunc (input ServiceInput) check() error {\n\tproblems := map[string]string{}\n\tif strings.TrimSpace(input.Name) == \"\" {\n\t\tproblems[\"Name\"] = \"Enter the service's name.\"\n\t}\n\tif input.Minutes \u003c 15 || input.Minutes \u003e 480 || input.Minutes%15 != 0 {\n\t\tproblems[\"Minutes\"] =\n\t\t\t\"Enter a length from 15 to 480 minutes, in steps of 15.\"\n\t}\n\tif input.PriceMinor \u003c 0 {\n\t\tproblems[\"Price\"] = \"Enter a price of zero or more.\"\n\t}\n\tif len(problems) \u003e 0 {\n\t\treturn op.Invalid{Fields: problems}\n\t}\n\treturn nil\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/services.go",
+            "Key": "Salon.ChangeService",
+            "Test": false,
+            "Start": 91,
+            "End": 114,
+            "Lines": 24,
+            "Cognitive": 3,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/services.go",
+            "Key": "ServiceInput.check",
+            "Test": false,
+            "Start": 116,
+            "End": 132,
+            "Lines": 17,
+            "Cognitive": 5,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Set": "check"
+    },
+    {
+      "ID": 30,
+      "Canonical": "accept-1/groomer-carlos-2: cancelling a booking | cost-1/groomer-carlos-1: cancelling a booking",
+      "Job": "cancelling a booking",
+      "Left": {
+        "Run": "accept-1/groomer-carlos-2",
+        "Job": "cancelling a booking",
+        "Text": "// internal/groomer/bookings.go\n// Cancel frees the booking's time. The row stays, marked, because the\n// owner still wants to see who cancelled. Cancelling twice, or after\n// the appointment, is a refusal rather than a silent success.\nfunc (bookings bookings) Cancel(ctx context.Context, id int64) error {\n\tnow := bookings.calendar.now().UTC()\n\tresult := live(bookings.calendar.database.WithContext(ctx).\n\t\tModel(\u0026Booking{})).Where(\"id = ? AND ends_at \u003e ?\", id, now).\n\t\tSelect(\"CancelledAt\").Updates(map[string]any{\"CancelledAt\": now})\n\tif result.Error != nil || result.RowsAffected \u003e 0 {\n\t\treturn result.Error\n\t}\n\tif _, err := bookings.ByID(ctx, id); err != nil {\n\t\treturn err\n\t}\n\treturn op.Conflict{Message: \"This booking is already cancelled \" +\n\t\t\"or over.\"}\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/bookings.go",
+            "Key": "bookings.Cancel",
+            "Test": false,
+            "Start": 125,
+            "End": 141,
+            "Lines": 17,
+            "Cognitive": 3,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Right": {
+        "Run": "cost-1/groomer-carlos-1",
+        "Job": "cancelling a booking",
+        "Text": "// internal/groomer/bookings.go\n// Cancel frees a booking's time. Cancelling twice is not an error: the\n// second press finds what the person wanted already done.\nfunc (salon salon) Cancel(ctx context.Context, id int64,\n\tnow time.Time) error {\n\tif _, err := salon.booking(ctx, id); err != nil {\n\t\treturn err\n\t}\n\treturn salon.database.WithContext(ctx).Model(\u0026Booking{}).\n\t\tWhere(\"id = ? AND cancelled_at IS NULL\", id).\n\t\tUpdate(\"cancelled_at\", now.UTC()).Error\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/bookings.go",
+            "Key": "salon.Cancel",
+            "Test": false,
+            "Start": 197,
+            "End": 207,
+            "Lines": 11,
+            "Cognitive": 1,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Set": "check"
+    },
+    {
+      "ID": 31,
+      "Canonical": "1/groomer-carlos-1: saving changes to a service | accept-1/groomer-carlos-3: saving changes to a service",
+      "Job": "saving changes to a service",
+      "Left": {
+        "Run": "1/groomer-carlos-1",
+        "Job": "saving changes to a service",
+        "Text": "// internal/groomer/services.go\n// Change rewrites a service's name, description, length and price.\n// Bookings already made keep the times they were given.\nfunc (services *catalog) Change(\n\tctx context.Context, id int64, input serviceInput,\n) error {\n\tif err := input.check(); err != nil {\n\t\treturn err\n\t}\n\treturn services.set(ctx, id, map[string]any{\n\t\t\"Name\": input.Name, \"Description\": input.Description,\n\t\t\"Minutes\": input.Minutes, \"PriceMinor\": input.PriceMinor,\n\t})\n}\n\nfunc (services *catalog) set(\n\tctx context.Context, id int64, columns map[string]any,\n) error {\n\tnames := make([]string, 0, len(columns)+1)\n\tfor name := range columns {\n\t\tnames = append(names, name)\n\t}\n\tcolumns[\"UpdatedAt\"] = time.Now()\n\tnames = append(names, \"UpdatedAt\")\n\tresult := services.database.WithContext(ctx).\n\t\tModel(\u0026Service{ID: id}).Select(names).Updates(columns)\n\tif result.Error != nil {\n\t\treturn result.Error\n\t}\n\tif result.RowsAffected == 0 {\n\t\treturn op.NotFound{}\n\t}\n\treturn nil\n}\n\nfunc (input *serviceInput) check() error {\n\tinput.Name = strings.TrimSpace(input.Name)\n\tinput.Description = strings.TrimSpace(input.Description)\n\tproblems := map[string]string{}\n\tif input.Name == \"\" {\n\t\tproblems[\"Name\"] = \"Enter a name for the service.\"\n\t} else if len(input.Name) \u003e 80 {\n\t\tproblems[\"Name\"] = \"Keep the name under 80 characters.\"\n\t}\n\tif len(input.Description) \u003e 500 {\n\t\tproblems[\"Description\"] = \"Keep the description under 500 \" +\n\t\t\t\"characters.\"\n\t}\n\tif !slices.Contains(serviceLengths, input.Minutes) {\n\t\tproblems[\"Minutes\"] = \"Choose how long the service takes.\"\n\t}\n\tif input.PriceMinor \u003c 0 {\n\t\tproblems[\"Price\"] = \"A price cannot be below zero.\"\n\t}\n\tif len(problems) \u003e 0 {\n\t\treturn op.Invalid{Fields: problems}\n\t}\n\treturn nil\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/services.go",
+            "Key": "catalog.Change",
+            "Test": false,
+            "Start": 84,
+            "End": 96,
+            "Lines": 13,
+            "Cognitive": 1,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/services.go",
+            "Key": "catalog.set",
+            "Test": false,
+            "Start": 109,
+            "End": 127,
+            "Lines": 19,
+            "Cognitive": 3,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/services.go",
+            "Key": "serviceInput.check",
+            "Test": false,
+            "Start": 129,
+            "End": 152,
+            "Lines": 24,
+            "Cognitive": 6,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Right": {
+        "Run": "accept-1/groomer-carlos-3",
+        "Job": "saving changes to a service",
+        "Text": "// internal/groomer/services.go\n// Change rewrites a service. Bookings already made keep their own end\n// time, so a new length applies to new bookings only.\nfunc (services services) Change(ctx context.Context, id int64,\n\tinput ServiceInput) error {\n\tif err := input.check(); err != nil {\n\t\treturn err\n\t}\n\tresult := services.database.WithContext(ctx).\n\t\tModel(\u0026Service{ID: id}).\n\t\tSelect(\"Name\", \"Description\", \"Minutes\", \"PriceMinor\", \"Offered\",\n\t\t\t\"UpdatedAt\").\n\t\tUpdates(map[string]any{\n\t\t\t\"Name\":        strings.TrimSpace(input.Name),\n\t\t\t\"Description\": strings.TrimSpace(input.Description),\n\t\t\t\"Minutes\":     input.Minutes, \"PriceMinor\": input.PriceMinor,\n\t\t\t\"Offered\": input.Offered, \"UpdatedAt\": services.now(),\n\t\t})\n\tif result.Error != nil {\n\t\treturn result.Error\n\t}\n\tif result.RowsAffected == 0 {\n\t\treturn op.NotFound{}\n\t}\n\treturn nil\n}\n\nfunc (input ServiceInput) check() error {\n\tif fields := input.problems(); len(fields) \u003e 0 {\n\t\treturn op.Invalid{Fields: fields}\n\t}\n\treturn nil\n}\n\n// problems is what is wrong with the input, by field.\nfunc (input ServiceInput) problems() map[string]string {\n\tfields := map[string]string{}\n\tname := strings.TrimSpace(input.Name)\n\tif name == \"\" || len(name) \u003e 60 {\n\t\tfields[\"Name\"] = \"Enter a name, up to 60 characters.\"\n\t}\n\tif len(input.Description) \u003e 300 {\n\t\tfields[\"Description\"] = \"Keep the description to 300 characters.\"\n\t}\n\tif input.Minutes \u003c 15 || input.Minutes \u003e 480 || input.Minutes%15 != 0 {\n\t\tfields[\"Minutes\"] = \"Enter a length from 15 to 480 minutes, \" +\n\t\t\t\"in steps of 15.\"\n\t}\n\tif input.PriceMinor \u003c 0 {\n\t\tfields[\"Price\"] = \"A price cannot be below zero.\"\n\t}\n\treturn fields\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/services.go",
+            "Key": "services.Change",
+            "Test": false,
+            "Start": 80,
+            "End": 104,
+            "Lines": 25,
+            "Cognitive": 3,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/services.go",
+            "Key": "ServiceInput.check",
+            "Test": false,
+            "Start": 106,
+            "End": 111,
+            "Lines": 6,
+            "Cognitive": 1,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/services.go",
+            "Key": "ServiceInput.problems",
+            "Test": false,
+            "Start": 113,
+            "End": 131,
+            "Lines": 19,
+            "Cognitive": 6,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Set": "spare"
+    },
+    {
+      "ID": 32,
+      "Canonical": "1/groomer-carlos-2: saving the opening hours | cost-1/groomer-carlos-1: saving the opening hours",
+      "Job": "saving the opening hours",
+      "Left": {
+        "Run": "1/groomer-carlos-2",
+        "Job": "saving the opening hours",
+        "Text": "// internal/groomer/hours.go\n// Set stores one weekday's hours. Bookings already made on that day\n// stand: the owner can cancel them one by one if the salon now closes.\nfunc (hours *Hours) Set(\n\tctx context.Context, weekday int, input hoursInput,\n) error {\n\tif weekday \u003c 0 || weekday \u003e 6 {\n\t\treturn op.NotFound{}\n\t}\n\tif err := input.check(); err != nil {\n\t\treturn err\n\t}\n\treturn hours.database.WithContext(ctx).Transaction(\n\t\tfunc(tx *gorm.DB) error {\n\t\t\treturn saveDay(tx, weekday, input)\n\t\t})\n}\n\nfunc saveDay(tx *gorm.DB, weekday int, input hoursInput) error {\n\tvar day OpeningDay\n\terr := tx.Where(\"weekday = ?\", weekday).First(\u0026day).Error\n\tif errors.Is(err, gorm.ErrRecordNotFound) {\n\t\treturn tx.Create(\u0026OpeningDay{Weekday: weekday, Open: input.Open,\n\t\t\tOpens: input.Opens, Closes: input.Closes}).Error\n\t}\n\tif err != nil {\n\t\treturn err\n\t}\n\treturn tx.Model(\u0026day).Select(\"Open\", \"Opens\", \"Closes\").\n\t\tUpdates(map[string]any{\"Open\": input.Open,\n\t\t\t\"Opens\": input.Opens, \"Closes\": input.Closes}).Error\n}\n\nfunc (input hoursInput) check() error {\n\tif !input.Open {\n\t\treturn nil\n\t}\n\tproblems := map[string]string{}\n\tif !input.OpensSet {\n\t\tproblems[\"Opens\"] = \"Enter the opening time.\"\n\t}\n\tif !input.ClosesSet {\n\t\tproblems[\"Closes\"] = \"Enter the closing time.\"\n\t}\n\tif len(problems) == 0 \u0026\u0026 input.Closes \u003c= input.Opens {\n\t\tproblems[\"Closes\"] = \"Closing time must be after opening time.\"\n\t}\n\tif len(problems) \u003e 0 {\n\t\treturn op.Invalid{Fields: problems}\n\t}\n\treturn nil\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/hours.go",
+            "Key": "Hours.Set",
+            "Test": false,
+            "Start": 61,
+            "End": 76,
+            "Lines": 16,
+            "Cognitive": 3,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/hours.go",
+            "Key": "saveDay",
+            "Test": false,
+            "Start": 78,
+            "End": 91,
+            "Lines": 14,
+            "Cognitive": 2,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/hours.go",
+            "Key": "hoursInput.check",
+            "Test": false,
+            "Start": 93,
+            "End": 111,
+            "Lines": 19,
+            "Cognitive": 6,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Right": {
+        "Run": "cost-1/groomer-carlos-1",
+        "Job": "saving the opening hours",
+        "Text": "// internal/groomer/services.go\n// SetHours changes one weekday's opening hours. Bookings already made\n// stand: the owner cancels any that no longer fit.\nfunc (salon salon) SetHours(ctx context.Context, weekday int,\n\tinput hoursInput) error {\n\tif weekday \u003c 0 || weekday \u003e 6 {\n\t\treturn op.NotFound{}\n\t}\n\tif problems := input.problems(); len(problems) \u003e 0 {\n\t\treturn op.Invalid{Fields: problems}\n\t}\n\tcolumns := []string{\"Open\", \"UpdatedAt\"}\n\tif input.OpensAt \u003e= 0 \u0026\u0026 input.ClosesAt \u003e= 0 {\n\t\tcolumns = append(columns, \"OpensAt\", \"ClosesAt\")\n\t}\n\treturn salon.database.WithContext(ctx).Transaction(\n\t\tfunc(transaction *gorm.DB) error {\n\t\t\thours := OpeningHours{Weekday: weekday}\n\t\t\terr := transaction.Where(\"weekday = ?\", weekday).\n\t\t\t\tFirstOrCreate(\u0026hours).Error\n\t\t\tif err != nil {\n\t\t\t\treturn err\n\t\t\t}\n\t\t\treturn transaction.Model(\u0026hours).Select(columns).\n\t\t\t\tUpdates(OpeningHours{Open: input.Open,\n\t\t\t\t\tOpensAt: input.OpensAt, ClosesAt: input.ClosesAt}).Error\n\t\t})\n}\n\nfunc (input hoursInput) problems() map[string]string {\n\tproblems := map[string]string{}\n\tswitch {\n\tcase !input.Open \u0026\u0026 (input.OpensAt \u003c 0) != (input.ClosesAt \u003c 0):\n\t\tproblems[\"closes\"] = \"Give both times, or neither.\"\n\tcase !input.Open:\n\tcase input.OpensAt \u003c 0:\n\t\tproblems[\"opens\"] = \"Enter the time you open.\"\n\tcase input.ClosesAt \u003c 0:\n\t\tproblems[\"closes\"] = \"Enter the time you close.\"\n\tcase input.ClosesAt \u003c= input.OpensAt:\n\t\tproblems[\"closes\"] = \"Closing time must be after opening time.\"\n\t}\n\tif input.OpensAt \u003e= 0 \u0026\u0026 input.ClosesAt \u003e input.OpensAt \u0026\u0026\n\t\tinput.ClosesAt-input.OpensAt \u003c 15 {\n\t\tproblems[\"closes\"] = \"Stay open at least 15 minutes.\"\n\t}\n\treturn problems\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/services.go",
+            "Key": "salon.SetHours",
+            "Test": false,
+            "Start": 133,
+            "End": 159,
+            "Lines": 27,
+            "Cognitive": 7,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/services.go",
+            "Key": "hoursInput.problems",
+            "Test": false,
+            "Start": 161,
+            "End": 179,
+            "Lines": 19,
+            "Cognitive": 4,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Set": "spare"
+    },
+    {
+      "ID": 33,
+      "Canonical": "1/groomer-carlos-2: listing the bookings for the owner | weight-1/groomer-carlos-2: listing the bookings for the owner",
+      "Job": "listing the bookings for the owner",
+      "Left": {
+        "Run": "1/groomer-carlos-2",
+        "Job": "listing the bookings for the owner",
+        "Text": "// internal/groomer/bookings.go\n// Upcoming is every booking that has not ended yet, soonest first,\n// cancelled ones included so the owner sees what changed.\nfunc (bookings *Bookings) Upcoming(\n\tctx context.Context, now time.Time,\n) ([]Booking, error) {\n\tvar found []Booking\n\terr := bookings.database.WithContext(ctx).\n\t\tWhere(\"ends_at \u003e ?\", now.UTC()).Order(\"starts_at\").\n\t\tFind(\u0026found).Error\n\treturn found, err\n}\n\n// Past is the most recent hundred bookings that have ended.\nfunc (bookings *Bookings) Past(\n\tctx context.Context, now time.Time,\n) ([]Booking, error) {\n\tvar found []Booking\n\terr := bookings.database.WithContext(ctx).\n\t\tWhere(\"ends_at \u003c= ?\", now.UTC()).Order(\"starts_at DESC\").\n\t\tLimit(100).Find(\u0026found).Error\n\treturn found, err\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/bookings.go",
+            "Key": "Bookings.Upcoming",
+            "Test": false,
+            "Start": 149,
+            "End": 159,
+            "Lines": 11,
+            "Cognitive": 0,
+            "Nesting": 0,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/bookings.go",
+            "Key": "Bookings.Past",
+            "Test": false,
+            "Start": 161,
+            "End": 170,
+            "Lines": 10,
+            "Cognitive": 0,
+            "Nesting": 0,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Right": {
+        "Run": "weight-1/groomer-carlos-2",
+        "Job": "listing the bookings for the owner",
+        "Text": "// internal/groomer/bookings.go\n// Upcoming lists bookings from the start of today on, soonest first.\nfunc (salon *Salon) Upcoming(ctx context.Context) ([]BookingView, error) {\n\ttoday := startOfDay(salon.now().In(salon.location)).UTC()\n\tvar views []BookingView\n\terr := salon.bookings(ctx).Where(\"bookings.starts_at \u003e= ?\", today).\n\t\tOrder(\"bookings.starts_at\").Find(\u0026views).Error\n\treturn salon.local(views), err\n}\n\n// Past lists the latest hundred bookings before today, newest first.\nfunc (salon *Salon) Past(ctx context.Context) ([]BookingView, error) {\n\ttoday := startOfDay(salon.now().In(salon.location)).UTC()\n\tvar views []BookingView\n\terr := salon.bookings(ctx).Where(\"bookings.starts_at \u003c ?\", today).\n\t\tOrder(\"bookings.starts_at desc\").Limit(100).Find(\u0026views).Error\n\treturn salon.local(views), err\n}\n\nfunc (salon *Salon) bookings(ctx context.Context) *gorm.DB {\n\treturn salon.database.WithContext(ctx).Model(\u0026Booking{}).\n\t\tSelect(\"bookings.*, services.name AS service_name\").\n\t\tJoins(\"JOIN services ON services.id = bookings.service_id\")\n}\n\n// local moves each booking's times into the salon's zone for display.\nfunc (salon *Salon) local(views []BookingView) []BookingView {\n\tfor index := range views {\n\t\tviews[index].StartsAt = views[index].StartsAt.In(salon.location)\n\t\tviews[index].EndsAt = views[index].EndsAt.In(salon.location)\n\t}\n\treturn views\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/bookings.go",
+            "Key": "Salon.Upcoming",
+            "Test": false,
+            "Start": 81,
+            "End": 88,
+            "Lines": 8,
+            "Cognitive": 0,
+            "Nesting": 0,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/bookings.go",
+            "Key": "Salon.Past",
+            "Test": false,
+            "Start": 90,
+            "End": 97,
+            "Lines": 8,
+            "Cognitive": 0,
+            "Nesting": 0,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/bookings.go",
+            "Key": "Salon.bookings",
+            "Test": false,
+            "Start": 115,
+            "End": 119,
+            "Lines": 5,
+            "Cognitive": 0,
+            "Nesting": 0,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/bookings.go",
+            "Key": "Salon.local",
+            "Test": false,
+            "Start": 132,
+            "End": 139,
+            "Lines": 8,
+            "Cognitive": 1,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Set": "spare"
+    },
+    {
+      "ID": 34,
+      "Canonical": "accept-1/groomer-carlos-2: listing the bookings for the owner | accept-1/groomer-carlos-3: listing the bookings for the owner",
+      "Job": "listing the bookings for the owner",
+      "Left": {
+        "Run": "accept-1/groomer-carlos-3",
+        "Job": "listing the bookings for the owner",
+        "Text": "// internal/groomer/bookings.go\n// Agenda is the owner's list of bookings: upcoming ones soonest first,\n// past or cancelled ones latest first.\nfunc (bookings bookings) Agenda(ctx context.Context, view string) (\n\t[]Booking, error) {\n\tnow := bookings.schedule.now().UTC()\n\tquery := bookings.database.WithContext(ctx).Preload(\"Service\")\n\tswitch view {\n\tcase \"past\":\n\t\tquery = query.Where(\"cancelled = ? AND starts_at \u003c ?\", false, now).\n\t\t\tOrder(\"starts_at desc\").Limit(200)\n\tcase \"cancelled\":\n\t\tquery = query.Where(\"cancelled = ?\", true).\n\t\t\tOrder(\"starts_at desc\").Limit(200)\n\tdefault:\n\t\tquery = query.Where(\"cancelled = ? AND ends_at \u003e= ?\", false, now).\n\t\t\tOrder(\"starts_at\")\n\t}\n\tvar found []Booking\n\terr := query.Find(\u0026found).Error\n\treturn found, err\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/bookings.go",
+            "Key": "bookings.Agenda",
+            "Test": false,
+            "Start": 202,
+            "End": 222,
+            "Lines": 21,
+            "Cognitive": 1,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Right": {
+        "Run": "accept-1/groomer-carlos-2",
+        "Job": "listing the bookings for the owner",
+        "Text": "// internal/groomer/bookings.go\n// Upcoming is every booking that has not finished yet, soonest first,\n// cancelled ones included so the owner sees what changed.\nfunc (bookings bookings) Upcoming(ctx context.Context) ([]Booking, error) {\n\tvar list []Booking\n\terr := bookings.calendar.database.WithContext(ctx).\n\t\tWhere(\"ends_at \u003e ?\", bookings.calendar.now().UTC()).\n\t\tOrder(\"starts_at, id\").Find(\u0026list).Error\n\treturn list, err\n}\n\n// Earlier is the most recent finished bookings, latest first.\nfunc (bookings bookings) Earlier(ctx context.Context) ([]Booking, error) {\n\tvar list []Booking\n\terr := bookings.calendar.database.WithContext(ctx).\n\t\tWhere(\"ends_at \u003c= ?\", bookings.calendar.now().UTC()).\n\t\tOrder(\"starts_at desc, id desc\").Limit(100).Find(\u0026list).Error\n\treturn list, err\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/bookings.go",
+            "Key": "bookings.Upcoming",
+            "Test": false,
+            "Start": 106,
+            "End": 114,
+            "Lines": 9,
+            "Cognitive": 0,
+            "Nesting": 0,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/bookings.go",
+            "Key": "bookings.Earlier",
+            "Test": false,
+            "Start": 116,
+            "End": 123,
+            "Lines": 8,
+            "Cognitive": 0,
+            "Nesting": 0,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Set": "spare"
+    },
+    {
+      "ID": 35,
+      "Canonical": "accept-1/groomer-carlos-2: cancelling a booking | accept-1/groomer-carlos-3: cancelling a booking",
+      "Job": "cancelling a booking",
+      "Left": {
+        "Run": "accept-1/groomer-carlos-2",
+        "Job": "cancelling a booking",
+        "Text": "// internal/groomer/bookings.go\n// Cancel frees the booking's time. The row stays, marked, because the\n// owner still wants to see who cancelled. Cancelling twice, or after\n// the appointment, is a refusal rather than a silent success.\nfunc (bookings bookings) Cancel(ctx context.Context, id int64) error {\n\tnow := bookings.calendar.now().UTC()\n\tresult := live(bookings.calendar.database.WithContext(ctx).\n\t\tModel(\u0026Booking{})).Where(\"id = ? AND ends_at \u003e ?\", id, now).\n\t\tSelect(\"CancelledAt\").Updates(map[string]any{\"CancelledAt\": now})\n\tif result.Error != nil || result.RowsAffected \u003e 0 {\n\t\treturn result.Error\n\t}\n\tif _, err := bookings.ByID(ctx, id); err != nil {\n\t\treturn err\n\t}\n\treturn op.Conflict{Message: \"This booking is already cancelled \" +\n\t\t\"or over.\"}\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/bookings.go",
+            "Key": "bookings.Cancel",
+            "Test": false,
+            "Start": 125,
+            "End": 141,
+            "Lines": 17,
+            "Cognitive": 3,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Right": {
+        "Run": "accept-1/groomer-carlos-3",
+        "Job": "cancelling a booking",
+        "Text": "// internal/groomer/bookings.go\n// Cancel frees the booking's time. Cancelling twice is not an error:\n// a customer who presses the button twice has still cancelled once.\nfunc (bookings bookings) Cancel(ctx context.Context, booking Booking) error {\n\tif booking.StartsAt.Before(bookings.schedule.now()) {\n\t\treturn op.Conflict{Message: \"This appointment has already \" +\n\t\t\t\"started, so it can no longer be cancelled here.\"}\n\t}\n\treturn bookings.database.WithContext(ctx).Model(\u0026booking).\n\t\tSelect(\"Cancelled\", \"UpdatedAt\").\n\t\tUpdates(map[string]any{\"Cancelled\": true,\n\t\t\t\"UpdatedAt\": bookings.schedule.now()}).Error\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/bookings.go",
+            "Key": "bookings.Cancel",
+            "Test": false,
+            "Start": 189,
+            "End": 200,
+            "Lines": 12,
+            "Cognitive": 1,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Set": "spare"
+    },
+    {
+      "ID": 36,
+      "Canonical": "1/groomer-carlos-1: saving changes to a service | cost-1/groomer-carlos-1: saving changes to a service",
+      "Job": "saving changes to a service",
+      "Left": {
+        "Run": "1/groomer-carlos-1",
+        "Job": "saving changes to a service",
+        "Text": "// internal/groomer/services.go\n// Change rewrites a service's name, description, length and price.\n// Bookings already made keep the times they were given.\nfunc (services *catalog) Change(\n\tctx context.Context, id int64, input serviceInput,\n) error {\n\tif err := input.check(); err != nil {\n\t\treturn err\n\t}\n\treturn services.set(ctx, id, map[string]any{\n\t\t\"Name\": input.Name, \"Description\": input.Description,\n\t\t\"Minutes\": input.Minutes, \"PriceMinor\": input.PriceMinor,\n\t})\n}\n\nfunc (services *catalog) set(\n\tctx context.Context, id int64, columns map[string]any,\n) error {\n\tnames := make([]string, 0, len(columns)+1)\n\tfor name := range columns {\n\t\tnames = append(names, name)\n\t}\n\tcolumns[\"UpdatedAt\"] = time.Now()\n\tnames = append(names, \"UpdatedAt\")\n\tresult := services.database.WithContext(ctx).\n\t\tModel(\u0026Service{ID: id}).Select(names).Updates(columns)\n\tif result.Error != nil {\n\t\treturn result.Error\n\t}\n\tif result.RowsAffected == 0 {\n\t\treturn op.NotFound{}\n\t}\n\treturn nil\n}\n\nfunc (input *serviceInput) check() error {\n\tinput.Name = strings.TrimSpace(input.Name)\n\tinput.Description = strings.TrimSpace(input.Description)\n\tproblems := map[string]string{}\n\tif input.Name == \"\" {\n\t\tproblems[\"Name\"] = \"Enter a name for the service.\"\n\t} else if len(input.Name) \u003e 80 {\n\t\tproblems[\"Name\"] = \"Keep the name under 80 characters.\"\n\t}\n\tif len(input.Description) \u003e 500 {\n\t\tproblems[\"Description\"] = \"Keep the description under 500 \" +\n\t\t\t\"characters.\"\n\t}\n\tif !slices.Contains(serviceLengths, input.Minutes) {\n\t\tproblems[\"Minutes\"] = \"Choose how long the service takes.\"\n\t}\n\tif input.PriceMinor \u003c 0 {\n\t\tproblems[\"Price\"] = \"A price cannot be below zero.\"\n\t}\n\tif len(problems) \u003e 0 {\n\t\treturn op.Invalid{Fields: problems}\n\t}\n\treturn nil\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/services.go",
+            "Key": "catalog.Change",
+            "Test": false,
+            "Start": 84,
+            "End": 96,
+            "Lines": 13,
+            "Cognitive": 1,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/services.go",
+            "Key": "catalog.set",
+            "Test": false,
+            "Start": 109,
+            "End": 127,
+            "Lines": 19,
+            "Cognitive": 3,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/services.go",
+            "Key": "serviceInput.check",
+            "Test": false,
+            "Start": 129,
+            "End": 152,
+            "Lines": 24,
+            "Cognitive": 6,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Right": {
+        "Run": "cost-1/groomer-carlos-1",
+        "Job": "saving changes to a service",
+        "Text": "// internal/groomer/services.go\n// ChangeService rewrites a service. Bookings already made keep the\n// price they were quoted (Booking.PriceMinor).\nfunc (salon salon) ChangeService(ctx context.Context, id int64,\n\tinput serviceInput) error {\n\tif _, err := salon.service(ctx, id); err != nil {\n\t\treturn err\n\t}\n\tservice, err := input.service()\n\tif err != nil {\n\t\treturn err\n\t}\n\treturn salon.database.WithContext(ctx).Model(\u0026Service{ID: id}).\n\t\tSelect(serviceColumns).Updates(\u0026service).Error\n}\n\n// service checks input and turns it into the row it describes.\nfunc (input serviceInput) service() (Service, error) {\n\tproblems := map[string]string{}\n\tif input.Name == \"\" {\n\t\tproblems[\"name\"] = \"Enter a name.\"\n\t} else if len(input.Name) \u003e 60 {\n\t\tproblems[\"name\"] = \"Use 60 characters or fewer.\"\n\t}\n\tif len(input.Description) \u003e 300 {\n\t\tproblems[\"description\"] = \"Use 300 characters or fewer.\"\n\t}\n\tminutes, err := strconv.Atoi(input.Minutes)\n\tif err != nil || minutes \u003c 15 || minutes \u003e 480 || minutes%15 != 0 {\n\t\tproblems[\"minutes\"] = \"Enter minutes from 15 to 480, \" +\n\t\t\t\"in steps of 15.\"\n\t}\n\tif input.PriceMinor == nil {\n\t\tproblems[\"price\"] = \"Enter a price.\"\n\t}\n\tif len(problems) \u003e 0 {\n\t\treturn Service{}, op.Invalid{Fields: problems}\n\t}\n\treturn Service{Name: input.Name, Description: input.Description,\n\t\tMinutes: minutes, PriceMinor: *input.PriceMinor,\n\t\tCurrency: salonCurrency}, nil\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/services.go",
+            "Key": "salon.ChangeService",
+            "Test": false,
+            "Start": 73,
+            "End": 86,
+            "Lines": 14,
+            "Cognitive": 2,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/services.go",
+            "Key": "serviceInput.service",
+            "Test": false,
+            "Start": 98,
+            "End": 123,
+            "Lines": 26,
+            "Cognitive": 7,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Set": "spare"
+    },
+    {
+      "ID": 37,
+      "Canonical": "accept-1/groomer-carlos-2: saving the opening hours | accept-1/groomer-carlos-3: saving the opening hours",
+      "Job": "saving the opening hours",
+      "Left": {
+        "Run": "accept-1/groomer-carlos-2",
+        "Job": "saving the opening hours",
+        "Text": "// internal/groomer/hours.go\n// Save replaces the opening times for all seven days at once, so the\n// week is never half-saved.\nfunc (hours hours) Save(ctx context.Context, days week) error {\n\tif err := days.check(); err != nil {\n\t\treturn err\n\t}\n\treturn hours.database.WithContext(ctx).Transaction(\n\t\tfunc(tx *gorm.DB) error {\n\t\t\tfor _, day := range days {\n\t\t\t\tif err := saveDay(tx, day); err != nil {\n\t\t\t\t\treturn err\n\t\t\t\t}\n\t\t\t}\n\t\t\treturn nil\n\t\t})\n}\n\nfunc saveDay(tx *gorm.DB, day OpeningDay) error {\n\tresult := tx.Model(\u0026OpeningDay{}).Where(\"weekday = ?\", day.Weekday).\n\t\tSelect(\"Open\", \"Opens\", \"Closes\").\n\t\tUpdates(map[string]any{\"Open\": day.Open, \"Opens\": day.Opens,\n\t\t\t\"Closes\": day.Closes})\n\tif result.Error != nil || result.RowsAffected \u003e 0 {\n\t\treturn result.Error\n\t}\n\trow := OpeningDay{Weekday: day.Weekday, Open: day.Open,\n\t\tOpens: day.Opens, Closes: day.Closes}\n\treturn tx.Create(\u0026row).Error\n}\n\n// check refuses an open day that closes before it opens. A closed\n// day's times are kept as typed, so reopening it later starts from\n// them.\nfunc (days week) check() error {\n\tfields := map[string]string{}\n\tfor _, day := range days {\n\t\tif day.Open \u0026\u0026 day.Closes-day.Opens \u003c 30 {\n\t\t\tfields[fmt.Sprintf(\"closes_%d\", day.Weekday)] =\n\t\t\t\t\"Close at least 30 minutes after opening.\"\n\t\t}\n\t}\n\tif len(fields) \u003e 0 {\n\t\treturn op.Invalid{Fields: fields}\n\t}\n\treturn nil\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/hours.go",
+            "Key": "hours.Save",
+            "Test": false,
+            "Start": 39,
+            "End": 54,
+            "Lines": 16,
+            "Cognitive": 6,
+            "Nesting": 2,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/hours.go",
+            "Key": "saveDay",
+            "Test": false,
+            "Start": 56,
+            "End": 67,
+            "Lines": 12,
+            "Cognitive": 2,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/hours.go",
+            "Key": "week.check",
+            "Test": false,
+            "Start": 69,
+            "End": 84,
+            "Lines": 16,
+            "Cognitive": 5,
+            "Nesting": 2,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Right": {
+        "Run": "accept-1/groomer-carlos-3",
+        "Job": "saving the opening hours",
+        "Text": "// internal/groomer/hours.go\n// SetWeek replaces the opening hours. Bookings already made stand even\n// where the salon now closes earlier: the owner cancels any that must go.\nfunc (hours hours) SetWeek(ctx context.Context, days []OpeningDay) error {\n\tfields := map[string]string{}\n\tfor _, day := range days {\n\t\tif day.Open \u0026\u0026 day.Opens \u003e= day.Closes {\n\t\t\tfields[dayField(day.Weekday)] = \"Closing time must be \" +\n\t\t\t\t\"after opening time.\"\n\t\t}\n\t}\n\tif len(fields) \u003e 0 {\n\t\treturn op.Invalid{Fields: fields}\n\t}\n\treturn hours.database.WithContext(ctx).Transaction(\n\t\tfunc(tx *gorm.DB) error {\n\t\t\tfor _, day := range days {\n\t\t\t\terr := tx.Clauses(clause.OnConflict{\n\t\t\t\t\tColumns: []clause.Column{{Name: \"weekday\"}},\n\t\t\t\t\tDoUpdates: clause.AssignmentColumns(\n\t\t\t\t\t\t[]string{\"open\", \"opens\", \"closes\"}),\n\t\t\t\t}).Create(\u0026day).Error\n\t\t\t\tif err != nil {\n\t\t\t\t\treturn err\n\t\t\t\t}\n\t\t\t}\n\t\t\treturn nil\n\t\t})\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/hours.go",
+            "Key": "hours.SetWeek",
+            "Test": false,
+            "Start": 43,
+            "End": 70,
+            "Lines": 28,
+            "Cognitive": 10,
+            "Nesting": 2,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Set": "spare"
+    },
+    {
+      "ID": 38,
+      "Canonical": "1/groomer-carlos-1: saving the opening hours | accept-1/groomer-carlos-2: saving the opening hours",
+      "Job": "saving the opening hours",
+      "Left": {
+        "Run": "1/groomer-carlos-1",
+        "Job": "saving the opening hours",
+        "Text": "// internal/groomer/hours.go\n// Save replaces the whole week. Bookings already made are kept even\n// when they now fall outside the hours; the owner sees them and\n// decides.\nfunc (hours *openingHours) Save(\n\tctx context.Context, week []OpeningDay,\n) error {\n\tif err := checkWeek(week); err != nil {\n\t\treturn err\n\t}\n\trows := make([]OpeningDay, 0, len(week))\n\tfor _, day := range week {\n\t\tday.ID = 0\n\t\trows = append(rows, day)\n\t}\n\tchanged := []string{\"open\", \"opens\", \"closes\"}\n\treturn hours.database.WithContext(ctx).Clauses(clause.OnConflict{\n\t\tColumns:   []clause.Column{{Name: \"weekday\"}},\n\t\tDoUpdates: clause.AssignmentColumns(changed),\n\t}).Create(\u0026rows).Error\n}\n\nfunc checkWeek(week []OpeningDay) error {\n\tproblems := map[string]string{}\n\tfor _, day := range week {\n\t\tif !day.Open {\n\t\t\tcontinue\n\t\t}\n\t\tname := time.Weekday(day.Weekday).String()\n\t\tif day.Closes \u003c= day.Opens {\n\t\t\tproblems[name+\"Closes\"] = \"Closing time must be after \" +\n\t\t\t\t\"opening time.\"\n\t\t}\n\t}\n\tif len(problems) \u003e 0 {\n\t\treturn op.Invalid{Fields: problems}\n\t}\n\treturn nil\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/hours.go",
+            "Key": "openingHours.Save",
+            "Test": false,
+            "Start": 53,
+            "End": 72,
+            "Lines": 20,
+            "Cognitive": 2,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/hours.go",
+            "Key": "checkWeek",
+            "Test": false,
+            "Start": 74,
+            "End": 90,
+            "Lines": 17,
+            "Cognitive": 6,
+            "Nesting": 2,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Right": {
+        "Run": "accept-1/groomer-carlos-2",
+        "Job": "saving the opening hours",
+        "Text": "// internal/groomer/hours.go\n// Save replaces the opening times for all seven days at once, so the\n// week is never half-saved.\nfunc (hours hours) Save(ctx context.Context, days week) error {\n\tif err := days.check(); err != nil {\n\t\treturn err\n\t}\n\treturn hours.database.WithContext(ctx).Transaction(\n\t\tfunc(tx *gorm.DB) error {\n\t\t\tfor _, day := range days {\n\t\t\t\tif err := saveDay(tx, day); err != nil {\n\t\t\t\t\treturn err\n\t\t\t\t}\n\t\t\t}\n\t\t\treturn nil\n\t\t})\n}\n\nfunc saveDay(tx *gorm.DB, day OpeningDay) error {\n\tresult := tx.Model(\u0026OpeningDay{}).Where(\"weekday = ?\", day.Weekday).\n\t\tSelect(\"Open\", \"Opens\", \"Closes\").\n\t\tUpdates(map[string]any{\"Open\": day.Open, \"Opens\": day.Opens,\n\t\t\t\"Closes\": day.Closes})\n\tif result.Error != nil || result.RowsAffected \u003e 0 {\n\t\treturn result.Error\n\t}\n\trow := OpeningDay{Weekday: day.Weekday, Open: day.Open,\n\t\tOpens: day.Opens, Closes: day.Closes}\n\treturn tx.Create(\u0026row).Error\n}\n\n// check refuses an open day that closes before it opens. A closed\n// day's times are kept as typed, so reopening it later starts from\n// them.\nfunc (days week) check() error {\n\tfields := map[string]string{}\n\tfor _, day := range days {\n\t\tif day.Open \u0026\u0026 day.Closes-day.Opens \u003c 30 {\n\t\t\tfields[fmt.Sprintf(\"closes_%d\", day.Weekday)] =\n\t\t\t\t\"Close at least 30 minutes after opening.\"\n\t\t}\n\t}\n\tif len(fields) \u003e 0 {\n\t\treturn op.Invalid{Fields: fields}\n\t}\n\treturn nil\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/hours.go",
+            "Key": "hours.Save",
+            "Test": false,
+            "Start": 39,
+            "End": 54,
+            "Lines": 16,
+            "Cognitive": 6,
+            "Nesting": 2,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/hours.go",
+            "Key": "saveDay",
+            "Test": false,
+            "Start": 56,
+            "End": 67,
+            "Lines": 12,
+            "Cognitive": 2,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/hours.go",
+            "Key": "week.check",
+            "Test": false,
+            "Start": 69,
+            "End": 84,
+            "Lines": 16,
+            "Cognitive": 5,
+            "Nesting": 2,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Set": "spare"
+    },
+    {
+      "ID": 39,
+      "Canonical": "1/groomer-carlos-1: listing the bookings for the owner | 1/groomer-carlos-2: listing the bookings for the owner",
+      "Job": "listing the bookings for the owner",
+      "Left": {
+        "Run": "1/groomer-carlos-2",
+        "Job": "listing the bookings for the owner",
+        "Text": "// internal/groomer/bookings.go\n// Upcoming is every booking that has not ended yet, soonest first,\n// cancelled ones included so the owner sees what changed.\nfunc (bookings *Bookings) Upcoming(\n\tctx context.Context, now time.Time,\n) ([]Booking, error) {\n\tvar found []Booking\n\terr := bookings.database.WithContext(ctx).\n\t\tWhere(\"ends_at \u003e ?\", now.UTC()).Order(\"starts_at\").\n\t\tFind(\u0026found).Error\n\treturn found, err\n}\n\n// Past is the most recent hundred bookings that have ended.\nfunc (bookings *Bookings) Past(\n\tctx context.Context, now time.Time,\n) ([]Booking, error) {\n\tvar found []Booking\n\terr := bookings.database.WithContext(ctx).\n\t\tWhere(\"ends_at \u003c= ?\", now.UTC()).Order(\"starts_at DESC\").\n\t\tLimit(100).Find(\u0026found).Error\n\treturn found, err\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/bookings.go",
+            "Key": "Bookings.Upcoming",
+            "Test": false,
+            "Start": 149,
+            "End": 159,
+            "Lines": 11,
+            "Cognitive": 0,
+            "Nesting": 0,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/bookings.go",
+            "Key": "Bookings.Past",
+            "Test": false,
+            "Start": 161,
+            "End": 170,
+            "Lines": 10,
+            "Cognitive": 0,
+            "Nesting": 0,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Right": {
+        "Run": "1/groomer-carlos-1",
+        "Job": "listing the bookings for the owner",
+        "Text": "// internal/groomer/appointments.go\n// List is the bookings in scope: upcoming soonest first, the rest\n// most recent first.\nfunc (book *diary) List(\n\tctx context.Context, scope bookingScope,\n) ([]appointment, error) {\n\tquery := book.withService(ctx)\n\tnow := book.now().UTC().Truncate(time.Second)\n\tswitch scope {\n\tcase scopePast:\n\t\tquery = query.Where(\"bookings.cancelled = ? AND \"+\n\t\t\t\"bookings.ends_at \u003c= ?\", false, now).\n\t\t\tOrder(\"bookings.starts_at DESC\")\n\tcase scopeCancelled:\n\t\tquery = query.Where(\"bookings.cancelled = ?\", true).\n\t\t\tOrder(\"bookings.starts_at DESC\")\n\tdefault:\n\t\tquery = query.Where(\"bookings.cancelled = ? AND \"+\n\t\t\t\"bookings.ends_at \u003e ?\", false, now).\n\t\t\tOrder(\"bookings.starts_at\")\n\t}\n\tvar found []appointment\n\terr := query.Limit(200).Find(\u0026found).Error\n\treturn found, err\n}\n\nfunc (book *diary) withService(ctx context.Context) *gorm.DB {\n\treturn book.database.WithContext(ctx).Model(\u0026Booking{}).\n\t\tSelect(\"bookings.*, services.name AS service_name\").\n\t\tJoins(\"LEFT JOIN services ON services.id = bookings.service_id\")\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/appointments.go",
+            "Key": "diary.List",
+            "Test": false,
+            "Start": 29,
+            "End": 52,
+            "Lines": 24,
+            "Cognitive": 1,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/appointments.go",
+            "Key": "diary.withService",
+            "Test": false,
+            "Start": 84,
+            "End": 88,
+            "Lines": 5,
+            "Cognitive": 0,
+            "Nesting": 0,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Set": "spare"
+    },
+    {
+      "ID": 40,
+      "Canonical": "accept-1/groomer-carlos-2: saving changes to a service | accept-1/groomer-carlos-3: saving changes to a service",
+      "Job": "saving changes to a service",
+      "Left": {
+        "Run": "accept-1/groomer-carlos-2",
+        "Job": "saving changes to a service",
+        "Text": "// internal/groomer/services.go\n// Change rewrites a service's details. Bookings already made keep the\n// name and length they were made with.\nfunc (services services) Change(ctx context.Context, id int64,\n\tinput serviceInput) error {\n\tinput, err := input.checked()\n\tif err != nil {\n\t\treturn err\n\t}\n\tresult := services.database.WithContext(ctx).Model(\u0026Service{ID: id}).\n\t\tSelect(\"Name\", \"Description\", \"Minutes\", \"PriceMinor\",\n\t\t\t\"Currency\", \"Offered\", \"UpdatedAt\").\n\t\tUpdates(map[string]any{\"Name\": input.Name,\n\t\t\t\"Description\": input.Description, \"Minutes\": input.Minutes,\n\t\t\t\"PriceMinor\": input.PriceMinor, \"Currency\": salonCurrency,\n\t\t\t\"Offered\": input.Offered})\n\tif result.Error != nil {\n\t\treturn result.Error\n\t}\n\tif result.RowsAffected == 0 {\n\t\treturn op.NotFound{}\n\t}\n\treturn nil\n}\n\n// checked trims the input and refuses what the menu cannot show.\nfunc (input serviceInput) checked() (serviceInput, error) {\n\tinput.Name = strings.TrimSpace(input.Name)\n\tinput.Description = strings.TrimSpace(input.Description)\n\tfields := map[string]string{}\n\tif input.Name == \"\" || len(input.Name) \u003e 80 {\n\t\tfields[\"Name\"] = \"Enter a name of up to 80 characters.\"\n\t}\n\tif len(input.Description) \u003e 400 {\n\t\tfields[\"Description\"] = \"Keep the description under 400 characters.\"\n\t}\n\tif !slices.Contains(serviceLengths, input.Minutes) {\n\t\tfields[\"Minutes\"] = \"Choose how long the appointment takes.\"\n\t}\n\tif input.PriceMinor \u003c 0 {\n\t\tfields[\"Price\"] = \"Enter a price of 0 or more.\"\n\t}\n\tif len(fields) \u003e 0 {\n\t\treturn input, op.Invalid{Fields: fields}\n\t}\n\treturn input, nil\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/services.go",
+            "Key": "services.Change",
+            "Test": false,
+            "Start": 91,
+            "End": 113,
+            "Lines": 23,
+            "Cognitive": 3,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/services.go",
+            "Key": "serviceInput.checked",
+            "Test": false,
+            "Start": 115,
+            "End": 136,
+            "Lines": 22,
+            "Cognitive": 6,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Right": {
+        "Run": "accept-1/groomer-carlos-3",
+        "Job": "saving changes to a service",
+        "Text": "// internal/groomer/services.go\n// Change rewrites a service. Bookings already made keep their own end\n// time, so a new length applies to new bookings only.\nfunc (services services) Change(ctx context.Context, id int64,\n\tinput ServiceInput) error {\n\tif err := input.check(); err != nil {\n\t\treturn err\n\t}\n\tresult := services.database.WithContext(ctx).\n\t\tModel(\u0026Service{ID: id}).\n\t\tSelect(\"Name\", \"Description\", \"Minutes\", \"PriceMinor\", \"Offered\",\n\t\t\t\"UpdatedAt\").\n\t\tUpdates(map[string]any{\n\t\t\t\"Name\":        strings.TrimSpace(input.Name),\n\t\t\t\"Description\": strings.TrimSpace(input.Description),\n\t\t\t\"Minutes\":     input.Minutes, \"PriceMinor\": input.PriceMinor,\n\t\t\t\"Offered\": input.Offered, \"UpdatedAt\": services.now(),\n\t\t})\n\tif result.Error != nil {\n\t\treturn result.Error\n\t}\n\tif result.RowsAffected == 0 {\n\t\treturn op.NotFound{}\n\t}\n\treturn nil\n}\n\nfunc (input ServiceInput) check() error {\n\tif fields := input.problems(); len(fields) \u003e 0 {\n\t\treturn op.Invalid{Fields: fields}\n\t}\n\treturn nil\n}\n\n// problems is what is wrong with the input, by field.\nfunc (input ServiceInput) problems() map[string]string {\n\tfields := map[string]string{}\n\tname := strings.TrimSpace(input.Name)\n\tif name == \"\" || len(name) \u003e 60 {\n\t\tfields[\"Name\"] = \"Enter a name, up to 60 characters.\"\n\t}\n\tif len(input.Description) \u003e 300 {\n\t\tfields[\"Description\"] = \"Keep the description to 300 characters.\"\n\t}\n\tif input.Minutes \u003c 15 || input.Minutes \u003e 480 || input.Minutes%15 != 0 {\n\t\tfields[\"Minutes\"] = \"Enter a length from 15 to 480 minutes, \" +\n\t\t\t\"in steps of 15.\"\n\t}\n\tif input.PriceMinor \u003c 0 {\n\t\tfields[\"Price\"] = \"A price cannot be below zero.\"\n\t}\n\treturn fields\n}\n",
+        "Arm": "carlos",
+        "Funcs": [
+          {
+            "Path": "internal/groomer/services.go",
+            "Key": "services.Change",
+            "Test": false,
+            "Start": 80,
+            "End": 104,
+            "Lines": 25,
+            "Cognitive": 3,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/services.go",
+            "Key": "ServiceInput.check",
+            "Test": false,
+            "Start": 106,
+            "End": 111,
+            "Lines": 6,
+            "Cognitive": 1,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          },
+          {
+            "Path": "internal/groomer/services.go",
+            "Key": "ServiceInput.problems",
+            "Test": false,
+            "Start": 113,
+            "End": 131,
+            "Lines": 19,
+            "Cognitive": 6,
+            "Nesting": 1,
+            "FarShortNames": 0,
+            "DuplicatedLines": 0,
+            "OverLimitLines": 0
+          }
+        ]
+      },
+      "Set": "spare"
+    }
+  ]
+}

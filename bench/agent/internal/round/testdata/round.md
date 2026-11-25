@@ -17,6 +17,7 @@
 | build minutes | 0 | 0 |
 | build context at first write (k) | 100 (50–150) | 100 (50–150) |
 | build deploy and live-check messages | 5 | 5 |
+| build failed builds and test runs | 0 | 0 |
 | build messages: framework-read | 0 | 0 |
 | build messages: app-read | 0 | 0 |
 | build messages: scaffold | 0 | 0 |
@@ -40,6 +41,7 @@
 | follow-up minutes | 0 | 0 |
 | follow-up context at first write (k) | – | – |
 | follow-up deploy and live-check messages | 0 | 0 |
+| follow-up failed builds and test runs | 0 | 0 |
 | follow-up messages: framework-read | 0 | 0 |
 | follow-up messages: app-read | 0 | 0 |
 | follow-up messages: scaffold | 0 | 0 |

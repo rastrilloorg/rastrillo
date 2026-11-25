@@ -1,0 +1,5 @@
+{
+ "command": "go test -short ./internal/... 2>&1 | grep -v \"^\\s*<\\|^        \" | head -60",
+ "is_error": false,
+ "result": "?   \tgroomer/internal/groomer\t[no test files]\n?   \tgroomer/internal/groomer/icons\t[no test files]\n--- FAIL: TestABookingHoldsTheTableForItsLength (0.93s)\n    booking_test.go:80: 0900 is offered inside the groom:\n    booking_test.go:80: 0930 is offered inside the groom:\n    booking_test.go:80: 1000 is offered inside the groom:\n--- FAIL: TestTwoCustomersCannotTakeOneSlot (1.01s)\n    booking_test.go:101: the second booking = 422, want 409 saying it has gone:\n--- FAIL: TestACustomerBooksAGroom (0.75s)\n    booking_test.go:54: booking = 422 to \"\", want 303 to /booked/…\nFAIL\nrastrillo-budget/v1 ran 2.064s\nFAIL\tgroomer/internal/groomertest\t2.164s\nFAIL"
+}

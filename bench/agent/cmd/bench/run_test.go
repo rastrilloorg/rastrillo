@@ -2,11 +2,14 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -287,5 +290,328 @@ func TestRescoreWaitsForTheRoundsLock(t *testing.T) {
 
 	if err := rescoreRound(root, t.TempDir(), "r"); err == nil {
 		t.Error("rescore ran while another bench held the round")
+	}
+}
+
+func TestTheGoplsArmNeedsAGoplsPath(t *testing.T) {
+	both := []brief.Arm{brief.Carlos, brief.CarlosGopls}
+	if _, err := goplsFor(both, "", ""); err == nil {
+		t.Error("carlos-gopls ran without -gopls")
+	}
+	if _, err := goplsFor(both, filepath.Join(t.TempDir(), "gopls"), ""); err == nil {
+		t.Error("a -gopls that does not exist was accepted")
+	}
+	if none, err := goplsFor([]brief.Arm{brief.Carlos}, "", ""); none != (gopls{}) ||
+		err != nil {
+		t.Errorf("carlos alone = %+v, %v; want no gopls", none, err)
+	}
+
+	dir := t.TempDir()
+	fake := filepath.Join(dir, "gopls")
+	os.WriteFile(fake, []byte("#!/bin/sh\ncase \"$*\" in\n"+
+		"version) echo 'golang.org/x/tools/gopls v0.24.0' ;;\n"+
+		"'mcp -instructions') printf '# The gopls MCP server\\n\\nUse it.\\n' ;;\n"+
+		"esac\n"), 0o755)
+	t.Chdir(dir)
+	found, err := goplsFor(both, "gopls", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if found.path != fake || found.version != "golang.org/x/tools/gopls v0.24.0" ||
+		found.instructions != "# The gopls MCP server\n\nUse it." {
+		t.Errorf("goplsFor = %+v; want %q, its version and its instructions",
+			found, fake)
+	}
+
+	// A round that ran gopls needs it on every resume, whatever -arms
+	// says, or its fingerprint would not match.
+	ran := "golang.org/x/tools/gopls v0.24.0"
+	_, err = goplsFor([]brief.Arm{brief.Carlos}, "", ran)
+	if err == nil || !strings.Contains(err.Error(), ran) ||
+		!strings.Contains(err.Error(), "-gopls") {
+		t.Errorf("resuming a gopls round without -gopls: %v, want an error "+
+			"naming gopls and -gopls", err)
+	}
+	if resumed, err := goplsFor([]brief.Arm{brief.Carlos}, "gopls", ran); err != nil ||
+		resumed != found {
+		t.Errorf("resuming with -gopls and -arms carlos = %+v, %v; want %+v",
+			resumed, err, found)
+	}
+
+	// The server is the bench's wrapper, by absolute path, given gopls,
+	// the app it watches, a log, and the Go settings a run gets.
+	var config struct {
+		MCPServers map[string]struct {
+			Type, Command string
+			Args          []string
+			Env           map[string]string
+		} `json:"mcpServers"`
+	}
+	raw := goplsServer("/c/bin/goplsmcp", found.path, "/run/app",
+		"/run/rec/goplsmcp.log", map[string]string{"GOPROXY": "file:///p"})
+	if err := json.Unmarshal([]byte(raw), &config); err != nil {
+		t.Fatalf("%s: %v", raw, err)
+	}
+	server := config.MCPServers["gopls"]
+	if len(config.MCPServers) != 1 || server.Type != "stdio" ||
+		server.Command != "/c/bin/goplsmcp" ||
+		strings.Join(server.Args, " ") != "-gopls "+fake+
+			" -dir /run/app -log /run/rec/goplsmcp.log" ||
+		server.Env["GOPROXY"] != "file:///p" {
+		t.Errorf("MCP config = %s", raw)
+	}
+}
+
+func TestTheGoplsVersionIsInTheFingerprint(t *testing.T) {
+	groomer, _ := pickBriefs("../..", "groomer")
+	fingerprintWith := func(gopls map[string]string) (string, string) {
+		settings := map[string]string{"model": "m"}
+		for name, value := range gopls {
+			settings[name] = value
+		}
+		config, control, err := fingerprints("../..", groomer, settings)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return config, control
+	}
+	arm := map[string]string{"gopls": "golang.org/x/tools/gopls v0.24.0",
+		"gopls-instructions": "Use go_workspace first.",
+		"gopls-proxy":        "abc"}
+	none, controlNone := fingerprintWith(nil)
+	newer, controlNewer := fingerprintWith(arm)
+	if none == newer || controlNone != controlNewer {
+		t.Error("gopls must change the round's fingerprint and never the control's")
+	}
+	for name := range arm {
+		changed := map[string]string{}
+		for each, value := range arm {
+			changed[each] = value
+		}
+		changed[name] += " (changed)"
+		if config, _ := fingerprintWith(changed); config == newer {
+			t.Errorf("a changed %s kept the round's fingerprint", name)
+		}
+	}
+	if hash, err := sourceHash("../..", "cmd/goplsmcp", "internal/mcpproxy"); err != nil ||
+		len(hash) != 64 {
+		t.Errorf("the wrapper's source hash = %q, %v", hash, err)
+	}
+}
+
+// Both arms deploy to the same Carloku account; with one name, a run
+// of one would deploy over, or build on, the other's app.
+func TestTheTwoRastrilloArmsGetDifferentAppNames(t *testing.T) {
+	carlos := appName("groomer", "read-1", brief.Carlos, 1, 0)
+	gopls := appName("groomer", "read-1", brief.CarlosGopls, 1, 0)
+	if carlos != "groomer-rread-1-1" || gopls != "groomer-gopls-rread-1-1" {
+		t.Errorf("names = %s and %s, want groomer-rread-1-1 and "+
+			"groomer-gopls-rread-1-1", carlos, gopls)
+	}
+	if got := appName("groomer", "read-1", brief.CarlosGopls, 2, 1); got != "groomer-gopls-rread-1-2-a2" {
+		t.Errorf("gopls's second attempt = %s", got)
+	}
+}
+
+func TestBothRastrilloArmsReachRecordsSummariesAndCleanup(t *testing.T) {
+	r := round.Round{Label: "t", Platform: "Fly.io"}
+	for _, arm := range []brief.Arm{brief.Carlos, brief.CarlosGopls} {
+		deploy := deployVars(arm, "Fly.io", "the demo org", "fly.io")
+		deploy.withCarloku("secret", "https://console.example")
+		if deploy.account != carlokuAccount || len(deploy.hosts) != 0 ||
+			deploy.env["CARLOS_SERVICE_TOKEN"] != "secret" {
+			t.Errorf("%s deploys as %+v, want Carloku's demo account", arm, deploy)
+		}
+
+		dir := t.TempDir()
+		os.MkdirAll(filepath.Join(dir, "app"), 0o755)
+		os.WriteFile(filepath.Join(dir, "app", "go.mod"), []byte(
+			"module x\n\nrequire amadan.net/rastrillo/rastrillo v0.41.0\n"), 0o644)
+		record := recordOf(runner.Spec{Dir: dir, Brief: brief.Brief{Name: "smoke"},
+			Arm: arm, N: 1, Vars: brief.Vars{App: appName("smoke", "t", arm, 1, 0)}},
+			runner.Outcome{})
+		if record.RastrilloVersion != "v0.41.0" {
+			t.Errorf("%s recorded Rastrillo %q, want v0.41.0", arm,
+				record.RastrilloVersion)
+		}
+		r.Runs = append(r.Runs, record)
+	}
+
+	if _, present := round.Summarise(r)["smoke"][brief.CarlosGopls]; !present {
+		t.Error("carlos-gopls has no column in the summary")
+	}
+	commands := strings.Join(cleanupCommands(r), "\n")
+	for _, want := range []string{
+		"carlos apps delete --account-id bdf --app smoke-rt-1",
+		"carlos apps delete --account-id bdf --app smoke-gopls-rt-1",
+	} {
+		if !strings.Contains(commands, want) {
+			t.Errorf("cleanup lacks %q:\n%s", want, commands)
+		}
+	}
+}
+
+// Arms alternate by run index, so a drift over the round's two days
+// (the model, Carloku, the token's limit) falls on both arms alike.
+// The order is saved, and a resume keeps it whatever order -arms says.
+func TestTheScheduleInterleavesArmsAndSurvivesAResume(t *testing.T) {
+	root := t.TempDir()
+	briefs := []string{"groomer", "lending"}
+	arms := []brief.Arm{brief.Carlos, brief.CarlosGopls}
+	slot := func(name string, arm brief.Arm, n int) round.Slot {
+		return round.Slot{Brief: name, Arm: arm, N: n}
+	}
+	want := []round.Slot{
+		slot("groomer", brief.Carlos, 1), slot("groomer", brief.CarlosGopls, 1),
+		slot("lending", brief.Carlos, 1), slot("lending", brief.CarlosGopls, 1),
+		slot("groomer", brief.Carlos, 2), slot("groomer", brief.CarlosGopls, 2),
+		slot("lending", brief.Carlos, 2), slot("lending", brief.CarlosGopls, 2),
+	}
+
+	r := round.Round{Label: "s"}
+	r.Schedule = extendSchedule(r.Schedule, briefs, arms, 2)
+	if !slices.Equal(r.Schedule, want) {
+		t.Fatalf("schedule = %v,\nwant %v", r.Schedule, want)
+	}
+	r.Runs = append(r.Runs, round.RunRecord{Brief: "groomer",
+		Arm: brief.Carlos, N: 1})
+	if err := saveRound(root, r); err != nil {
+		t.Fatal(err)
+	}
+
+	resumed, err := loadRound(root, "s")
+	if err != nil {
+		t.Fatal(err)
+	}
+	reversed := []brief.Arm{brief.CarlosGopls, brief.Carlos}
+	resumed.Schedule = extendSchedule(resumed.Schedule, briefs, reversed, 3)
+	if !slices.Equal(resumed.Schedule[:8], want) {
+		t.Errorf("a resume reordered the schedule: %v", resumed.Schedule)
+	}
+	if !slices.Equal(resumed.Schedule[8:], []round.Slot{
+		slot("groomer", brief.Carlos, 3), slot("groomer", brief.CarlosGopls, 3),
+		slot("lending", brief.Carlos, 3), slot("lending", brief.CarlosGopls, 3),
+	}) {
+		t.Errorf("a third run was not added after the saved schedule: %v",
+			resumed.Schedule[8:])
+	}
+
+	got := pendingJobs(resumed, briefs, []brief.Arm{brief.CarlosGopls}, 3)
+	if len(got) != 6 || got[0] != slot("groomer", brief.CarlosGopls, 1) ||
+		got[1] != slot("lending", brief.CarlosGopls, 1) {
+		t.Errorf("pending carlos-gopls jobs = %v", got)
+	}
+}
+
+// read, keys, score, waste and pairs read both Rastrillo arms unless
+// told otherwise, and carlos never picks up carlos-gopls's runs.
+func TestKeptRunsReadBothRastrilloArmsByDefault(t *testing.T) {
+	cache := t.TempDir()
+	r := round.Round{Label: "1"}
+	for _, run := range []round.RunRecord{
+		{Brief: "groomer", Arm: brief.Carlos, N: 1},
+		{Brief: "groomer", Arm: brief.CarlosGopls, N: 1},
+		{Brief: "groomer", Arm: brief.Control, N: 1},
+	} {
+		r.Runs = append(r.Runs, run)
+		os.MkdirAll(filepath.Join(cache, "1",
+			fmt.Sprintf("%s-%s-%d", run.Brief, run.Arm, run.N)), 0o755)
+	}
+	os.MkdirAll(filepath.Join(cache, "1", "groomer-carlos-gopls-1-attempt-1"),
+		0o755)
+	names := func(kept []keptRun) []string {
+		var names []string
+		for _, run := range kept {
+			names = append(names, run.name)
+		}
+		return names
+	}
+
+	both, _, err := acceptedRuns(r, cache, []string{"groomer"},
+		strings.Split(rastrilloArms, ","))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(names(both), []string{"groomer-carlos-1",
+		"groomer-carlos-gopls-1"}) {
+		t.Errorf("default arms found %v", both)
+	}
+	carlos, _, _ := acceptedRuns(r, cache, []string{"groomer"},
+		[]string{"carlos"})
+	if !slices.Equal(names(carlos), []string{"groomer-carlos-1"}) {
+		t.Errorf("-arms carlos found %v", carlos)
+	}
+}
+
+// Only the runs a round's records accepted are read. The directory a
+// failed last attempt left at the run's own path, or a build still
+// going there, is skipped and named; a reused run is read where it was
+// made. Every command finds its runs through results/<round>.json.
+func TestKeptRunsAreTheRunsTheRoundAccepted(t *testing.T) {
+	root, cache := t.TempDir(), t.TempDir()
+	r := round.Round{Label: "read-1", Runs: []round.RunRecord{
+		{Brief: "groomer", Arm: brief.Carlos, N: 1},
+		{Brief: "groomer", Arm: brief.Control, N: 1, ReusedFrom: "1"},
+	}}
+	for _, dir := range []string{"read-1/groomer-carlos-1",
+		"read-1/groomer-carlos-2", "read-1/groomer-carlos-gopls-1",
+		"read-1/groomer-carlos-2-attempt-1", "1/groomer-control-1"} {
+		os.MkdirAll(filepath.Join(cache, dir), 0o755)
+	}
+	if err := saveRound(root, r); err != nil {
+		t.Fatal(err)
+	}
+
+	kept, err := keptRuns(root, cache, "read-1", []string{"groomer"},
+		[]string{"carlos", "carlos-gopls", "control"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, skipped, _ := acceptedRuns(r, cache, []string{"groomer"},
+		[]string{"carlos", "carlos-gopls", "control"})
+
+	want := []keptRun{
+		{"groomer-carlos-1", filepath.Join(cache, "read-1", "groomer-carlos-1")},
+		{"groomer-control-1", filepath.Join(cache, "1", "groomer-control-1")},
+	}
+	if !slices.Equal(kept, want) {
+		t.Errorf("kept = %v, want %v", kept, want)
+	}
+	if !slices.Equal(skipped, []string{"groomer-carlos-2",
+		"groomer-carlos-gopls-1"}) {
+		t.Errorf("skipped = %v", skipped)
+	}
+	if _, err := keptRuns(root, cache, "no-such-round", []string{"groomer"},
+		[]string{"carlos"}); err == nil {
+		t.Error("a round with no records found runs")
+	}
+}
+
+// A round's decision is kept by hand beside the generated report, which
+// points to it, so writing the report again never loses it.
+func TestTheRoundReportPointsToItsDecision(t *testing.T) {
+	root := t.TempDir()
+	r := round.Round{Label: "read-1"}
+	if err := saveRound(root, r); err != nil {
+		t.Fatal(err)
+	}
+	raw, _ := os.ReadFile(resultPath(root, "read-1", ".md"))
+	if strings.Contains(string(raw), "Decision") {
+		t.Errorf("a round with no decision points to one:\n%s", raw)
+	}
+
+	decision := resultPath(root, "read-1-decision", ".md")
+	os.WriteFile(decision, []byte("# Decision\n\nnot accepted\n"), 0o644)
+	if err := saveRound(root, r); err != nil {
+		t.Fatal(err)
+	}
+
+	raw, _ = os.ReadFile(resultPath(root, "read-1", ".md"))
+	if !strings.Contains(string(raw), "[read-1-decision.md](read-1-decision.md)") {
+		t.Errorf("the report does not point to the decision:\n%s", raw)
+	}
+	kept, _ := os.ReadFile(decision)
+	if string(kept) != "# Decision\n\nnot accepted\n" {
+		t.Errorf("writing the report changed the decision: %q", kept)
 	}
 }

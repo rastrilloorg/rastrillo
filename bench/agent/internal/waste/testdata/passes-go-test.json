@@ -1,0 +1,5 @@
+{
+ "command": "make ci > $TMPDIR/ci.log 2>&1; echo \"exit $?\"; tail -1 $TMPDIR/ci.log; grep -iE \"error|FAIL\" $TMPDIR/ci.log | head -5; rm $TMPDIR/ci.log; timeout 300 go test -count=1 -tags browser ./internal/groomertest/ -run Browser 2>&1 | tail -2",
+ "is_error": false,
+ "result": "exit 0\nrastrillo generate --check: 0 route(s), actions tagged, locale catalogs complete, icon slugs resolve, hand-written code on its operation, compiled templates current\nreceipt: 2 packages ran, 0 cached, 4 without tests, 0 failed\nreceipt: 1 packages ran, 0 cached, 5 without tests, 0 failed\nok  \tgroomer/internal/groomertest\t1.164s"
+}

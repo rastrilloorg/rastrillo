@@ -1,0 +1,214 @@
+{
+  "Label": "spike-gopls",
+  "Date": "2026-11-22",
+  "Model": "claude-opus-5-5",
+  "ClaudeVersion": "2.1.321",
+  "Rastrillo": "60340a3ef690 (v0.45.0-bench.g60340a3ef690)",
+  "Platform": "",
+  "Poll": "",
+  "GettingStartedCommit": "69e128252caf",
+  "PolicyHash": "47433b0aa1a2018a",
+  "Config": "8d8d8cc494de3c19",
+  "ControlConfig": "278199b53cc47044",
+  "Notes": null,
+  "Gopls": "golang.org/x/tools/gopls v0.24.0",
+  "GoplsInstructions": "",
+  "Schedule": [
+    {
+      "Brief": "smoke",
+      "Arm": "carlos-gopls",
+      "N": 1
+    }
+  ],
+  "Runs": [
+    {
+      "Brief": "smoke",
+      "Arm": "carlos-gopls",
+      "N": 1,
+      "App": "smoke-gopls-rspike-gopls-1",
+      "RastrilloVersion": "v0.45.0-bench.g60340a3ef690",
+      "Build": {
+        "Complete": true,
+        "Messages": 29,
+        "ToolCalls": 30,
+        "NumTurns": 31,
+        "Output": 12436,
+        "CacheRead": 1457392,
+        "CacheWrite": 71969,
+        "CostUSD": 1.1161824000000002,
+        "DurationS": 244,
+        "FirstWriteContext": 54503,
+        "DeployMessages": 7,
+        "Stages": {
+          "app-read": {
+            "Messages": 3,
+            "ToolCalls": 3,
+            "Context": 131925
+          },
+          "build-test": {
+            "Messages": 2,
+            "ToolCalls": 2,
+            "Context": 113661
+          },
+          "deploy": {
+            "Messages": 7,
+            "ToolCalls": 7,
+            "Context": 417908
+          },
+          "framework-read": {
+            "Messages": 2,
+            "ToolCalls": 2,
+            "Context": 83928
+          },
+          "other": {
+            "Messages": 11,
+            "ToolCalls": 11,
+            "Context": 592789
+          },
+          "scaffold": {
+            "Messages": 3,
+            "ToolCalls": 4,
+            "Context": 134705
+          },
+          "write": {
+            "Messages": 1,
+            "ToolCalls": 1,
+            "Context": 54503
+          }
+        },
+        "FailedBuilds": 0,
+        "GoplsCalls": null
+      },
+      "Followup": {
+        "Complete": true,
+        "Messages": 18,
+        "ToolCalls": 23,
+        "NumTurns": 24,
+        "Output": 12679,
+        "CacheRead": 1561421,
+        "CacheWrite": 28156,
+        "CostUSD": 0.7912642,
+        "DurationS": 204,
+        "FirstWriteContext": 78923,
+        "DeployMessages": 1,
+        "Stages": {
+          "app-read": {
+            "Messages": 1,
+            "ToolCalls": 1,
+            "Context": 84310
+          },
+          "deploy": {
+            "Messages": 1,
+            "ToolCalls": 1,
+            "Context": 99372
+          },
+          "gates": {
+            "Messages": 1,
+            "ToolCalls": 1,
+            "Context": 98701
+          },
+          "other": {
+            "Messages": 4,
+            "ToolCalls": 3,
+            "Context": 324560
+          },
+          "screenshots": {
+            "Messages": 9,
+            "ToolCalls": 15,
+            "Context": 811803
+          },
+          "write": {
+            "Messages": 2,
+            "ToolCalls": 2,
+            "Context": 170869
+          }
+        },
+        "FailedBuilds": 0,
+        "GoplsCalls": null
+      },
+      "Measured": [
+        {
+          "Pages": [
+            {
+              "Role": "home",
+              "URL": "https://smoke-gopls-rspike-gopls-1.bdf.oncarlos.com/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 6321,
+                  "html": 1428,
+                  "js": 5153,
+                  "other": 676
+                },
+                "Decoded": {
+                  "css": 30802,
+                  "html": 2530,
+                  "js": 10016,
+                  "other": 549
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 90
+              }
+            }
+          ],
+          "Headers": {
+            "content-security-policy": "default-src 'self'; style-src 'self' 'unsafe-hashes' 'sha256-yJxAE4rjdcckohdlnvecSporPcqS9xOaA4hJxi87LMc=' 'sha256-81gZUb3tp60YCqhJ0dItBPh5hRQiGbfst4gpwCNPTfI='; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+            "frame-ancestors": "frame-ancestors 'none'",
+            "referrer-policy": "strict-origin-when-cross-origin",
+            "strict-transport-security": "max-age=31536000",
+            "x-content-type-options": "nosniff",
+            "x-frame-options": "DENY"
+          },
+          "DeployOK": true,
+          "Failures": null
+        },
+        {
+          "Pages": [
+            {
+              "Role": "home",
+              "URL": "https://smoke-gopls-rspike-gopls-1.bdf.oncarlos.com/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 7588,
+                  "html": 1559,
+                  "js": 4830,
+                  "other": 676
+                },
+                "Decoded": {
+                  "css": 33504,
+                  "html": 2982,
+                  "js": 10475,
+                  "other": 549
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "seo": 100
+              }
+            }
+          ],
+          "Headers": {
+            "content-security-policy": "default-src 'self'; style-src 'self' 'unsafe-hashes' 'sha256-yJxAE4rjdcckohdlnvecSporPcqS9xOaA4hJxi87LMc=' 'sha256-81gZUb3tp60YCqhJ0dItBPh5hRQiGbfst4gpwCNPTfI='; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+            "frame-ancestors": "frame-ancestors 'none'",
+            "referrer-policy": "strict-origin-when-cross-origin",
+            "strict-transport-security": "max-age=31536000",
+            "x-content-type-options": "nosniff",
+            "x-frame-options": "DENY"
+          },
+          "DeployOK": true,
+          "Failures": null
+        }
+      ],
+      "AgentFailures": null,
+      "ReusedFrom": ""
+    }
+  ]
+}

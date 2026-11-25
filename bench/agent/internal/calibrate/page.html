@@ -1,0 +1,99 @@
+{{define "head"}}<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<style>
+  :root { color-scheme: light dark; --rule: #8884; --soft: #8881; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font: 16px/1.45 system-ui, sans-serif;
+  }
+  header, main { padding: 0 1rem; }
+  header { max-width: 50rem; }
+  .progress { margin: 1rem 0 0; font-size: 0.875rem; opacity: 0.7; }
+  .instruction { margin: 0.25rem 0 0.5rem; font-size: 1.0625rem; }
+  .hint { margin: 0 0 1rem; font-size: 0.875rem; opacity: 0.8; }
+  main { display: grid; gap: 1rem; grid-template-columns: minmax(0, 1fr); }
+  h2 { margin: 0 0 0.25rem; font-size: 0.875rem; font-weight: 600; }
+  pre {
+    margin: 0;
+    padding: 0.75rem;
+    overflow-x: auto;
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    background: var(--soft);
+    font: 13px/1.5 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    tab-size: 4;
+  }
+  form {
+    position: sticky;
+    bottom: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding: 0.75rem 1rem;
+    border-top: 1px solid var(--rule);
+    background: Canvas;
+  }
+  button {
+    min-height: 2.75rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    background: var(--soft);
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+  }
+  button:hover { border-color: currentColor; }
+  button:focus-visible { outline: 2px solid Highlight; outline-offset: 2px; }
+  @media (min-width: 72rem) {
+    main { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    pre { font-size: min(13px, calc((100vw - 5rem) / 98)); }
+    form { grid-template-columns: repeat(4, max-content); }
+  }
+</style>
+{{end}}
+
+{{define "judging"}}{{template "head" .}}<title>{{.Copy.Title}}</title>
+</head>
+<body>
+<header>
+  <p class="progress">{{.Progress}}</p>
+  <p class="instruction">{{.Instruction}}</p>
+  <p class="hint">{{.Hint}}</p>
+</header>
+<main>
+  <section>
+    <h2>{{.Copy.LeftHeading}}</h2>
+    <pre>{{.Left}}</pre>
+  </section>
+  <section>
+    <h2>{{.Copy.RightHeading}}</h2>
+    <pre>{{.Right}}</pre>
+  </section>
+</main>
+<form method="post" action="/">
+  <input type="hidden" name="step" value="{{.Step}}">
+  <button name="verdict" value="{{.LeftBetter}}">{{.Copy.LeftBetter}}</button>
+  <button name="verdict" value="{{.RightBetter}}">{{.Copy.RightBetter}}</button>
+  <button name="verdict" value="{{.Same}}">{{.Copy.Same}}</button>
+  <button name="verdict" value="{{.NotSameJob}}">{{.Copy.NotSameJob}}</button>
+</form>
+</body>
+</html>
+{{end}}
+
+{{define "finished"}}{{template "head" .}}<title>{{.Copy.FinishedTitle}}</title>
+</head>
+<body>
+<header>
+  <p class="instruction">{{.Copy.Finished}}</p>
+</header>
+</body>
+</html>
+{{end}}

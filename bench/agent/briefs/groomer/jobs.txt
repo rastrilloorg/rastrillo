@@ -1,0 +1,9 @@
+working out which time slots are free to book
+making a booking
+checking the owner's sign-in
+saving changes to a service
+saving the opening hours
+listing the bookings for the owner
+cancelling a booking
+seeding the demo data
+validating a booking before it is saved

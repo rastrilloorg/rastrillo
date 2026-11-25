@@ -1,0 +1,48 @@
+id: empty-reply
+kind: choice
+behavioural: yes
+ask: What does a visitor see after sending a reply with the message left empty?
+choices: the reply form again with a message | an error page | a confirmation | nothing changes
+
+id: reply-sent-status
+kind: status
+behavioural: yes
+ask: What HTTP status code answers a reply that is accepted?
+
+id: replies-signed-out
+kind: status
+behavioural: yes
+ask: What HTTP status code does a visitor who is not signed in get when they ask to read the replies?
+
+id: unknown-category
+kind: choice
+behavioural: yes
+ask: What does a visitor get when they filter by a category that does not exist?
+choices: an empty list | all the notices | an error page | a not-found page
+
+id: after-reply
+kind: route
+behavioural: yes
+ask: After a visitor sends a reply, at what path are they taken?
+
+id: signin-path
+kind: route
+ask: At what path does a moderator sign in?
+
+id: demo-moderator
+kind: word
+behavioural: yes
+ask: What username or sign-in name does the sign-in page show for the demo moderator?
+
+id: remove-notice
+kind: choice
+ask: When a moderator removes a notice, what happens to the replies already left on it?
+choices: they are kept | they are deleted | they are hidden | the notice cannot be removed while it has replies
+
+id: search-body
+kind: yesno
+ask: Does a search find a notice by words that appear only in its description and not in its title?
+
+id: replies-visible
+kind: yesno
+ask: Does a notice's public page show the replies left on it to ordinary visitors?

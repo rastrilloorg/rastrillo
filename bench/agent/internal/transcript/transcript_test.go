@@ -3,6 +3,7 @@ package transcript
 import (
 	"bytes"
 	"os"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -150,5 +151,65 @@ func TestAnEmptyUsageMapIsZeroNewCost(t *testing.T) {
 	}
 	if got := transcript.Result.PhaseCostUSD; got < 3.8499 || got > 3.8501 {
 		t.Errorf("phase cost = %v, want 3.85", got)
+	}
+}
+
+func TestToolResultsKeepTheirTextAndError(t *testing.T) {
+	transcript := parseFixture(t, false)
+
+	read := transcript.Messages[1].Tools[1]
+	if read.Result != "module x" || !read.IsError {
+		t.Errorf("read = %+v, want its text and is_error", read)
+	}
+	listed := transcript.Messages[1].Tools[0]
+	if listed.Result != "ok" || listed.IsError {
+		t.Errorf("list-shaped result = %+v, want text ok, not an error",
+			listed)
+	}
+}
+
+// A long result keeps its first and last lines: the end holds what a
+// build says last (make's "Error 1", the exit status), which a head
+// alone loses.
+func TestAResultIsCappedAtFourThousandRunes(t *testing.T) {
+	long := "START" + strings.Repeat("é", 5000) + "END"
+	raw := `{"type":"assistant","message":{"id":"m","content":[` +
+		`{"type":"tool_use","id":"t","name":"Bash","input":{}}]}}` + "\n" +
+		`{"type":"user","message":{"content":[{"type":"tool_result",` +
+		`"tool_use_id":"t","content":"` + long + `"}]}}` + "\n"
+
+	transcript, err := Parse(strings.NewReader(raw))
+	if err != nil {
+		t.Fatal(err)
+	}
+	tool := transcript.Messages[0].Tools[0]
+	if got := len([]rune(tool.Result)); got != ResultCap {
+		t.Errorf("kept %d runes, want %d", got, ResultCap)
+	}
+	if !strings.HasPrefix(tool.Result, "START") ||
+		!strings.HasSuffix(tool.Result, "END") {
+		t.Errorf("kept %.20q...%.20q, want both ends",
+			tool.Result, tool.Result[len(tool.Result)-20:])
+	}
+	if tool.ResultLen != 5008 {
+		t.Errorf("ResultLen = %d, want the whole 5008", tool.ResultLen)
+	}
+}
+
+// The init record says which MCP servers claude connected, so a run
+// that was meant to have gopls can be refused when it did not.
+func TestParseReadsTheMCPServers(t *testing.T) {
+	raw := `{"type":"system","subtype":"init","claude_code_version":"9",` +
+		`"mcp_servers":[{"name":"gopls","status":"connected","source":"dynamic"},` +
+		`{"name":"other","status":"failed"}]}` + "\n"
+
+	transcript, err := Parse(strings.NewReader(raw))
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []MCPServer{{Name: "gopls", Status: "connected"},
+		{Name: "other", Status: "failed"}}
+	if !reflect.DeepEqual(transcript.Init.MCPServers, want) {
+		t.Errorf("MCPServers = %+v, want %+v", transcript.Init.MCPServers, want)
 	}
 }

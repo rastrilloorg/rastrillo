@@ -1,0 +1,7 @@
+{"type":"thread.started","thread_id":"01a20433-f0bf-7661-bacb-10046dbeb939"}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"item_0","type":"agent_message","text":"I’ll check the directory.\n"}}
+{"type":"item.started","item":{"id":"item_1","type":"command_execution","command":"/bin/bash -lc ls","aggregated_output":"","exit_code":null,"status":"in_progress"}}
+{"type":"item.completed","item":{"id":"item_1","type":"command_execution","command":"/bin/bash -lc ls","aggregated_output":"a.txt\nb.txt\n","exit_code":0,"status":"completed"}}
+{"type":"item.completed","item":{"id":"item_2","type":"agent_message","text":"2"}}
+{"type":"turn.completed","usage":{"input_tokens":30882,"cached_input_tokens":27520,"cache_write_input_tokens":0,"output_tokens":116,"reasoning_output_tokens":63}}

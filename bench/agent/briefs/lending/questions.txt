@@ -1,0 +1,49 @@
+id: item-taken
+kind: choice
+behavioural: yes
+ask: What does a member get when they try to borrow an item that is already on loan?
+choices: a message on a page | an error page | the borrow is accepted anyway | nothing changes
+
+id: signed-out-list
+kind: status
+behavioural: yes
+ask: What HTTP status code does a visitor who is not signed in get when they ask for the list of available equipment?
+
+id: member-overdue
+kind: status
+behavioural: yes
+ask: What HTTP status code does a signed-in member who is not an admin get when they ask for the overdue list?
+
+id: return-others
+kind: choice
+behavioural: yes
+ask: What happens when a member marks as returned an item that another member borrowed?
+choices: it is refused with a message | it is marked returned anyway | an error page | nothing changes
+
+id: csv-type
+kind: word
+behavioural: yes
+ask: What content type does the loan history download answer with?
+
+id: after-signin
+kind: route
+behavioural: yes
+ask: After a member signs in successfully, at what path do they land?
+
+id: demo-member
+kind: word
+behavioural: yes
+ask: What username or sign-in name does the sign-in page show for the demo member?
+
+id: two-items
+kind: yesno
+ask: Can one member have more than one item on loan at the same time?
+
+id: overdue-borrow
+kind: yesno
+ask: Can a member borrow another item while they have an overdue loan?
+
+id: retire-on-loan
+kind: choice
+ask: When an admin retires an item that is currently on loan, what happens?
+choices: the loan is kept and the item is retired | the retire is refused | the loan is closed as returned | the item and its loans are deleted

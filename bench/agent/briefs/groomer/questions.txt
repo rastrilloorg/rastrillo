@@ -1,0 +1,47 @@
+id: empty-dog
+kind: choice
+behavioural: yes
+ask: What does a customer see after submitting the booking form with the dog's name left empty?
+choices: the booking form again with a message | an error page | a confirmation | nothing changes
+
+id: empty-phone
+kind: yesno
+behavioural: yes
+ask: Is a booking accepted when the customer leaves the phone number empty?
+
+id: booked-status
+kind: status
+behavioural: yes
+ask: What HTTP status code answers a booking that succeeds?
+
+id: after-booking
+kind: route
+behavioural: yes
+ask: After a customer books, at what path is their booking confirmed to them?
+
+id: owner-signed-out
+kind: status
+behavioural: yes
+ask: What HTTP status code does a visitor who is not signed in get when they ask for the owner's list of bookings?
+
+id: demo-username
+kind: word
+behavioural: yes
+ask: What username does the sign-in page show for the demo owner?
+
+id: signin-path
+kind: route
+ask: At what path does the owner sign in?
+
+id: dog-field
+kind: word
+ask: What is the name of the booking form's field that carries the dog's name?
+
+id: same-time
+kind: yesno
+ask: Can two customers book the same start time on the same day?
+
+id: remove-service
+kind: choice
+ask: When the owner takes a service away, what happens to bookings already made for it?
+choices: they are kept | they are deleted | they are cancelled | the service cannot be taken away while it has bookings

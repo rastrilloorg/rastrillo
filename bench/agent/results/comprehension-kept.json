@@ -1,0 +1,3367 @@
+{
+  "Model": "gpt-6-astra",
+  "Effort": "high",
+  "Reads": 3,
+  "Budget": 180000,
+  "Apps": [
+    {
+      "Round": "1",
+      "Run": "groomer-carlos-1",
+      "Brief": "groomer",
+      "Version": "v0.30.0-bench.gb79c48634fea",
+      "Reads": [
+        {
+          "Run": "groomer-carlos-1",
+          "Readings": [
+            {
+              "QuestionID": "empty-dog",
+              "Answer": "the booking form again with a message",
+              "Correct": false,
+              "OverBudget": true,
+              "Tokens": 180350,
+              "Commands": 5
+            },
+            {
+              "QuestionID": "empty-phone",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 93994,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "booked-status",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 93580,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "after-booking",
+              "Answer": "/booking/{reference}",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 62336,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "owner-signed-out",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 112063,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "demo-username",
+              "Answer": "owner",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 34399,
+              "Commands": 1
+            },
+            {
+              "QuestionID": "signin-path",
+              "Answer": "/signin",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 62393,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "dog-field",
+              "Answer": "DogName",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 90768,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "same-time",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 142952,
+              "Commands": 5
+            },
+            {
+              "QuestionID": "remove-service",
+              "Answer": "they are kept",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 62350,
+              "Commands": 2
+            }
+          ],
+          "Accuracy": 0.9,
+          "MedianTokens": 90768,
+          "MedianCommands": 3,
+          "AccuracyBeforeBudget": 1,
+          "Unsettled": 0,
+          "Missing": 0
+        },
+        {
+          "Run": "groomer-carlos-1",
+          "Readings": [
+            {
+              "QuestionID": "empty-dog",
+              "Answer": "the booking form again with a message",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 134744,
+              "Commands": 5
+            },
+            {
+              "QuestionID": "empty-phone",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 64858,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "booked-status",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 93020,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "after-booking",
+              "Answer": "/booking/{reference}",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 61873,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "owner-signed-out",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 179420,
+              "Commands": 6
+            },
+            {
+              "QuestionID": "demo-username",
+              "Answer": "owner",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 59837,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "signin-path",
+              "Answer": "/signin",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 91577,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "dog-field",
+              "Answer": "DogName",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 59449,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "same-time",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 134805,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "remove-service",
+              "Answer": "they are kept",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 61567,
+              "Commands": 2
+            }
+          ],
+          "Accuracy": 1,
+          "MedianTokens": 78217.5,
+          "MedianCommands": 3,
+          "AccuracyBeforeBudget": 1,
+          "Unsettled": 0,
+          "Missing": 0
+        },
+        {
+          "Run": "groomer-carlos-1",
+          "Readings": [
+            {
+              "QuestionID": "empty-dog",
+              "Answer": "the booking form again with a message",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 134315,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "empty-phone",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 66097,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "booked-status",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 91434,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "after-booking",
+              "Answer": "/booking/{reference}",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 63109,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "owner-signed-out",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 119167,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "demo-username",
+              "Answer": "owner",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 34375,
+              "Commands": 1
+            },
+            {
+              "QuestionID": "signin-path",
+              "Answer": "/signin",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 62486,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "dog-field",
+              "Answer": "DogName",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 57846,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "same-time",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 134497,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "remove-service",
+              "Answer": "they are kept",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 76502,
+              "Commands": 3
+            }
+          ],
+          "Accuracy": 1,
+          "MedianTokens": 71299.5,
+          "MedianCommands": 2.5,
+          "AccuracyBeforeBudget": 1,
+          "Unsettled": 0,
+          "Missing": 0
+        }
+      ]
+    },
+    {
+      "Round": "1",
+      "Run": "groomer-carlos-2",
+      "Brief": "groomer",
+      "Version": "v0.30.0-bench.gb79c48634fea",
+      "Reads": [
+        {
+          "Run": "groomer-carlos-2",
+          "Readings": [
+            {
+              "QuestionID": "empty-dog",
+              "Answer": "the booking form again with a message",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 126631,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "empty-phone",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 86359,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "booked-status",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 56916,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "after-booking",
+              "Answer": "/booked/{reference}",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 62337,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "owner-signed-out",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 122530,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "demo-username",
+              "Answer": "owner",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 52999,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "signin-path",
+              "Answer": "/signin",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 92885,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "dog-field",
+              "Answer": "DogName",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 98286,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "same-time",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 106669,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "remove-service",
+              "Answer": "they are kept",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 85261,
+              "Commands": 6
+            }
+          ],
+          "Accuracy": 1,
+          "MedianTokens": 89622,
+          "MedianCommands": 3.5,
+          "AccuracyBeforeBudget": 1,
+          "Unsettled": 0,
+          "Missing": 0
+        },
+        {
+          "Run": "groomer-carlos-2",
+          "Readings": [
+            {
+              "QuestionID": "empty-dog",
+              "Answer": "the booking form again with a message",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 179473,
+              "Commands": 6
+            },
+            {
+              "QuestionID": "empty-phone",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 60443,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "booked-status",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 94040,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "after-booking",
+              "Answer": "/booked/{reference}",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 63500,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "owner-signed-out",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 123330,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "demo-username",
+              "Answer": "owner",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 53621,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "signin-path",
+              "Answer": "/signin",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 62774,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "dog-field",
+              "Answer": "DogName",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 98357,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "same-time",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 99823,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "remove-service",
+              "Answer": "they are kept",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 90178,
+              "Commands": 3
+            }
+          ],
+          "Accuracy": 1,
+          "MedianTokens": 92109,
+          "MedianCommands": 3,
+          "AccuracyBeforeBudget": 1,
+          "Unsettled": 0,
+          "Missing": 0
+        },
+        {
+          "Run": "groomer-carlos-2",
+          "Readings": [
+            {
+              "QuestionID": "empty-dog",
+              "Answer": "the booking form again with a message",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 134643,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "empty-phone",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 62455,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "booked-status",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 56967,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "after-booking",
+              "Answer": "/booked/{reference}",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 63812,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "owner-signed-out",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 160783,
+              "Commands": 6
+            },
+            {
+              "QuestionID": "demo-username",
+              "Answer": "owner",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 58318,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "signin-path",
+              "Answer": "/signin",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 64628,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "dog-field",
+              "Answer": "DogName",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 98335,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "same-time",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 129766,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "remove-service",
+              "Answer": "they are kept",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 58618,
+              "Commands": 2
+            }
+          ],
+          "Accuracy": 1,
+          "MedianTokens": 64220,
+          "MedianCommands": 2,
+          "AccuracyBeforeBudget": 1,
+          "Unsettled": 0,
+          "Missing": 0
+        }
+      ]
+    },
+    {
+      "Round": "1",
+      "Run": "groomer-carlos-3",
+      "Brief": "groomer",
+      "Version": "v0.30.0-bench.gb79c48634fea",
+      "Reads": [
+        {
+          "Run": "groomer-carlos-3",
+          "Readings": [
+            {
+              "QuestionID": "empty-dog",
+              "Answer": "the booking form again with a message",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 164788,
+              "Commands": 5
+            },
+            {
+              "QuestionID": "empty-phone",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 81342,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "booked-status",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 56990,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "after-booking",
+              "Answer": "/booked/{ref}",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 126021,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "owner-signed-out",
+              "Answer": "303",
+              "Correct": false,
+              "OverBudget": true,
+              "Tokens": 198373,
+              "Commands": 6
+            },
+            {
+              "QuestionID": "demo-username",
+              "Answer": "owner",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 53813,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "signin-path",
+              "Answer": "/signin",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 62102,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "dog-field",
+              "Answer": "DogName",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 56510,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "same-time",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 96192,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "remove-service",
+              "Answer": "they are kept",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 126103,
+              "Commands": 4
+            }
+          ],
+          "Accuracy": 0.9,
+          "MedianTokens": 81342,
+          "MedianCommands": 3,
+          "AccuracyBeforeBudget": 1,
+          "Unsettled": 0,
+          "Missing": 0
+        },
+        {
+          "Run": "groomer-carlos-3",
+          "Readings": [
+            {
+              "QuestionID": "empty-dog",
+              "Answer": "the booking form again with a message",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 155250,
+              "Commands": 5
+            },
+            {
+              "QuestionID": "empty-phone",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 92470,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "booked-status",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 92421,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "after-booking",
+              "Answer": "/booked/{ref}",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 96839,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "owner-signed-out",
+              "Answer": "303",
+              "Correct": false,
+              "OverBudget": true,
+              "Tokens": 190358,
+              "Commands": 6
+            },
+            {
+              "QuestionID": "demo-username",
+              "Answer": "owner",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 58115,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "signin-path",
+              "Answer": "/signin",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 62205,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "dog-field",
+              "Answer": "DogName",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 95674,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "same-time",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 134682,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "remove-service",
+              "Answer": "they are kept",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 113248,
+              "Commands": 4
+            }
+          ],
+          "Accuracy": 0.9,
+          "MedianTokens": 95674,
+          "MedianCommands": 3,
+          "AccuracyBeforeBudget": 1,
+          "Unsettled": 0,
+          "Missing": 0
+        },
+        {
+          "Run": "groomer-carlos-3",
+          "Readings": [
+            {
+              "QuestionID": "empty-dog",
+              "Answer": "the booking form again with a message",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 139177,
+              "Commands": 6
+            },
+            {
+              "QuestionID": "empty-phone",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 62667,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "booked-status",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 58333,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "after-booking",
+              "Answer": "/booked/{ref}",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 90356,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "owner-signed-out",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 121458,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "demo-username",
+              "Answer": "owner",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 51324,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "signin-path",
+              "Answer": "/signin",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 62633,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "dog-field",
+              "Answer": "DogName",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 99244,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "same-time",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 170917,
+              "Commands": 5
+            },
+            {
+              "QuestionID": "remove-service",
+              "Answer": "they are kept",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 113657,
+              "Commands": 4
+            }
+          ],
+          "Accuracy": 1,
+          "MedianTokens": 94800,
+          "MedianCommands": 3.5,
+          "AccuracyBeforeBudget": 1,
+          "Unsettled": 0,
+          "Missing": 0
+        }
+      ]
+    },
+    {
+      "Round": "accept-1",
+      "Run": "groomer-carlos-1",
+      "Brief": "groomer",
+      "Version": "v0.30.0-bench.gf99c96d2b252",
+      "Reads": [
+        {
+          "Run": "groomer-carlos-1",
+          "Readings": [
+            {
+              "QuestionID": "empty-dog",
+              "Answer": "the booking form again with a message",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 140533,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "empty-phone",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 65931,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "booked-status",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 95398,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "after-booking",
+              "Answer": "/booked/{reference}",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 94669,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "owner-signed-out",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 141350,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "demo-username",
+              "Answer": "owner",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 58261,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "signin-path",
+              "Answer": "/signin",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 64466,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "dog-field",
+              "Answer": "dog",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 85154,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "same-time",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 99064,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "remove-service",
+              "Answer": "they are kept",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 64473,
+              "Commands": 2
+            }
+          ],
+          "Accuracy": 1,
+          "MedianTokens": 89911.5,
+          "MedianCommands": 3,
+          "AccuracyBeforeBudget": 1,
+          "Unsettled": 0,
+          "Missing": 0
+        },
+        {
+          "Run": "groomer-carlos-1",
+          "Readings": [
+            {
+              "QuestionID": "empty-dog",
+              "Answer": "the booking form again with a message",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 134074,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "empty-phone",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 68082,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "booked-status",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 63150,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "after-booking",
+              "Answer": "/booked/{reference}",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 127703,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "owner-signed-out",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 128535,
+              "Commands": 5
+            },
+            {
+              "QuestionID": "demo-username",
+              "Answer": "owner",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 54740,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "signin-path",
+              "Answer": "/signin",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 65073,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "dog-field",
+              "Answer": "dog",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 83478,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "same-time",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 129129,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "remove-service",
+              "Answer": "they are kept",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 94557,
+              "Commands": 3
+            }
+          ],
+          "Accuracy": 1,
+          "MedianTokens": 89017.5,
+          "MedianCommands": 3.5,
+          "AccuracyBeforeBudget": 1,
+          "Unsettled": 0,
+          "Missing": 0
+        },
+        {
+          "Run": "groomer-carlos-1",
+          "Readings": [
+            {
+              "QuestionID": "empty-dog",
+              "Answer": "the booking form again with a message",
+              "Correct": false,
+              "OverBudget": true,
+              "Tokens": 210261,
+              "Commands": 6
+            },
+            {
+              "QuestionID": "empty-phone",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 65221,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "booked-status",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 68273,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "after-booking",
+              "Answer": "/booked/{reference}",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 70878,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "owner-signed-out",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 126731,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "demo-username",
+              "Answer": "owner",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 54666,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "signin-path",
+              "Answer": "/signin",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 63846,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "dog-field",
+              "Answer": "dog",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 34173,
+              "Commands": 1
+            },
+            {
+              "QuestionID": "same-time",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 132890,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "remove-service",
+              "Answer": "they are kept",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 94756,
+              "Commands": 3
+            }
+          ],
+          "Accuracy": 0.9,
+          "MedianTokens": 68273,
+          "MedianCommands": 2,
+          "AccuracyBeforeBudget": 1,
+          "Unsettled": 0,
+          "Missing": 0
+        }
+      ]
+    },
+    {
+      "Round": "accept-1",
+      "Run": "groomer-carlos-2",
+      "Brief": "groomer",
+      "Version": "v0.30.0-bench.gf99c96d2b252",
+      "Reads": [
+        {
+          "Run": "groomer-carlos-2",
+          "Readings": [
+            {
+              "QuestionID": "empty-dog",
+              "Answer": "the booking form again with a message",
+              "Correct": false,
+              "OverBudget": true,
+              "Tokens": 234375,
+              "Commands": 6
+            },
+            {
+              "QuestionID": "empty-phone",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 65365,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "booked-status",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 131109,
+              "Commands": 5
+            },
+            {
+              "QuestionID": "after-booking",
+              "Answer": "/booking/{ref}",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 121375,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "owner-signed-out",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 127745,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "signin-path",
+              "Answer": "/signin",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 63471,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "dog-field",
+              "Answer": "DogName",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 90154,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "same-time",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 98850,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "remove-service",
+              "Answer": "they are kept",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 63480,
+              "Commands": 2
+            }
+          ],
+          "Accuracy": 0.8,
+          "MedianTokens": 94502,
+          "MedianCommands": 3,
+          "AccuracyBeforeBudget": 0.9,
+          "Unsettled": 1,
+          "Missing": 0
+        },
+        {
+          "Run": "groomer-carlos-2",
+          "Readings": [
+            {
+              "QuestionID": "empty-dog",
+              "Answer": "the booking form again with a message",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 133089,
+              "Commands": 5
+            },
+            {
+              "QuestionID": "empty-phone",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 93118,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "booked-status",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 122304,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "after-booking",
+              "Answer": "/booking/{ref}",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 126623,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "owner-signed-out",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 140871,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "signin-path",
+              "Answer": "/signin",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 64114,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "dog-field",
+              "Answer": "DogName",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 36227,
+              "Commands": 1
+            },
+            {
+              "QuestionID": "same-time",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 98157,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "remove-service",
+              "Answer": "they are kept",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 93220,
+              "Commands": 3
+            }
+          ],
+          "Accuracy": 0.9,
+          "MedianTokens": 98157,
+          "MedianCommands": 3,
+          "AccuracyBeforeBudget": 0.9,
+          "Unsettled": 1,
+          "Missing": 0
+        },
+        {
+          "Run": "groomer-carlos-2",
+          "Readings": [
+            {
+              "QuestionID": "empty-dog",
+              "Answer": "the booking form again with a message",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 128661,
+              "Commands": 5
+            },
+            {
+              "QuestionID": "empty-phone",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 66183,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "booked-status",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 127273,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "after-booking",
+              "Answer": "/booking/{ref}",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 95950,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "owner-signed-out",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 123702,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "signin-path",
+              "Answer": "/signin",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 64610,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "dog-field",
+              "Answer": "DogName",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 36209,
+              "Commands": 1
+            },
+            {
+              "QuestionID": "same-time",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 98648,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "remove-service",
+              "Answer": "they are kept",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 103343,
+              "Commands": 5
+            }
+          ],
+          "Accuracy": 0.9,
+          "MedianTokens": 98648,
+          "MedianCommands": 3,
+          "AccuracyBeforeBudget": 0.9,
+          "Unsettled": 1,
+          "Missing": 0
+        }
+      ]
+    },
+    {
+      "Round": "accept-1",
+      "Run": "groomer-carlos-3",
+      "Brief": "groomer",
+      "Version": "v0.30.0-bench.gf99c96d2b252",
+      "Reads": [
+        {
+          "Run": "groomer-carlos-3",
+          "Readings": [
+            {
+              "QuestionID": "empty-dog",
+              "Answer": "the booking form again with a message",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 133194,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "empty-phone",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 90027,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "booked-status",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 63917,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "after-booking",
+              "Answer": "/bookings/{code}",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 98196,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "owner-signed-out",
+              "Answer": "303",
+              "Correct": false,
+              "OverBudget": true,
+              "Tokens": 186269,
+              "Commands": 5
+            },
+            {
+              "QuestionID": "demo-username",
+              "Answer": "owner",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 92185,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "signin-path",
+              "Answer": "/signin",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 93500,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "dog-field",
+              "Answer": "DogName",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 63579,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "same-time",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 102739,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "remove-service",
+              "Answer": "they are kept",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 93745,
+              "Commands": 3
+            }
+          ],
+          "Accuracy": 0.9,
+          "MedianTokens": 93500,
+          "MedianCommands": 3,
+          "AccuracyBeforeBudget": 1,
+          "Unsettled": 0,
+          "Missing": 0
+        },
+        {
+          "Run": "groomer-carlos-3",
+          "Readings": [
+            {
+              "QuestionID": "empty-dog",
+              "Answer": "the booking form again with a message",
+              "Correct": false,
+              "OverBudget": true,
+              "Tokens": 180452,
+              "Commands": 5
+            },
+            {
+              "QuestionID": "empty-phone",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 87788,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "booked-status",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 69387,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "after-booking",
+              "Answer": "/bookings/{code}",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 64393,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "owner-signed-out",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 175224,
+              "Commands": 5
+            },
+            {
+              "QuestionID": "demo-username",
+              "Answer": "owner",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 93186,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "signin-path",
+              "Answer": "/signin",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 65457,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "dog-field",
+              "Answer": "DogName",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 61317,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "same-time",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 153621,
+              "Commands": 5
+            },
+            {
+              "QuestionID": "remove-service",
+              "Answer": "they are kept",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 92422,
+              "Commands": 3
+            }
+          ],
+          "Accuracy": 0.9,
+          "MedianTokens": 87788,
+          "MedianCommands": 3,
+          "AccuracyBeforeBudget": 1,
+          "Unsettled": 0,
+          "Missing": 0
+        },
+        {
+          "Run": "groomer-carlos-3",
+          "Readings": [
+            {
+              "QuestionID": "empty-dog",
+              "Answer": "the booking form again with a message",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 141874,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "empty-phone",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 99404,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "booked-status",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 61839,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "after-booking",
+              "Answer": "/bookings/{code}",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 91444,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "owner-signed-out",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 172927,
+              "Commands": 5
+            },
+            {
+              "QuestionID": "demo-username",
+              "Answer": "owner",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 59012,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "signin-path",
+              "Answer": "/signin",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 64111,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "dog-field",
+              "Answer": "DogName",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 62192,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "same-time",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 100494,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "remove-service",
+              "Answer": "they are kept",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 77786,
+              "Commands": 3
+            }
+          ],
+          "Accuracy": 1,
+          "MedianTokens": 84615,
+          "MedianCommands": 3,
+          "AccuracyBeforeBudget": 1,
+          "Unsettled": 0,
+          "Missing": 0
+        }
+      ]
+    },
+    {
+      "Round": "cost-1",
+      "Run": "groomer-carlos-1",
+      "Brief": "groomer",
+      "Version": "v0.30.0-bench.gc89896cd6ebd",
+      "Reads": [
+        {
+          "Run": "groomer-carlos-1",
+          "Readings": [
+            {
+              "QuestionID": "empty-dog",
+              "Answer": "the booking form again with a message",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 141721,
+              "Commands": 6
+            },
+            {
+              "QuestionID": "empty-phone",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 92841,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "booked-status",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 99944,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "after-booking",
+              "Answer": "/booked/{reference}",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 92358,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "owner-signed-out",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 101564,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "demo-username",
+              "Answer": "owner",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 35795,
+              "Commands": 1
+            },
+            {
+              "QuestionID": "signin-path",
+              "Answer": "/signin",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 98560,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "dog-field",
+              "Answer": "dog",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 60780,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "same-time",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 131011,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "remove-service",
+              "Answer": "they are kept",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 125911,
+              "Commands": 4
+            }
+          ],
+          "Accuracy": 1,
+          "MedianTokens": 99252,
+          "MedianCommands": 3,
+          "AccuracyBeforeBudget": 1,
+          "Unsettled": 0,
+          "Missing": 0
+        },
+        {
+          "Run": "groomer-carlos-1",
+          "Readings": [
+            {
+              "QuestionID": "empty-dog",
+              "Answer": "the booking form again with a message",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 132350,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "empty-phone",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 92721,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "booked-status",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 93538,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "after-booking",
+              "Answer": "/booked/{reference}",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 94886,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "owner-signed-out",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 132708,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "demo-username",
+              "Answer": "owner",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 56150,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "signin-path",
+              "Answer": "/signin",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 66741,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "dog-field",
+              "Answer": "dog",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 61719,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "same-time",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 151336,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "remove-service",
+              "Answer": "they are kept",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 122826,
+              "Commands": 4
+            }
+          ],
+          "Accuracy": 1,
+          "MedianTokens": 94212,
+          "MedianCommands": 3.5,
+          "AccuracyBeforeBudget": 1,
+          "Unsettled": 0,
+          "Missing": 0
+        },
+        {
+          "Run": "groomer-carlos-1",
+          "Readings": [
+            {
+              "QuestionID": "empty-dog",
+              "Answer": "the booking form again with a message",
+              "Correct": false,
+              "OverBudget": true,
+              "Tokens": 188100,
+              "Commands": 5
+            },
+            {
+              "QuestionID": "empty-phone",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 66195,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "booked-status",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 100906,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "after-booking",
+              "Answer": "/booked/{reference}",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 89864,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "owner-signed-out",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 137155,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "demo-username",
+              "Answer": "owner",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 56315,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "signin-path",
+              "Answer": "/signin",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 63108,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "dog-field",
+              "Answer": "dog",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 64136,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "same-time",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 97404,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "remove-service",
+              "Answer": "they are kept",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 94222,
+              "Commands": 3
+            }
+          ],
+          "Accuracy": 0.9,
+          "MedianTokens": 89864,
+          "MedianCommands": 3,
+          "AccuracyBeforeBudget": 1,
+          "Unsettled": 0,
+          "Missing": 0
+        }
+      ]
+    },
+    {
+      "Round": "cost-1",
+      "Run": "groomer-carlos-2",
+      "Brief": "groomer",
+      "Version": "v0.30.0-bench.gc89896cd6ebd",
+      "Reads": [
+        {
+          "Run": "groomer-carlos-2",
+          "Readings": [
+            {
+              "QuestionID": "empty-dog",
+              "Answer": "the booking form again with a message",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 143280,
+              "Commands": 5
+            },
+            {
+              "QuestionID": "empty-phone",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 92622,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "booked-status",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 93329,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "after-booking",
+              "Answer": "/bookings/{reference}",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 95389,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "owner-signed-out",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 127215,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "signin-path",
+              "Answer": "/signin",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 91699,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "dog-field",
+              "Answer": "Dog",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 63174,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "same-time",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 98554,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "remove-service",
+              "Answer": "they are kept",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 94437,
+              "Commands": 3
+            }
+          ],
+          "Accuracy": 0.9,
+          "MedianTokens": 94437,
+          "MedianCommands": 3,
+          "AccuracyBeforeBudget": 0.9,
+          "Unsettled": 1,
+          "Missing": 0
+        },
+        {
+          "Run": "groomer-carlos-2",
+          "Readings": [
+            {
+              "QuestionID": "empty-dog",
+              "Answer": "the booking form again with a message",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 107251,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "empty-phone",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 98898,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "booked-status",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 66028,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "after-booking",
+              "Answer": "/bookings/{reference}",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 96873,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "owner-signed-out",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 141185,
+              "Commands": 5
+            },
+            {
+              "QuestionID": "signin-path",
+              "Answer": "/signin",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 64228,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "dog-field",
+              "Answer": "Dog",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 34907,
+              "Commands": 1
+            },
+            {
+              "QuestionID": "same-time",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 100187,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "remove-service",
+              "Answer": "they are kept",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 65545,
+              "Commands": 2
+            }
+          ],
+          "Accuracy": 0.9,
+          "MedianTokens": 96873,
+          "MedianCommands": 3,
+          "AccuracyBeforeBudget": 0.9,
+          "Unsettled": 1,
+          "Missing": 0
+        },
+        {
+          "Run": "groomer-carlos-2",
+          "Readings": [
+            {
+              "QuestionID": "empty-dog",
+              "Answer": "the booking form again with a message",
+              "Correct": false,
+              "OverBudget": true,
+              "Tokens": 194669,
+              "Commands": 5
+            },
+            {
+              "QuestionID": "empty-phone",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 98234,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "booked-status",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 65538,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "after-booking",
+              "Answer": "/bookings/{reference}",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 95323,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "owner-signed-out",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 138375,
+              "Commands": 5
+            },
+            {
+              "QuestionID": "signin-path",
+              "Answer": "/signin",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 62833,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "dog-field",
+              "Answer": "Dog",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 62928,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "same-time",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 97687,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "remove-service",
+              "Answer": "they are kept",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 94312,
+              "Commands": 3
+            }
+          ],
+          "Accuracy": 0.8,
+          "MedianTokens": 94817.5,
+          "MedianCommands": 3,
+          "AccuracyBeforeBudget": 0.9,
+          "Unsettled": 1,
+          "Missing": 0
+        }
+      ]
+    },
+    {
+      "Round": "cost-1",
+      "Run": "groomer-carlos-3",
+      "Brief": "groomer",
+      "Version": "v0.30.0-bench.gc89896cd6ebd",
+      "Reads": [
+        {
+          "Run": "groomer-carlos-3",
+          "Readings": [
+            {
+              "QuestionID": "empty-dog",
+              "Answer": "the booking form again with a message",
+              "Correct": false,
+              "OverBudget": true,
+              "Tokens": 180575,
+              "Commands": 5
+            },
+            {
+              "QuestionID": "empty-phone",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 88719,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "booked-status",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 97445,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "after-booking",
+              "Answer": "/booked/{reference}",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 66052,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "owner-signed-out",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 125403,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "demo-username",
+              "Answer": "owner",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 64763,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "signin-path",
+              "Answer": "/signin",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 65068,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "dog-field",
+              "Answer": "DogName",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 62096,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "same-time",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 101668,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "remove-service",
+              "Answer": "they are kept",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 93888,
+              "Commands": 3
+            }
+          ],
+          "Accuracy": 0.9,
+          "MedianTokens": 88719,
+          "MedianCommands": 3,
+          "AccuracyBeforeBudget": 1,
+          "Unsettled": 0,
+          "Missing": 0
+        },
+        {
+          "Run": "groomer-carlos-3",
+          "Readings": [
+            {
+              "QuestionID": "empty-dog",
+              "Answer": "the booking form again with a message",
+              "Correct": false,
+              "OverBudget": true,
+              "Tokens": 228942,
+              "Commands": 6
+            },
+            {
+              "QuestionID": "empty-phone",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 66449,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "booked-status",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 87270,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "after-booking",
+              "Answer": "/booked/{reference}",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 93634,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "owner-signed-out",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 128685,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "demo-username",
+              "Answer": "owner",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 63349,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "signin-path",
+              "Answer": "/signin",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 59768,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "dog-field",
+              "Answer": "DogName",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 59605,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "same-time",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 96106,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "remove-service",
+              "Answer": "they are kept",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 91604,
+              "Commands": 3
+            }
+          ],
+          "Accuracy": 0.9,
+          "MedianTokens": 87270,
+          "MedianCommands": 3,
+          "AccuracyBeforeBudget": 1,
+          "Unsettled": 0,
+          "Missing": 0
+        },
+        {
+          "Run": "groomer-carlos-3",
+          "Readings": [
+            {
+              "QuestionID": "empty-dog",
+              "Answer": "the booking form again with a message",
+              "Correct": false,
+              "OverBudget": true,
+              "Tokens": 223499,
+              "Commands": 6
+            },
+            {
+              "QuestionID": "empty-phone",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 66409,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "booked-status",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 94719,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "after-booking",
+              "Answer": "/booked/{reference}",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 93366,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "owner-signed-out",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 125586,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "demo-username",
+              "Answer": "owner",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 33743,
+              "Commands": 1
+            },
+            {
+              "QuestionID": "signin-path",
+              "Answer": "/signin",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 96288,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "dog-field",
+              "Answer": "DogName",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 62896,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "same-time",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 100725,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "remove-service",
+              "Answer": "they are kept",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 95222,
+              "Commands": 3
+            }
+          ],
+          "Accuracy": 0.9,
+          "MedianTokens": 94719,
+          "MedianCommands": 3,
+          "AccuracyBeforeBudget": 1,
+          "Unsettled": 0,
+          "Missing": 0
+        }
+      ]
+    },
+    {
+      "Round": "weight-1",
+      "Run": "groomer-carlos-1",
+      "Brief": "groomer",
+      "Version": "v0.30.0-bench.ga386b11d1cc8",
+      "Reads": [
+        {
+          "Run": "groomer-carlos-1",
+          "Readings": [
+            {
+              "QuestionID": "empty-dog",
+              "Answer": "the booking form again with a message",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 136332,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "empty-phone",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 63795,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "booked-status",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 87293,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "after-booking",
+              "Answer": "/visits/{reference}",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 98556,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "owner-signed-out",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 131159,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "demo-username",
+              "Answer": "owner",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 61976,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "signin-path",
+              "Answer": "/signin",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 95876,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "dog-field",
+              "Answer": "DogName",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 35432,
+              "Commands": 1
+            },
+            {
+              "QuestionID": "same-time",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 143515,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "remove-service",
+              "Answer": "they are kept",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 86500,
+              "Commands": 3
+            }
+          ],
+          "Accuracy": 1,
+          "MedianTokens": 91584.5,
+          "MedianCommands": 3,
+          "AccuracyBeforeBudget": 1,
+          "Unsettled": 0,
+          "Missing": 0
+        },
+        {
+          "Run": "groomer-carlos-1",
+          "Readings": [
+            {
+              "QuestionID": "empty-dog",
+              "Answer": "the booking form again with a message",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 126179,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "empty-phone",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 92028,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "booked-status",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 92117,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "after-booking",
+              "Answer": "/visits/{reference}",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 101014,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "owner-signed-out",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 96594,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "demo-username",
+              "Answer": "owner",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 62620,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "signin-path",
+              "Answer": "/signin",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 92282,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "dog-field",
+              "Answer": "DogName",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 36494,
+              "Commands": 1
+            },
+            {
+              "QuestionID": "same-time",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 126581,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "remove-service",
+              "Answer": "they are kept",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 61870,
+              "Commands": 2
+            }
+          ],
+          "Accuracy": 1,
+          "MedianTokens": 92199.5,
+          "MedianCommands": 3,
+          "AccuracyBeforeBudget": 1,
+          "Unsettled": 0,
+          "Missing": 0
+        },
+        {
+          "Run": "groomer-carlos-1",
+          "Readings": [
+            {
+              "QuestionID": "empty-dog",
+              "Answer": "the booking form again with a message",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 138604,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "empty-phone",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 84078,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "booked-status",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 75849,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "after-booking",
+              "Answer": "/visits/{reference}",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 140816,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "owner-signed-out",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 174249,
+              "Commands": 7
+            },
+            {
+              "QuestionID": "demo-username",
+              "Answer": "owner",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 57103,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "signin-path",
+              "Answer": "/signin",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 65822,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "dog-field",
+              "Answer": "DogName",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 57084,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "same-time",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 154841,
+              "Commands": 5
+            },
+            {
+              "QuestionID": "remove-service",
+              "Answer": "they are kept",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 90283,
+              "Commands": 3
+            }
+          ],
+          "Accuracy": 1,
+          "MedianTokens": 87180.5,
+          "MedianCommands": 3,
+          "AccuracyBeforeBudget": 1,
+          "Unsettled": 0,
+          "Missing": 0
+        }
+      ]
+    },
+    {
+      "Round": "weight-1",
+      "Run": "groomer-carlos-2",
+      "Brief": "groomer",
+      "Version": "v0.30.0-bench.ga386b11d1cc8",
+      "Reads": [
+        {
+          "Run": "groomer-carlos-2",
+          "Readings": [
+            {
+              "QuestionID": "empty-dog",
+              "Answer": "the booking form again with a message",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 160034,
+              "Commands": 5
+            },
+            {
+              "QuestionID": "empty-phone",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 63526,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "booked-status",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 87053,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "after-booking",
+              "Answer": "/booked/{code}",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 62081,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "owner-signed-out",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 124287,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "demo-username",
+              "Answer": "owner",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 81512,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "signin-path",
+              "Answer": "/signin",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 89043,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "dog-field",
+              "Answer": "DogName",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 60648,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "same-time",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 128888,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "remove-service",
+              "Answer": "they are kept",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 62165,
+              "Commands": 2
+            }
+          ],
+          "Accuracy": 1,
+          "MedianTokens": 84282.5,
+          "MedianCommands": 3,
+          "AccuracyBeforeBudget": 1,
+          "Unsettled": 0,
+          "Missing": 0
+        },
+        {
+          "Run": "groomer-carlos-2",
+          "Readings": [
+            {
+              "QuestionID": "empty-dog",
+              "Answer": "the booking form again with a message",
+              "Correct": false,
+              "OverBudget": true,
+              "Tokens": 186725,
+              "Commands": 5
+            },
+            {
+              "QuestionID": "empty-phone",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 85429,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "booked-status",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 82016,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "after-booking",
+              "Answer": "/booked/{code}",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 63562,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "owner-signed-out",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 126707,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "demo-username",
+              "Answer": "owner",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 33943,
+              "Commands": 1
+            },
+            {
+              "QuestionID": "signin-path",
+              "Answer": "/signin",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 93761,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "dog-field",
+              "Answer": "DogName",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 62515,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "same-time",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 128505,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "remove-service",
+              "Answer": "they are kept",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 75717,
+              "Commands": 3
+            }
+          ],
+          "Accuracy": 0.9,
+          "MedianTokens": 82016,
+          "MedianCommands": 3,
+          "AccuracyBeforeBudget": 1,
+          "Unsettled": 0,
+          "Missing": 0
+        },
+        {
+          "Run": "groomer-carlos-2",
+          "Readings": [
+            {
+              "QuestionID": "empty-dog",
+              "Answer": "the booking form again with a message",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 130773,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "empty-phone",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 62134,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "booked-status",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 90387,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "after-booking",
+              "Answer": "/booked/{code}",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 92764,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "owner-signed-out",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 118857,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "demo-username",
+              "Answer": "owner",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 53622,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "signin-path",
+              "Answer": "/signin",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 88756,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "dog-field",
+              "Answer": "DogName",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 59648,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "same-time",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 125875,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "remove-service",
+              "Answer": "they are kept",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 108367,
+              "Commands": 3
+            }
+          ],
+          "Accuracy": 1,
+          "MedianTokens": 91575.5,
+          "MedianCommands": 3,
+          "AccuracyBeforeBudget": 1,
+          "Unsettled": 0,
+          "Missing": 0
+        }
+      ]
+    },
+    {
+      "Round": "weight-1",
+      "Run": "groomer-carlos-3",
+      "Brief": "groomer",
+      "Version": "v0.30.0-bench.ga386b11d1cc8",
+      "Reads": [
+        {
+          "Run": "groomer-carlos-3",
+          "Readings": [
+            {
+              "QuestionID": "empty-dog",
+              "Answer": "the booking form again with a message",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 134085,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "empty-phone",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 120291,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "booked-status",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 58248,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "after-booking",
+              "Answer": "/bookings/{reference}",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 88082,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "owner-signed-out",
+              "Answer": "303",
+              "Correct": false,
+              "OverBudget": true,
+              "Tokens": 180325,
+              "Commands": 6
+            },
+            {
+              "QuestionID": "demo-username",
+              "Answer": "owner@example.com",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 61036,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "signin-path",
+              "Answer": "/signin",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 96208,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "dog-field",
+              "Answer": "Dog",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 57941,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "same-time",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 126953,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "remove-service",
+              "Answer": "they are kept",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 88363,
+              "Commands": 3
+            }
+          ],
+          "Accuracy": 0.9,
+          "MedianTokens": 88363,
+          "MedianCommands": 3,
+          "AccuracyBeforeBudget": 1,
+          "Unsettled": 0,
+          "Missing": 0
+        },
+        {
+          "Run": "groomer-carlos-3",
+          "Readings": [
+            {
+              "QuestionID": "empty-dog",
+              "Answer": "the booking form again with a message",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 134011,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "empty-phone",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 136982,
+              "Commands": 5
+            },
+            {
+              "QuestionID": "booked-status",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 91809,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "after-booking",
+              "Answer": "/bookings/{reference}",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 89101,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "owner-signed-out",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 126563,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "demo-username",
+              "Answer": "owner@example.com",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 63248,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "signin-path",
+              "Answer": "/signin",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 71095,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "dog-field",
+              "Answer": "Dog",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 57885,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "same-time",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 129356,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "remove-service",
+              "Answer": "they are kept",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 91991,
+              "Commands": 3
+            }
+          ],
+          "Accuracy": 1,
+          "MedianTokens": 91900,
+          "MedianCommands": 4,
+          "AccuracyBeforeBudget": 1,
+          "Unsettled": 0,
+          "Missing": 0
+        },
+        {
+          "Run": "groomer-carlos-3",
+          "Readings": [
+            {
+              "QuestionID": "empty-dog",
+              "Answer": "the booking form again with a message",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 124836,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "empty-phone",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 86784,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "booked-status",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 90483,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "after-booking",
+              "Answer": "/bookings/{reference}",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 94641,
+              "Commands": 3
+            },
+            {
+              "QuestionID": "owner-signed-out",
+              "Answer": "303",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 133339,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "demo-username",
+              "Answer": "owner@example.com",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 63167,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "signin-path",
+              "Answer": "/signin",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 61393,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "dog-field",
+              "Answer": "Dog",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 59056,
+              "Commands": 2
+            },
+            {
+              "QuestionID": "same-time",
+              "Answer": "no",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 123718,
+              "Commands": 4
+            },
+            {
+              "QuestionID": "remove-service",
+              "Answer": "they are kept",
+              "Correct": true,
+              "OverBudget": false,
+              "Tokens": 77704,
+              "Commands": 3
+            }
+          ],
+          "Accuracy": 1,
+          "MedianTokens": 88633.5,
+          "MedianCommands": 3,
+          "AccuracyBeforeBudget": 1,
+          "Unsettled": 0,
+          "Missing": 0
+        }
+      ]
+    }
+  ],
+  "Gates": [
+    {
+      "Measure": "accuracy",
+      "Reads": 0,
+      "Runs": 0,
+      "ReadPairs": 36,
+      "RunPairs": 36,
+      "Verdict": "cannot separate runs",
+      "Passes": false
+    },
+    {
+      "Measure": "tokens",
+      "Reads": 5659,
+      "Runs": 5501.5,
+      "ReadPairs": 36,
+      "RunPairs": 36,
+      "Verdict": "fails",
+      "Passes": false
+    },
+    {
+      "Measure": "commands",
+      "Reads": 0,
+      "Runs": 0,
+      "ReadPairs": 36,
+      "RunPairs": 36,
+      "Verdict": "cannot separate runs",
+      "Passes": false
+    }
+  ],
+  "Budgeting": {
+    "RightAnswers": 354,
+    "Percentile95": 174249,
+    "Suggested": 180000,
+    "Cut": 14
+  }
+}

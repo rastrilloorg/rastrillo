@@ -13,6 +13,7 @@ import (
 	"amadan.net/rastrillo/rastrillo/bench/agent/internal/classify"
 	"amadan.net/rastrillo/rastrillo/bench/agent/internal/measure"
 	"amadan.net/rastrillo/rastrillo/bench/agent/internal/transcript"
+	"amadan.net/rastrillo/rastrillo/bench/agent/internal/waste"
 )
 
 type Cost struct {
@@ -25,6 +26,19 @@ type Cost struct {
 	CostUSD                                                      float64
 	DurationS, FirstWriteContext, DeployMessages                 int
 	Stages                                                       map[classify.Stage]classify.Tally
+	// FailedBuilds counts the go build, go test, go vet and make calls
+	// that failed, read from their output as internal/waste reads it.
+	FailedBuilds int
+	// GoplsCalls is calls to each gopls tool, by the tool's own name
+	// (go_workspace, not mcp__gopls__go_workspace).
+	GoplsCalls map[string]int
+}
+
+// Slot is one run in a round's schedule.
+type Slot struct {
+	Brief string
+	Arm   brief.Arm
+	N     int
 }
 
 type RunRecord struct {
@@ -32,7 +46,7 @@ type RunRecord struct {
 	Arm              brief.Arm
 	N                int
 	App              string // the deployed app's name, for cleanup
-	RastrilloVersion string // what the app's go.mod required, carlos arm only
+	RastrilloVersion string // what the app's go.mod required, Rastrillo arms only
 	Build, Followup  Cost
 	Measured         [2]measure.Measurement // after build, after follow-up
 	AgentFailures    []string
@@ -50,7 +64,14 @@ type Round struct {
 	// depends on, which is what reusing its runs requires to match.
 	Config, ControlConfig string
 	Notes                 []string
-	Runs                  []RunRecord
+	Gopls                 string // gopls version, for a carlos-gopls arm
+	// GoplsInstructions is the sha256 of `gopls mcp -instructions`, which
+	// the carlos-gopls arm's system prompt ends with.
+	GoplsInstructions string
+	// Schedule is the order the runs go in, saved when the round starts
+	// so a resume keeps it.
+	Schedule []Slot
+	Runs     []RunRecord
 }
 
 // CostOf reads a phase's cost off its transcript. Turns and dollars are
@@ -63,6 +84,17 @@ func CostOf(run transcript.Transcript, where classify.Where) Cost {
 	}
 	for _, message := range run.Messages {
 		cost.ToolCalls += len(message.Tools)
+		for _, tool := range message.Tools {
+			if waste.BuildsOrTests(tool) && waste.OutcomeOf(tool) == waste.Failed {
+				cost.FailedBuilds++
+			}
+			if name, found := strings.CutPrefix(tool.Name, goplsPrefix); found {
+				if cost.GoplsCalls == nil {
+					cost.GoplsCalls = map[string]int{}
+				}
+				cost.GoplsCalls[name]++
+			}
+		}
 	}
 	cost.DeployMessages = cost.Stages[classify.Deploy].Messages +
 		cost.Stages[classify.LiveCheck].Messages
@@ -78,6 +110,9 @@ func CostOf(run transcript.Transcript, where classify.Where) Cost {
 	return cost
 }
 
+// goplsPrefix starts the name of every tool the gopls server offers.
+const goplsPrefix = "mcp__gopls__"
+
 // Spread is one metric across an arm's runs. Samples is how many runs
 // gave a value; fewer than Runs means some runs could not be measured.
 type Spread struct {
@@ -90,7 +125,7 @@ type metric struct {
 	value func(RunRecord) (float64, bool)
 }
 
-var arms = []brief.Arm{brief.Carlos, brief.Control, brief.Spec}
+var arms = []brief.Arm{brief.Carlos, brief.CarlosGopls, brief.Control, brief.Spec}
 
 // armsIn are the arms a round ran, in column order; a two-arm round
 // keeps two columns.
@@ -213,7 +248,17 @@ func metricsFor(r Round, name string) []metric {
 			metric{phase + " deploy and live-check messages", func(run RunRecord) (float64, bool) {
 				return float64(cost(run).DeployMessages), true
 			}},
+			metric{phase + " failed builds and test runs", func(run RunRecord) (float64, bool) {
+				return float64(cost(run).FailedBuilds), true
+			}},
 		)
+		for _, tool := range goplsToolsOf(r, name) {
+			metrics = append(metrics, metric{
+				fmt.Sprintf("%s gopls calls: %s", phase, tool),
+				func(run RunRecord) (float64, bool) {
+					return float64(cost(run).GoplsCalls[tool]), true
+				}})
+		}
 		for _, stage := range stageOrder {
 			metrics = append(metrics, metric{
 				fmt.Sprintf("%s messages: %s", phase, stage),
@@ -257,6 +302,26 @@ var stageOrder = []classify.Stage{
 	classify.Write, classify.BuildTest, classify.Gates,
 	classify.Screenshots, classify.Deploy, classify.LiveCheck,
 	classify.Other,
+}
+
+// goplsToolsOf names, in order, the gopls tools any run of a brief
+// called, so a round without gopls has no gopls rows.
+func goplsToolsOf(r Round, name string) []string {
+	var tools []string
+	for _, run := range r.Runs {
+		if run.Brief != name {
+			continue
+		}
+		for _, cost := range []Cost{run.Build, run.Followup} {
+			for tool := range cost.GoplsCalls {
+				if !contains(tools, tool) {
+					tools = append(tools, tool)
+				}
+			}
+		}
+	}
+	sort.Strings(tools)
+	return tools
 }
 
 func rolesOf(r Round, name string) []string {
@@ -322,7 +387,9 @@ func Markdown(r Round) string {
 	fmt.Fprintf(&out, "# Agent benchmark, round %s\n\n", r.Label)
 	for _, line := range [][2]string{
 		{"Date", r.Date}, {"Model", r.Model}, {"Claude Code", r.ClaudeVersion},
-		{"Rastrillo", r.Rastrillo}, {"Control platform", r.Platform},
+		{"Rastrillo", r.Rastrillo}, {"gopls", r.Gopls},
+		{"gopls instructions (sha256)", r.GoplsInstructions},
+		{"Control platform", r.Platform},
 		{"Platform poll", r.Poll},
 		{"Getting-started skill", r.GettingStartedCommit},
 		{"Machine policy (sha256)", r.PolicyHash},

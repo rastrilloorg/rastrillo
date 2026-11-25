@@ -1,0 +1,66 @@
+version: "2"
+run:
+  timeout: 10m
+  tests: true
+  build-tags: [browser, perf]
+output:
+  formats:
+    json:
+      path: stdout
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+linters:
+  default: none
+  enable:
+    - staticcheck
+    - govet
+    - errcheck
+    - unused
+    - ineffassign
+    - usestdlibvars
+    - errorlint
+    - nilerr
+    - noctx
+    - bodyclose
+    - sqlclosecheck
+    - rowserrcheck
+    - gocritic
+    - revive
+    - unparam
+    - gochecknoinits
+    - forcetypeassert
+    - predeclared
+    - gocognit
+    - nestif
+    - dupl
+    - gosec
+    - misspell
+    - godot
+    - prealloc
+    - perfsprint
+    - contextcheck
+    - wastedassign
+    - nakedret
+    - errname
+    - exhaustive
+  settings:
+    gocognit:
+      min-complexity: 15
+    nestif:
+      min-complexity: 4
+  exclusions:
+    generated: lax
+    presets: []
+    paths:
+      - gen/
+      - vendor/
+      - static/
+formatters:
+  enable: []
+  exclusions:
+    generated: lax
+    paths:
+      - gen/
+      - vendor/
+      - static/

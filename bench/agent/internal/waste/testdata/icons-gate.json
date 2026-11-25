@@ -1,0 +1,5 @@
+{
+ "command": "sed -i 's|\"Saturday\", \"09:00–13:00\", groomer.SalonName,|\"Saturday\", \"09:00–13:00\",\\n\\t\\ttemplate.HTMLEscapeString(groomer.SalonName),|' internal/groomertest/flows_test.go && gofmt -l internal; make ci > $TMPDIR/ci.log 2>&1; echo \"make ci exit $?\"; grep -E \"FAIL|Error|problems|unknown\" $TMPDIR/ci.log | head; tail -2 $TMPDIR/ci.log; rm -f $TMPDIR/ci.log; go run amadan.net/rastrillo/rastrillo/cmd/rastrillo budget code 2>&1 | tail -2",
+ "is_error": false,
+ "result": "make ci exit 2\n(at run time an unknown slug renders nothing on purpose; this is the pre-ship gate)\nrastrillo: 10 unknown icon slug(s)\nmake: *** [Makefile:198: generate-check] Error 1\nexit status 1\nmake: *** [Makefile:198: generate-check] Error 1\nNo origin/main to compare with: skipping the check that records only go down.\nbudget code: within the limits, with 40 records in .rastrillo/code.txt.\n[This command modified 1 file you've previously read: internal/groomertest/flows_test.go. Call Read before editing.]"
+}

@@ -1,0 +1,5 @@
+{
+ "command": "git add -A >/dev/null && make ci 2>&1 | grep -v \"^perf:\" | tail -40",
+ "is_error": false,
+ "result": "go vet ./...\ngo run honnef.co/go/tools/cmd/staticcheck@v0.8.2 -tags browser,perf ./...\ninternal/groomertest/harness_test.go:75:6: func post is unused (U1000)\nexit status 1\nmake: *** [Makefile:152: staticcheck] Error 1"
+}

@@ -1,0 +1,11 @@
+searching notices for a word
+filtering notices by category
+showing a single notice's page
+saving a reply to a notice
+validating a reply before it is saved
+checking a moderator's sign-in
+adding a notice
+saving changes to a notice
+removing a notice
+listing the replies for a moderator
+seeding the demo notices and replies

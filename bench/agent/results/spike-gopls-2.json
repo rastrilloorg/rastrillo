@@ -1,0 +1,228 @@
+{
+  "Label": "spike-gopls-2",
+  "Date": "2026-11-22",
+  "Model": "claude-opus-5-5",
+  "ClaudeVersion": "2.1.321",
+  "Rastrillo": "091ea1ded8c1 (v0.45.0-bench.g091ea1ded8c1)",
+  "Platform": "",
+  "Poll": "",
+  "GettingStartedCommit": "69e128252caf",
+  "PolicyHash": "47433b0aa1a2018a",
+  "Config": "0feb07c821d80717",
+  "ControlConfig": "278199b53cc47044",
+  "Notes": [
+    "carlos-gopls is carlos with gopls over MCP, set up as gopls's own docs set it up: `gopls mcp` runs behind the bench's goplsmcp wrapper, which starts it again in the app's module once go.mod appears (Claude Code's MCP never lets gopls find a module made after it starts), and the arm's system prompt ends with `gopls mcp -instructions` after the environment notes. The prompt itself is carlos's, word for word."
+  ],
+  "Gopls": "golang.org/x/tools/gopls v0.24.0",
+  "GoplsInstructions": "c22be2d4ea39",
+  "Schedule": [
+    {
+      "Brief": "smoke",
+      "Arm": "carlos-gopls",
+      "N": 1
+    }
+  ],
+  "Runs": [
+    {
+      "Brief": "smoke",
+      "Arm": "carlos-gopls",
+      "N": 1,
+      "App": "smoke-gopls-rspike-gopls-2-1",
+      "RastrilloVersion": "v0.45.0-bench.g091ea1ded8c1",
+      "Build": {
+        "Complete": true,
+        "Messages": 33,
+        "ToolCalls": 38,
+        "NumTurns": 39,
+        "Output": 9519,
+        "CacheRead": 1645414,
+        "CacheWrite": 47522,
+        "CostUSD": 0.9010140000000002,
+        "DurationS": 198,
+        "FirstWriteContext": 51902,
+        "DeployMessages": 9,
+        "Stages": {
+          "app-read": {
+            "Messages": 3,
+            "ToolCalls": 3,
+            "Context": 134087
+          },
+          "build-test": {
+            "Messages": 4,
+            "ToolCalls": 4,
+            "Context": 229429
+          },
+          "deploy": {
+            "Messages": 9,
+            "ToolCalls": 9,
+            "Context": 497484
+          },
+          "framework-read": {
+            "Messages": 5,
+            "ToolCalls": 7,
+            "Context": 216245
+          },
+          "other": {
+            "Messages": 7,
+            "ToolCalls": 10,
+            "Context": 375891
+          },
+          "scaffold": {
+            "Messages": 3,
+            "ToolCalls": 3,
+            "Context": 134181
+          },
+          "write": {
+            "Messages": 2,
+            "ToolCalls": 2,
+            "Context": 105687
+          }
+        },
+        "FailedBuilds": 0,
+        "GoplsCalls": {
+          "go_diagnostics": 1,
+          "go_vulncheck": 1,
+          "go_workspace": 1
+        }
+      },
+      "Followup": {
+        "Complete": true,
+        "Messages": 31,
+        "ToolCalls": 42,
+        "NumTurns": 43,
+        "Output": 18563,
+        "CacheRead": 2775243,
+        "CacheWrite": 42173,
+        "CostUSD": 1.2639405999999997,
+        "DurationS": 324,
+        "FirstWriteContext": 69660,
+        "DeployMessages": 1,
+        "Stages": {
+          "app-read": {
+            "Messages": 3,
+            "ToolCalls": 3,
+            "Context": 261224
+          },
+          "build-test": {
+            "Messages": 2,
+            "ToolCalls": 2,
+            "Context": 175342
+          },
+          "deploy": {
+            "Messages": 1,
+            "ToolCalls": 1,
+            "Context": 105201
+          },
+          "framework-read": {
+            "Messages": 2,
+            "ToolCalls": 3,
+            "Context": 135451
+          },
+          "other": {
+            "Messages": 8,
+            "ToolCalls": 10,
+            "Context": 802194
+          },
+          "screenshots": {
+            "Messages": 8,
+            "ToolCalls": 12,
+            "Context": 689262
+          },
+          "write": {
+            "Messages": 7,
+            "ToolCalls": 11,
+            "Context": 648804
+          }
+        },
+        "FailedBuilds": 0,
+        "GoplsCalls": {
+          "go_diagnostics": 1
+        }
+      },
+      "Measured": [
+        {
+          "Pages": [
+            {
+              "Role": "home",
+              "URL": "https://smoke-gopls-rspike-gopls-2-1.bdf.oncarlos.com/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 6102,
+                  "html": 1481,
+                  "js": 6049,
+                  "other": 676
+                },
+                "Decoded": {
+                  "css": 25307,
+                  "html": 2691,
+                  "js": 14100,
+                  "other": 549
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 96,
+                "performance": 100,
+                "seo": 90
+              }
+            }
+          ],
+          "Headers": {
+            "content-security-policy": "default-src 'self'; style-src 'self' 'unsafe-hashes' 'sha256-yJxAE4rjdcckohdlnvecSporPcqS9xOaA4hJxi87LMc=' 'sha256-81gZUb3tp60YCqhJ0dItBPh5hRQiGbfst4gpwCNPTfI='; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+            "frame-ancestors": "frame-ancestors 'none'",
+            "referrer-policy": "strict-origin-when-cross-origin",
+            "strict-transport-security": "max-age=31536000",
+            "x-content-type-options": "nosniff",
+            "x-frame-options": "DENY"
+          },
+          "DeployOK": true,
+          "Failures": null
+        },
+        {
+          "Pages": [
+            {
+              "Role": "home",
+              "URL": "https://smoke-gopls-rspike-gopls-2-1.bdf.oncarlos.com/",
+              "Failure": "",
+              "Weight": {
+                "Wire": {
+                  "css": 6832,
+                  "html": 1614,
+                  "js": 4150,
+                  "other": 964
+                },
+                "Decoded": {
+                  "css": 27313,
+                  "html": 3037,
+                  "js": 9087,
+                  "other": 825
+                }
+              },
+              "Axe": {},
+              "Lighthouse": {
+                "accessibility": 100,
+                "best-practices": 100,
+                "performance": 100,
+                "seo": 100
+              }
+            }
+          ],
+          "Headers": {
+            "content-security-policy": "default-src 'self'; style-src 'self' 'unsafe-hashes' 'sha256-yJxAE4rjdcckohdlnvecSporPcqS9xOaA4hJxi87LMc=' 'sha256-81gZUb3tp60YCqhJ0dItBPh5hRQiGbfst4gpwCNPTfI='; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+            "frame-ancestors": "frame-ancestors 'none'",
+            "referrer-policy": "strict-origin-when-cross-origin",
+            "strict-transport-security": "max-age=31536000",
+            "x-content-type-options": "nosniff",
+            "x-frame-options": "DENY"
+          },
+          "DeployOK": true,
+          "Failures": null
+        }
+      ],
+      "AgentFailures": null,
+      "ReusedFrom": ""
+    }
+  ]
+}
