@@ -822,8 +822,8 @@ instead: a class in your own stylesheet, or a listener added with
 `element.style.setProperty`, which the CSP allows.
 
 A `<script type="importmap">` passes, though the default CSP blocks it
-too: an app that needs one admits it by its hash in `Options.CSP`, and
-`csp` cannot see whether yours does. A data block such as
+too: an app that needs one adds its hash to `script-src` with
+`Options.CSPAllow`, and `csp` cannot see whether yours does. A data block such as
 `<script type="application/json">` passes because the browser never
 runs it.
 

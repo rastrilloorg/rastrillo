@@ -35,9 +35,9 @@ and `transition.js` (view transitions between pages). All but
    relative path (`./board-drag.js`): the assets handler serves those
    unhashed with no-cache, so there is still no build.
 4. **An import map** when vendored packages import each other by bare
-   name. It is an inline script, which the default CSP blocks: set
-   `Options.CSP` to the default policy (`defaultCSP` in `serve.go`)
-   plus `script-src 'self' 'sha256-<hash of the map>'`.
+   name. It is an inline script, which the default CSP blocks: allow
+   it with
+   `CSPAllow: map[string][]string{"script-src": {"'sha256-<hash of the map>'"}}`.
 5. **A build step** when the graph outgrows that: TypeScript, JSX, or a
    library with many dependencies. Use esbuild (`go run
    github.com/evanw/esbuild/cmd/esbuild@<version>`, so no Node in the

@@ -36,7 +36,8 @@ func TestEveryResponseNamesTheSpeculationRules(t *testing.T) {
 		if got := rec.Header().Get("Speculation-Rules"); got != rulesHeader {
 			t.Errorf("%s: Speculation-Rules = %q, want %q", path, got, rulesHeader)
 		}
-		if got := rec.Header().Get("Content-Security-Policy"); got != defaultCSP {
+		got := rec.Header().Get("Content-Security-Policy")
+		if got != DefaultCSP {
 			t.Errorf("%s: the CSP changed: %q", path, got)
 		}
 	}

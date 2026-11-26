@@ -17815,10 +17815,9 @@ names secondfactor/secondfactor_test.go sessionFrom/w 1
 names secondfactor/secondfactor_test.go withPending/r 1
 columns serve.go 309a8d186ced 1
 columns serve.go 3a4da472b9c6 1
-columns serve.go 3cd9cfb233c9 2
+columns serve.go 3cd9cfb233c9 1
 columns serve.go 4d2967491258 1
 columns serve.go 5b58809d186f 1
-columns serve.go 62bb19e243d1 1
 columns serve.go 63263ee6dfa0 1
 columns serve.go 7083c465a970 1
 columns serve.go 72f2e5cb4ec0 1
@@ -17826,15 +17825,13 @@ columns serve.go 8d078295ca02 1
 columns serve.go a32b7eb0aace 1
 columns serve.go b003745b5f0b 1
 columns serve.go b53910cab1c0 1
-columns serve.go c116945cd983 1
 columns serve.go cf0358a0c895 1
 columns serve.go e93098ec142f 1
 columns serve.go eeff5664a139 1
-columns serve.go f5f8b0d4485b 1
 columns serve.go fe48d8bf59b6 1
 columns serve.go ff53a0259cb6 1
-file serve.go - 749
-func serve.go Handler 61
+file serve.go - 730
+func serve.go Handler 52
 func serve.go buildHandler 87
 names serve.go buildHandler/h 1
 names serve.go buildHandler/k 1
@@ -17852,9 +17849,6 @@ names serve.go recoverPanics/v 1
 names serve.go recoverPanics/w 1
 names serve.go schemeSwitchUnlessApp/r 1
 names serve.go schemeSwitchUnlessApp/w 1
-names serve.go securityHeaders/h 1
-names serve.go securityHeaders/r 1
-names serve.go securityHeaders/w 1
 columns serve_basepath_test.go 01d6d476a9ef 1
 columns serve_basepath_test.go 01e1665cbb78 1
 columns serve_basepath_test.go 04579919c35e 1
@@ -18873,7 +18867,6 @@ columns speculation_test.go 4860d23af3e2 1
 columns speculation_test.go 604d53218cf0 1
 columns speculation_test.go 62ceb36dff93 1
 columns speculation_test.go 6c2b9764aaf7 1
-columns speculation_test.go 6f47e7fa27f8 1
 columns speculation_test.go 703f9053493c 1
 columns speculation_test.go 817a1971f083 1
 columns speculation_test.go 8194fc7bc14e 1

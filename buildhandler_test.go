@@ -302,7 +302,7 @@ func TestBuildHandlerSetsSecurityHeaders(t *testing.T) {
 // when markup injection gets through (GitHub #147).
 func TestDefaultCSPStyleSrcAllowsOnlyTheFrameworksHashes(t *testing.T) {
 	var styleSrc string
-	for _, directive := range strings.Split(defaultCSP, ";") {
+	for _, directive := range strings.Split(DefaultCSP, ";") {
 		fields := strings.Fields(directive)
 		if len(fields) > 0 && fields[0] == "style-src" {
 			styleSrc = strings.Join(fields[1:], " ")

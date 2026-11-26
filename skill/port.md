@@ -74,6 +74,7 @@ Answer a port request in this order:
 | "No cross-customer admin view" | The hub keeps a record per customer and counts what it witnesses (sign-ups, usage); other figures are facts each instance sends the hub. Pulling from every instance's `/api/v1` wakes each one and needs a credential across tenants. A real cost: design it (CARLOS's tenancy guidance lists the routes). |
 | "No combobox" | `field-select` past ten options is a searchable combobox (`select.js`); dates take "next fri 9am" (`datetime.js`). |
 | "No drag and drop / rich UI" | A form for each move, then a script that drags (skill/scripts.md). |
+| "Our logos and fonts are on another host" | The CSP is same-origin: add the source with `CSPAllow`, such as `CSPAllow: map[string][]string{"img-src": {"https://logos.example.com"}}`. |
 | "Real-time needs an always-on server" | `data-poll` on a hibernating route; live regions on an always-on one (skill/live.md, skill/background.md). |
 | "Postgres to SQLite" | One writer per customer, not per product: each file holds one team. |
 | "Their MCP has a secret URL, or takes only a header token" | Sign-in plus OAuth: start from `rastrillo new --auth=signin`, then mount OAuth (skill/mcp.md), and claude.ai, ChatGPT, Claude Code and Codex connect by address. Do not carry over a secret URL. A client that uses a header token needs a token from the app's token page, which requires sign-in. |

@@ -73,7 +73,7 @@ func (a *Auth) confirm(w http.ResponseWriter, r *http.Request) {
 	// Sec-Fetch-Site (PrepareSigninResponse keeps it off every form
 	// state for the same reason). strict-origin leaves Origin intact.
 	//
-	// frame-ancestors is Added, not Set. serve.go's securityHeaders has
+	// frame-ancestors is Added, not Set. rastrillo's securityHeaders has
 	// already Set the app's real Content-Security-Policy, and replacing
 	// it here would trade a whole policy for one directive; a second CSP
 	// header is enforced alongside the first, so the page ends up with
@@ -119,7 +119,7 @@ func (a *Auth) host() string {
 // break every app that upgrades without noticing.
 //
 // Its <style> block is admitted by its hash in rastrillo's default CSP
-// (serve.go's defaultCSP). Change one byte of it and the page renders
+// (rastrillo.DefaultCSP). Change one byte of it and the page renders
 // unstyled until the hash there follows: confirmcsp_test.go says so.
 var confirmTmpl = template.Must(template.New("confirm").Parse(`<!doctype html>
 <html lang="en">

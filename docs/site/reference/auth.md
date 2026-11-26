@@ -428,7 +428,9 @@ The default policy allows the page's single `<style>` block by hash. If
 you set `Options.CSP`, include
 `'sha256-81gZUb3tp60YCqhJ0dItBPh5hRQiGbfst4gpwCNPTfI='` in `style-src`,
 and in `style-src-elem` if your policy has one; otherwise, the page will
-be unstyled.
+be unstyled. To allow another source without replacing the policy, use
+`Options.CSPAllow`. It preserves the hash above if the policy in force
+includes it.
 
 Before calling you, `Verify` sets `Cache-Control: no-store`,
 `Referrer-Policy: strict-origin`, `X-Robots-Tag: noindex, nofollow`,

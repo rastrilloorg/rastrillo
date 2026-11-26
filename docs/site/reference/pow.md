@@ -120,7 +120,7 @@ The status takes no space, so nothing moves when the module loads. `StatusLine` 
 
 If the visitor submits before the solve or the minimum age is done, the module holds the submit, shows `busy.js`'s busy state on the button (`aria-busy`, the spinner, `data-busy-label`), and sends it with the button they pressed once both are done. A button rendered with `autofocus` gets its focus back when the module enables it, so a one-tap sign-in still answers Enter.
 
-The baseline CSP allows all of this: the worker is same-origin, and the honeypot's inline style is allowed by its hash. If you replace the policy, keep `'unsafe-hashes'` and `pow.HoneypotStyleHash` in `style-src`, or the trap field shows on your form.
+The baseline CSP allows all of this: the worker is same-origin, and the honeypot's inline style is allowed by its hash. If you replace the policy, keep `'unsafe-hashes'` and `pow.HoneypotStyleHash` in `style-src`, or the trap field shows on your form. To allow another source without replacing the baseline policy, use `Options.CSPAllow`. It keeps both the hash and `'unsafe-hashes'`.
 
 **Never cache a page that carries a challenge.** One token on a shared cached page is one token for every visitor, and the first to submit spends it for everyone else. `pow` can't set headers from a template, so set `Cache-Control: no-store` on every such response yourself. `auth`'s `PrepareSigninResponse` and `password`'s handlers already do.
 

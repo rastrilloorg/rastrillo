@@ -15,8 +15,9 @@ relative `-db` resolves inside it when systemd provides one — a unit
 tenant's working directory is not its state directory. `GET /healthz`
 and `GET /api/version`. The SIGTERM drain, which fits inside the
 activator's SIGKILL budget. And baseline security headers, CSP included,
-framework-owned and outermost, with your own `Set` or `Del` winning and
-`Options.CSP` swapping the policy wholesale.
+framework-owned and outermost, with your own `Set` or `Del` winning,
+`Options.CSP` swapping the policy wholesale and `Options.CSPAllow`
+adding sources to it.
 
 Between `Serve` and `Run`, every route kind the platform runs —
 always-on instance, hibernating exec child, unit tenant — boots the same

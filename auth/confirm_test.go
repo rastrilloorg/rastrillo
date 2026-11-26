@@ -120,7 +120,7 @@ func TestConfirmPageIsNotCachedOrFramed(t *testing.T) {
 			link := linkRE.FindString(m.sentBody())
 
 			w := httptest.NewRecorder()
-			// What serve.go's securityHeaders has already written.
+			// What rastrillo's securityHeaders has already written.
 			w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
 			a.Verify(w, httptest.NewRequest("GET", link, nil))
 			want := map[string]string{

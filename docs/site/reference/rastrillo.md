@@ -115,9 +115,29 @@ a channel twice panics. If `Stop` is nil, only SIGTERM and SIGINT stop
 **`Locales`**, **`DefaultLocale`**, **`LocaleFS`** — the locale set and
 its catalogs.
 
-**`CSP`** — swaps the baseline content-security policy. The baseline
-allows no inline styles or scripts. The framework sets baseline security
-headers outermost, and your own `Set` or `Del` wins.
+**`CSP`** — swaps the baseline content-security policy, `DefaultCSP`.
+The baseline allows no inline styles or scripts. The framework sets
+baseline security headers outermost, and your own `Set` or `Del` wins.
+
+**`CSPAllow`** — adds sources to the policy in force, `CSP` or
+`DefaultCSP`. Use it to allow another source, such as `CSPAllow: map[string][]string{"img-src": {"https://logos.example.com"}}`. With the default policy, the framework's hashes remain.
+A directive the policy lacks starts with the sources the browser would
+otherwise use, usually `default-src`'s, so adding `script-src` keeps
+`'self'`. Directives that fell back past the new one are written out,
+so every directive keeps what it allowed.
+
+`'unsafe-inline'`, `'unsafe-eval'` and `*` weaken the policy.
+`'strict-dynamic'` or a hash in `script-src` changes what its other
+sources allow, rather than only adding to them.
+
+`Serve` refuses to start on:
+
+- a name that is not a directive that takes sources;
+- a source that is not a host, scheme, quoted keyword or hash;
+- a nonce, which would be the same on every response;
+- a `CSP` with a comma, which holds two policies;
+- `form-action`, `base-uri` or `frame-ancestors` when the policy has
+  none, because it already allows every source there.
 
 **`NextDue`** — answers the activator's `GET /api/next-due` scheduled-wake
 poll. Unset, the route does not exist.

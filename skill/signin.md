@@ -93,13 +93,10 @@ refusals with `app.auth.AnswerAsSent(response, request)`, never its own
 **CSP:** `form-action 'self'` covers a form's whole redirect chain, so
 `Begin`'s 303 to a keymail server is refused. With `SigninScreen` on,
 keymail continues on your own page and `form-action` stays `'self'`.
-Only a hand-built sign-in page with the screen off restates
-`Options.CSP` (it replaces the policy wholesale) with the keymail
-origin appended: `default-src 'self'; style-src 'self' 'unsafe-hashes'
-'sha256-yJxAE4rjdcckohdlnvecSporPcqS9xOaA4hJxi87LMc='
-'sha256-81gZUb3tp60YCqhJ0dItBPh5hRQiGbfst4gpwCNPTfI='; img-src 'self'
-data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
-https://keymail.dev`. `auth.Config.KeymailServers` limits which keymail
-servers are trusted; other addresses get a link. Nil (the default)
-trusts any delegated server but dials public addresses only;
+Only a hand-built sign-in page with the screen off adds the keymail
+origin:
+`CSPAllow: map[string][]string{"form-action": {"https://keymail.dev"}}`.
+`auth.Config.KeymailServers` limits which keymail servers are trusted;
+other addresses get a link. Nil (the default) trusts any delegated
+server but dials public addresses only;
 `[]string{}` turns Keymail off.

@@ -188,9 +188,11 @@ type Options struct {
 	Sidecar func(ctx context.Context) (time.Time, error)
 
 	// CSP replaces the value of the Content-Security-Policy header the
-	// framework sets on every response (see the package's default
-	// below: same-origin everything, no inline styles but two of the
-	// framework's own by hash, framing denied). Empty keeps the default.
+	// framework sets on every response (DefaultCSP: same-origin
+	// everything, no inline styles but two of the framework's own by
+	// hash, framing denied). Empty keeps the default. To allow another
+	// source without replacing the default policy, use CSPAllow; it
+	// keeps those hashes.
 	// The other baseline headers — nosniff, frame denial, referrer policy, a
 	// one-year host-only HSTS — have no Options
 	// field on purpose: all of them — this one included — are set
@@ -198,6 +200,28 @@ type Options struct {
 	// sets (or deletes) its own in a handler or Options.Wrap middleware
 	// and simply wins.
 	CSP string
+
+	// CSPAllow adds sources to directives of the policy in force, CSP
+	// or DefaultCSP, so an app can allow a host without restating the
+	// rest:
+	//
+	//	CSPAllow: map[string][]string{
+	//		"img-src": {"https://logos.example.com"},
+	//	},
+	//
+	// A directive the policy lacks starts from the one the browser
+	// would use in its place, such as default-src, so adding script-src
+	// keeps 'self', and directives that fell back past it are written
+	// out, so nothing the policy allowed is refused. 'unsafe-inline',
+	// 'unsafe-eval' and * weaken the policy, and 'strict-dynamic' or a
+	// hash in script-src changes what its other sources allow.
+	//
+	// Serve refuses to start on a name that is not a directive taking
+	// sources, a source that is not a host, scheme, keyword or hash, a
+	// nonce (the header is built once, so it would never change), a
+	// directive the policy leaves open, such as form-action in a policy
+	// without one, and a CSP with a comma, which holds two policies.
+	CSPAllow map[string][]string
 
 	// NoSpeculationRules turns off prerendering of shell navigation. By
 	// default every response carries a Speculation-Rules header naming
@@ -372,9 +396,10 @@ func Serve(opts Options) error {
 // returned close func closes Options.Live, stops Options.Background and then releases the
 // database handle (each a no-op without one).
 //
-// It refuses a locale configuration locales.CheckConfig rejects, and a
-// BasePath basepath's Validate rejects, before opening anything, and
-// installs the accepted locales for request-time formatting.
+// It refuses a locale configuration locales.CheckConfig rejects, a
+// BasePath basepath's Validate rejects and a CSPAllow allowInCSP
+// rejects, before opening anything, and installs the accepted locales
+// for request-time formatting.
 //
 // Exported for test harnesses: before this seam, every app's harness
 // hand-duplicated /healthz, /api/version and the DSN pragma ordering
@@ -388,17 +413,8 @@ func Handler(opts Options) (http.Handler, func() error, error) {
 		return nil, closeNothing, errors.New("rastrillo: exactly one of Options.Mux and Options.Router must be set")
 	}
 
-	// Checked in the serving binary, because only it knows which packs
-	// are linked; before the database opens, so a misconfigured deploy
-	// changes nothing.
-	cfg, err := locales.CheckConfig(opts.DefaultLocale, opts.Locales)
+	opts, cfg, err := checkStart(opts)
 	if err != nil {
-		return nil, closeNothing, fmt.Errorf("rastrillo: refusing to start: %v", err)
-	}
-	// Beside the locale check, and before its Install, for the same
-	// reason: a deploy with a bad slug or origin changes nothing, rather
-	// than serving at the wrong path or answering every request with 404.
-	if err := opts.BasePath.Validate(); err != nil {
 		return nil, closeNothing, fmt.Errorf("rastrillo: refusing to start: %v", err)
 	}
 	locales.Install(cfg)
@@ -445,58 +461,22 @@ func Handler(opts Options) (http.Handler, func() error, error) {
 	return handler, closeDB, nil
 }
 
-// defaultCSP is the Content-Security-Policy every rastrillo response
-// carries unless Options.CSP replaces it: same-origin scripts, styles,
-// images, fetches and form targets; data: images allowed for embedded
-// favicons; framing denied.
-//
-// No inline styles and no inline scripts: inline styles are how CSS
-// exfiltration and UI redress work once markup injection gets through,
-// so ui's partials emit none and a grid's --rst-cols comes from the
-// app's stylesheet (GitHub #147). Two exceptions pass by hash: pow's
-// honeypot (an attribute, so 'unsafe-hashes' too) and auth's fallback
-// confirm page's <style>. Spelled out so apps need not link either;
-// buildhandler_test.go and auth's confirmcsp_test.go keep them in step.
-const defaultCSP = "default-src 'self'; " +
-	"style-src 'self' 'unsafe-hashes' " +
-	"'sha256-yJxAE4rjdcckohdlnvecSporPcqS9xOaA4hJxi87LMc=' " +
-	"'sha256-81gZUb3tp60YCqhJ0dItBPh5hRQiGbfst4gpwCNPTfI='; " +
-	"img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
-
-// securityHeaders is the outermost layer of the serving handler: the
-// baseline headers a security audit expects on every response, set
-// BEFORE anything else runs so that any header an app sets itself —
-// in a handler or Options.Wrap middleware — replaces the default, and
-// a Del removes it. Framework-owned for the same reason csrf is:
-// hand-rolled per-app hygiene is where apps ship gaps.
-func securityHeaders(csp string, speculate bool, next http.Handler) http.Handler {
-	if csp == "" {
-		csp = defaultCSP
+// checkStart refuses what a deploy can get wrong before the database
+// opens, so a misconfigured deploy changes nothing: a locale set,
+// checked in the serving binary because only it knows which packs are
+// linked; a base path that would serve at the wrong path or answer
+// every request with 404; and Options.CSPAllow. It returns opts with
+// CSP set to the policy in force, and the locale config to install.
+func checkStart(opts Options) (Options, locales.Config, error) {
+	cfg, err := locales.CheckConfig(opts.DefaultLocale, opts.Locales)
+	if err != nil {
+		return opts, cfg, err
 	}
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		h := w.Header()
-		h.Set("Content-Security-Policy", csp)
-		h.Set("X-Content-Type-Options", "nosniff")
-		h.Set("X-Frame-Options", "DENY")
-		h.Set("Referrer-Policy", "strict-origin-when-cross-origin")
-		// Unconditional, not gated on r.TLS: behind the CARLOS edge TLS
-		// ends before the process, so r.TLS is nil in production and a
-		// gate would never send it. That is safe because browsers ignore
-		// HSTS received over plain HTTP (RFC 6797 §8.1), so a local
-		// `-addr :8080` is unaffected. No includeSubDomains or preload:
-		// both commit hosts beyond this app's own, which is the app
-		// owner's call — set a wider value in a handler or Options.Wrap.
-		h.Set("Strict-Transport-Security", "max-age=31536000")
-		// On every response rather than sniffed for HTML: browsers act
-		// on it for documents and ignore it elsewhere. A structured-field
-		// list of one string, which is the header's form.
-		if speculate {
-			// Through Path, so under a base the browser fetches this
-			// tenant's ruleset, not a path on the hub.
-			h.Set("Speculation-Rules", `"`+basepath.Path(r, SpeculationRulesPath)+`"`)
-		}
-		next.ServeHTTP(w, r)
-	})
+	if err := opts.BasePath.Validate(); err != nil {
+		return opts, cfg, err
+	}
+	opts.CSP, err = allowInCSP(opts.CSP, opts.CSPAllow)
+	return opts, cfg, err
 }
 
 // recoverPanics turns a panicking handler into a logged 500. It is the
@@ -552,7 +532,8 @@ func recoverPanics(errorPage ErrorPageFunc, logger *slog.Logger, next http.Handl
 // translator rides the request context (§10). The security-header
 // wrapper goes around all of it, panic recovery around that, and
 // Options.BasePath, when set, around everything. Split from Handler so
-// the assembly is testable without a database.
+// the assembly is testable without a database; Handler has already
+// added Options.CSPAllow to Options.CSP.
 func buildHandler(opts Options) (http.Handler, error) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
