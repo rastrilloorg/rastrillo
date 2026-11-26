@@ -5,15 +5,15 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strings"
 	"testing"
 )
 
-// The chat tour, replayed on this checkout as a reader follows it: the
-// app builds, vets and passes its tests after every step that changes
-// it, and the finished app passes the checks make ci runs that need no
-// network (the route table, migrations, generated files, code limits
-// and the perf lane).
+// The chat tour, replayed on this checkout as a reader follows it: after
+// every step that changes the app it builds, vets and passes its tests,
+// and every path, command and name its lesson mentions is there; the
+// finished app passes its own make ci, as step 13 promises.
 func TestEveryStepOfTheChatTourBuildsAndPasses(t *testing.T) {
 	if testing.Short() {
 		t.Skip("scaffolds and builds an app for every step")
@@ -26,7 +26,13 @@ func TestEveryStepOfTheChatTourBuildsAndPasses(t *testing.T) {
 	app := ""
 	played := func(step Step, directory string, changes []Change) error {
 		app = directory
-		if directory == "" || (len(changes) == 0 && !step.Scaffold) {
+		if directory == "" {
+			return nil
+		}
+		if err := lessonMatches(step, directory, toolchain); err != nil {
+			return err
+		}
+		if len(changes) == 0 && !step.Scaffold {
 			return nil
 		}
 		for _, arguments := range [][]string{
@@ -41,13 +47,53 @@ func TestEveryStepOfTheChatTourBuildsAndPasses(t *testing.T) {
 	if err := tour.Replay(t.TempDir(), toolchain, played); err != nil {
 		t.Fatal(err)
 	}
-	for _, command := range []string{
-		"rastrillo routes --check", "rastrillo migration check",
-		"rastrillo generate --check", "rastrillo budget code",
-		"go test -tags perf ./internal/chat/",
-	} {
-		if err := toolchain.command(app, command); err != nil {
-			t.Errorf("the finished app: %v", err)
+	wholeGate(t, app)
+}
+
+// wholeGate runs every lane on the app's own ci: line but govulncheck,
+// which reads the live vulnerability database, offline from this
+// machine's module cache, as the scaffold's own gate test does.
+func wholeGate(t *testing.T, app string) {
+	t.Helper()
+	makefile, err := os.ReadFile(filepath.Join(app, "Makefile"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var lanes []string
+	for _, line := range strings.Split(string(makefile), "\n") {
+		if lint, found := strings.CutPrefix(line, "GOLANGCI_LINT := "); found {
+			// As scaffoldGate does: the one tool rastrillo's gate never runs,
+			// so nothing else caches it. -n fetches it and builds nothing; the
+			// gate below then runs offline.
+			install := exec.Command("go", "install", "-n", lint)
+			if output, err := install.CombinedOutput(); err != nil {
+				t.Fatalf("go install -n %s: %v\n%s", lint, err, output)
+			}
+		}
+		if targets, found := strings.CutPrefix(line, "ci: "); found {
+			for _, lane := range strings.Fields(targets) {
+				if lane != "govulncheck" {
+					lanes = append(lanes, lane)
+				}
+			}
+		}
+	}
+	if len(lanes) < 5 {
+		t.Fatalf("read only %v from the app's ci: line", lanes)
+	}
+	gate := exec.Command("make", lanes...)
+	gate.Dir = app
+	gate.Env = append(os.Environ(), offline(t)...)
+	gate.Env = append(gate.Env, "GOFLAGS=-mod=readonly -buildvcs=false",
+		"GOPRIVATE=", "AMADAN_CI=", "CI=")
+	output, err := gate.CombinedOutput()
+	if err != nil {
+		t.Fatalf("make ci on the finished app: %v\n%s", err, output)
+	}
+	for _, ran := range []string{"budget code: within the limits.",
+		"csp: nothing the CSP drops", "0 issues.\n", "perf: GET /: median"} {
+		if !strings.Contains(string(output), ran) {
+			t.Errorf("make ci ran no %q:\n%s", ran, output)
 		}
 	}
 }
@@ -88,6 +134,21 @@ func thisCheckout(t *testing.T) Toolchain {
 		return toolchain.rastrillo(directory, "generate")
 	}
 	return toolchain
+}
+
+// output is what rastrillo prints for arguments, failing or not: its
+// usage and -help are read for the commands and flags it has.
+func (toolchain Toolchain) output(arguments ...string) string {
+	argv := slices.Clone(toolchain.Rastrillo)
+	for _, argument := range arguments {
+		if argument != "" {
+			argv = append(argv, argument)
+		}
+	}
+	command := exec.Command(argv[0], argv[1:]...)
+	command.Env = append(os.Environ(), toolchain.Env...)
+	output, _ := command.CombinedOutput()
+	return string(output)
 }
 
 // offline resolves modules from this machine's module cache only, as

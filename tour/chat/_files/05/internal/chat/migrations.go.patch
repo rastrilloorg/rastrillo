@@ -1,0 +1,13 @@
+--- a/internal/chat/migrations.go
++++ b/internal/chat/migrations.go
+@@ -21,7 +21,9 @@
+ var Schema = migrate.MustFromFS(migrationFS, "chat").
+ 	Declare(migrate.Data{Name: "notes", Key: []string{"id"},
+ 		Kind: migrate.Personal, Owner: migrate.Subject("owner"),
+-		Erase: migrate.EraseRow, Export: true})
++		Erase: migrate.EraseRow, Export: true}).
++	Declare(migrate.Data{Name: "rooms", Key: []string{"id"},
++		Kind: migrate.Shared})
+ 
+ // BootSchema is what boot applies. A subsystem's schema goes here, in the
+ // order it applies, and never in Schema: check would drop its tables.

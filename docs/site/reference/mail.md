@@ -28,10 +28,13 @@ func SMTP(host, port, from, user, pass string) Sender
 func FromEnv(prefix string, logger *slog.Logger) Sender
 ```
 
-`FromEnv` reads `<prefix>_SMTP_{HOST,PORT,FROM,USER,PASS}`, which is how
-a deployed app is normally configured. With HOST or FROM missing it
+`FromEnv` gives an app the mail it can start with. On CARLOS, once
+`carlos email enable` has switched mail on for the app, it sends
+through the platform, as `FromCarlos` does below. Otherwise it reads
+`<prefix>_SMTP_{HOST,PORT,FROM,USER,PASS}`. With HOST or FROM missing it
 warns and gives you `Logged` instead — an unconfigured standalone
-instance is expected, not an error.
+instance is expected, not an error. A half-configured platform mail is
+warned about and falls back the same way.
 
 Header injection is refused: a `to` or `subject` containing a newline is
 rejected instead of sent. That is the whole CRLF injection class, and

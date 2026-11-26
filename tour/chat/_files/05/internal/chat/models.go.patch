@@ -1,0 +1,22 @@
+--- a/internal/chat/models.go
++++ b/internal/chat/models.go
+@@ -6,6 +6,7 @@
+ // check fails the gate when it and migrations/ disagree.
+ var Models = []any{
+ 	&Note{},
++	&Room{},
+ }
+ 
+ // Note is an example model: rename it, replace it, add more beside it.
+@@ -19,3 +20,11 @@
+ 	CreatedAt time.Time
+ 	UpdatedAt time.Time
+ }
++
++// Room is a place to talk. Admins make, rename and delete rooms.
++type Room struct {
++	ID        int64
++	Name      string `gorm:"uniqueIndex"`
++	CreatedAt time.Time
++	UpdatedAt time.Time
++}

@@ -1,0 +1,14 @@
+--- a/internal/chat/migrations.go
++++ b/internal/chat/migrations.go
+@@ -23,7 +23,10 @@
+ 		Kind: migrate.Personal, Owner: migrate.Subject("owner"),
+ 		Erase: migrate.EraseRow, Export: true}).
+ 	Declare(migrate.Data{Name: "rooms", Key: []string{"id"},
+-		Kind: migrate.Shared})
++		Kind: migrate.Shared}).
++	Declare(migrate.Data{Name: "messages", Key: []string{"id"},
++		Kind: migrate.Personal, Owner: migrate.Subject("sender"),
++		Erase: migrate.EraseRow, Export: true})
+ 
+ // BootSchema is what boot applies. A subsystem's schema goes here, in the
+ // order it applies, and never in Schema: check would drop its tables.

@@ -1,0 +1,15 @@
+--- a/internal/chat/app.go
++++ b/internal/chat/app.go
+@@ -75,8 +75,10 @@
+ 		return nil, nil, err
+ 	}
+ 	app.live, err = live.New(live.Config{
+-		Path:   string(livePage),
+-		Topics: map[string]live.Allow{},
++		Path: string(livePage),
++		Topics: map[string]live.Allow{
++			"room": anyoneSignedIn,
++		},
+ 	})
+ 	if err != nil {
+ 		return nil, nil, err

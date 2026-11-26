@@ -81,11 +81,21 @@ func TestSubmitUsesTheMailFromVariable(t *testing.T) {
 	}
 }
 
-func TestFromEnvIgnoresCarlosMail(t *testing.T) {
+// An app built on FromEnv sends through CARLOS once mail is switched on
+// there, and a half-configured submit still lets it start.
+func TestFromEnvUsesCarlosMailWhenItIsOn(t *testing.T) {
 	setEnv(t, merged(submitVars, smtpVars,
 		map[string]string{"CARLOS_MAIL": "submit"}))
+	if got := transportName(FromEnv("APP", nil)); got != "submit" {
+		t.Errorf("FromEnv chose %s with CARLOS mail on, want submit", got)
+	}
+	without := merged(submitVars, smtpVars,
+		map[string]string{"CARLOS_MAIL": "submit"})
+	delete(without, "APP_MAIL_FROM")
+	setEnv(t, without)
 	if got := transportName(FromEnv("APP", nil)); got != "smtp" {
-		t.Errorf("FromEnv chose %s; it must stay SMTP-or-logged", got)
+		t.Errorf("FromEnv chose %s with submit half-configured, want smtp",
+			got)
 	}
 }
 

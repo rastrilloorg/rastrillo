@@ -1,0 +1,23 @@
+--- a/internal/chat/models.go
++++ b/internal/chat/models.go
+@@ -7,6 +7,7 @@
+ var Models = []any{
+ 	&Note{},
+ 	&Room{},
++	&Message{},
+ }
+ 
+ // Note is an example model: rename it, replace it, add more beside it.
+@@ -28,3 +29,12 @@
+ 	CreatedAt time.Time
+ 	UpdatedAt time.Time
+ }
++
++// Message is one line somebody posted in a room.
++type Message struct {
++	ID        int64
++	RoomID    int64 `gorm:"index"`
++	Sender    string
++	Text      string
++	CreatedAt time.Time
++}

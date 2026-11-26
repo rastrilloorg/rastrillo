@@ -1,0 +1,11 @@
+--- a/internal/chat/routes.go
++++ b/internal/chat/routes.go
+@@ -31,6 +31,8 @@
+ 		guarded.Group(func(owned *action.Routes) {
+ 			owned.Guard("session", app.auth.RequireSession)
+ 			owned.Get(accountPage, app.account)
++			owned.Get(adminRoomsPage, app.adminRooms)
++			owned.Post(adminRoomsPage, app.addRoom)
+ 			owned.Handle(http.MethodGet, livePage, app.live.Handler(),
+ 				"live")
+ 		})

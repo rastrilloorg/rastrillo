@@ -13375,7 +13375,7 @@ columns mail/mail.go d88cf09b6e24 1
 columns mail/mail.go dc0f76b3e68b 1
 columns mail/mail.go fee73143e005 1
 columns mail/mail.go ffb1d4f00117 1
-file mail/mail.go - 410
+file mail/mail.go - 413 FromEnv sends through CARLOS mail once it is on: the three lines that ask carlosSubmit first
 func mail/mail.go message 68
 func mail/mail.go smtpSender.deliver 54
 names mail/mail.go -/m 1

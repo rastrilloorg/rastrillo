@@ -1,0 +1,12 @@
+--- a/internal/chat/render.go
++++ b/internal/chat/render.go
+@@ -32,7 +32,8 @@
+ 		return nil, err
+ 	}
+ 	files := map[string]ui.PageFile{}
+-	for _, name := range []string{"index", "errors", "tokens", "admin_rooms"} {
++	for _, name := range []string{"index", "errors", "tokens", "admin_rooms",
++		"admin_room", "admin_room_delete"} {
+ 		files[name] = ui.PageFile{Path: "templates/" + name + ".html"}
+ 	}
+ 	return ui.NewPages(ui.PagesConfig{

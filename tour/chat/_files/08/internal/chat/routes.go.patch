@@ -1,0 +1,13 @@
+--- a/internal/chat/routes.go
++++ b/internal/chat/routes.go
+@@ -35,6 +35,10 @@
+ 				admin.Guard("admin", app.requireAdmin)
+ 				admin.Get(adminRoomsPage, app.adminRooms)
+ 				admin.Post(adminRoomsPage, app.addRoom)
++				admin.Get(adminRoomPage, app.adminRoom)
++				admin.Post(adminRoomPage, app.renameRoomAt)
++				admin.Get(adminRoomDeletePage, app.confirmDeleteRoom)
++				admin.Post(adminRoomDeletePage, app.deleteRoomAt)
+ 			})
+ 			owned.Handle(http.MethodGet, livePage, app.live.Handler(),
+ 				"live")

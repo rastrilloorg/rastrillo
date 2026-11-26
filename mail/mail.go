@@ -268,17 +268,20 @@ func (l loggedSender) SendList(_ context.Context, m ListMessage) error {
 
 func (l loggedSender) Delivers() bool { return false }
 
-// FromEnv builds a Sender from <prefix>_SMTP_{HOST,PORT,FROM,USER,PASS}.
+// FromEnv builds the Sender an app can start without: CARLOS mail once
+// it is on (carlosSubmit), else <prefix>_SMTP_{HOST,PORT,FROM,USER,PASS}.
 // HOST and FROM are the two values with no sane default: with either
 // missing the instance has no relay, and FromEnv returns Logged with a
 // loud warning rather than an error — an unconfigured standalone
 // instance is the expected common case, not a misconfiguration
 // (vitogo's rule). Ask IsConfigured if a caller needs to know which it
-// got. These arrive as ordinary env vars, which on the platform means
-// `carlos env` / sealed secrets.
+// got.
 func FromEnv(prefix string, logger *slog.Logger) Sender {
 	if logger == nil {
 		logger = slog.Default()
+	}
+	if sender := carlosSubmit(prefix, logger); sender != nil {
+		return sender
 	}
 	host := strings.TrimSpace(os.Getenv(prefix + "_SMTP_HOST"))
 	from := strings.TrimSpace(os.Getenv(prefix + "_SMTP_FROM"))

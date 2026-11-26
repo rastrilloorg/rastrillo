@@ -125,7 +125,7 @@ func (tour Tour) check() error {
 				step.Number)
 		}
 		for _, file := range step.Files {
-			if _, err := tour.File(step, file); err != nil {
+			if _, _, err := tour.source(step, file); err != nil {
 				return err
 			}
 		}
@@ -152,14 +152,21 @@ func (tour Tour) newCommand(step Step) (string, error) {
 		"rastrillo new ending in %s", tour.Slug, step.Number, tour.App)
 }
 
-// File is the whole text of file as step leaves it.
-func (tour Tour) File(step Step, file string) (string, error) {
+// source is what step holds for file: its whole text, or, for a file
+// the scaffold wrote, a patch of the step's own change. A patch rides
+// on whatever rastrillo new writes today, so the scaffold's own changes
+// reach the reader instead of being copied back over.
+func (tour Tour) source(step Step, file string) (string, bool, error) {
 	name := path.Join(tour.Slug, "_files", fmt.Sprintf("%02d", step.Number),
 		file)
+	if patch, err := fs.ReadFile(content, name+".patch"); err == nil {
+		return string(patch), true, nil
+	}
 	text, err := fs.ReadFile(content, name)
 	if err != nil {
-		return "", fmt.Errorf("tour %s step %d names %s, but %s is "+
-			"missing: %w", tour.Slug, step.Number, file, name, err)
+		return "", false, fmt.Errorf("tour %s step %d names %s, but "+
+			"neither %s nor %s.patch is there", tour.Slug, step.Number,
+			file, name, name)
 	}
-	return string(text), nil
+	return string(text), false, nil
 }

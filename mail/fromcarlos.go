@@ -46,6 +46,23 @@ func FromCarlos(prefix string, logger *slog.Logger) (Sender, error) {
 	return FromEnv(prefix, logger), nil
 }
 
+// carlosSubmit is FromEnv's platform mail: the submit Sender when
+// CARLOS_MAIL=submit and it is fully configured, else nil. Half
+// configured is warned about, and FromEnv falls back to SMTP or the log
+// rather than refusing to start, which is FromCarlos's job.
+func carlosSubmit(prefix string, logger *slog.Logger) Sender {
+	if os.Getenv(carlosMailEnv) != "submit" {
+		return nil
+	}
+	sender, err := submitFromEnv(prefix, logger)
+	if err != nil {
+		logger.Warn("rastrillo/mail: CARLOS mail is on but cannot be used; "+
+			"falling back to SMTP or the log", "err", err)
+		return nil
+	}
+	return sender
+}
+
 // submitFromEnv is FromCarlos under CARLOS_MAIL=submit. Each missing
 // variable is a refusal here rather than a failed send later, because
 // the first send is often a person waiting for a sign-in link.

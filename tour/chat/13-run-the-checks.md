@@ -6,9 +6,10 @@ check = "`make ci` finishes without an error."
 +++
 
 `make ci` is every check the app has, in one command: vet, formatting,
-static analysis, known vulnerabilities, leaked secrets, size and code
-limits, the route table, the tests, the performance lane, and whether
-the migrations and generated files are up to date. CI runs the same
+`go fix`, static analysis, lint, known vulnerabilities, leaked secrets,
+size and code limits, the route table, the content security policy,
+the tests (which also check the migrations against the models), the
+performance lane, and whether the generated files are up to date. CI runs the same
 command, so passing here means passing there.
 
 The first run fails in the performance lane. That lane times every

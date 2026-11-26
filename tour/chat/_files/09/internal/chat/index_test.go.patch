@@ -1,0 +1,24 @@
+--- a/internal/chat/index_test.go
++++ b/internal/chat/index_test.go
+@@ -16,8 +16,7 @@
+ 
+ var hashedStylesheet = regexp.MustCompile(`/static/tokens\.[0-9a-f]{16}\.css`)
+ 
+-// The next two tests are about the placeholder index page, and yours to
+-// repoint or delete: putting "/" behind sign-in turns its GET into a 303.
++// The home page lists the rooms, and there are none in a new database.
+ func TestIndexRenders(t *testing.T) {
+ 	t.Parallel()
+ 	recorder := get(t, newApp(t), "/")
+@@ -26,9 +25,8 @@
+ 			"placeholder test fails: repoint or delete it", recorder.Code)
+ 	}
+ 	body := recorder.Body.String()
+-	if !strings.Contains(body, "this is a rastrillo app") {
+-		t.Errorf("GET /: no heading. If you replaced the placeholder index, "+
+-			"this test is yours to rewrite:\n%s", body)
++	if !strings.Contains(body, "No rooms yet") {
++		t.Errorf("GET /: no empty room list:\n%s", body)
+ 	}
+ 	catalog := rastrillo.BaseCatalogs()[genlocales.DefaultLocale]
+ 	skip := template.HTMLEscapeString(catalog["rastrillo.ui.shell_skip"])

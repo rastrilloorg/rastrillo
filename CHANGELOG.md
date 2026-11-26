@@ -10,6 +10,20 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+### Changed: `mail.FromEnv` sends through CARLOS mail once it is on
+
+When CARLOS sets `CARLOS_MAIL=submit` for the app, `mail.FromEnv` now
+sends through the platform, as `mail.FromCarlos` does, and needs no SMTP
+settings. The platform sets it once submission is on
+(`carlos email submission on`) and the app's build declares
+`--mail submit`; `carlos email enable` alone still delivers SMTP
+settings, which `FromEnv` reads as before. A new app uses `FromEnv`, so
+its sign-in links go out through either with no change to its code.
+Without `CARLOS_MAIL=submit`, nothing changes: SMTP from
+`<prefix>_SMTP_*`, or the log. If platform
+mail is on but incomplete, `FromEnv` logs a warning and falls back
+rather than refusing to start; use `FromCarlos` to refuse.
+
 **Upgrade: put `signin-view-head` in your sign-in page's `head` block so the passkey button stops moving the page.** A small script in `<head>` now shows the button before the page is first drawn. Before, the button appeared after its module loaded and moved the email form's Continue button by about 50px. A tap aimed at Continue could land on the email field. Without this line, the button still works, but appears late and moves Continue. The browser console says what to add. In an app made with `rastrillo new --auth=signin`, add this line to `templates/signin.html`: `{{define "head"}}{{$L := localizer $}}{{template "signin-view-head" (dict "L" $L "View" .View)}}{{end}}`. An app that renders `signin` itself should put `signin-head` there instead, serve `passkey.ProbeJS()`, and set its URL as `auth.PasskeyDoor.ProbeURL`. The `signin` package serves the script and sets the URL for you.
 
 **Fixed: a press on a passkey button before its script loaded did nothing.** The press now starts the passkey prompt when the module is ready. If the person sends the email form or leaves the page first, the press is dropped. No prompt appears later. If the script fails to load because of a network failure or the site's Content Security Policy, pressing the button says passkeys don't work here. On the one-way screen, it then opens the email way. The passkey button on that screen is enabled before the page is first drawn. With JavaScript off, it stays hidden, and the line saying a passkey needs JavaScript remains. The passkey add page's button is also enabled before the page is first drawn.

@@ -112,7 +112,7 @@ func (tour Tour) play(
 }
 
 func (tour Tour) write(step Step, directory, file string) (Change, error) {
-	text, err := tour.File(step, file)
+	text, patch, err := tour.source(step, file)
 	if err != nil {
 		return Change{}, err
 	}
@@ -121,6 +121,11 @@ func (tour Tour) write(step Step, directory, file string) (Change, error) {
 	existed := err == nil
 	if err != nil && !errors.Is(err, os.ErrNotExist) {
 		return Change{}, err
+	}
+	if patch {
+		if text, err = applyPatch(string(old), text); err != nil {
+			return Change{}, fmt.Errorf("%s: %w", file, err)
+		}
 	}
 	if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
 		return Change{}, err

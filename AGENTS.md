@@ -89,6 +89,33 @@ a private ssh-agent for five minutes and never touches disk.
 `hack/release.sh -sign hack/sign-ssh.sh -try-sign` checks the signer in
 seconds, and `hack/sign-ssh.sh verify-tag vX.Y.Z` checks a tag. `hack/allowed_signers` holds the public key.
 
+## The tour
+
+`tour/chat` is the tour at rastrillo.org/tour: one lesson per step
+(`NN-slug.md`) and, under `_files/NN/`, the files the reader types. A
+file the tour creates is stored whole. A change to a file `rastrillo
+new` wrote is stored as `<path>.patch`, a `git diff` of the step's own
+change, applied to whatever the scaffold writes today, so scaffold
+improvements reach the reader instead of being undone by an old copy.
+
+`TestEveryStepOfTheChatTourBuildsAndPasses` replays every step on a new
+app. After each one the app builds, vets and passes its tests, and every
+path, `rastrillo` command, flag and code name the lesson mentions must
+exist. The finished app must pass its own `make ci`.
+
+- **A patch no longer applies:** the scaffold changed under that step.
+  `go run ./cmd/tourgen -checkout . -out <dir>` writes the app as it
+  stands after each step; unzip the step before, make the change again,
+  and save its `git diff` as the patch. Never replace a patch with the
+  whole file: that freezes the scaffold as it was.
+- **A lesson names something gone:** reword the lesson.
+
+At release prep, when the CHANGELOG changes `rastrillo new`'s flags or
+output, CLI commands, sign-in, `make ci`'s lanes or deploying, read the
+steps that touch them: the test checks names, not meaning. The site's
+sync rebuilds the tour's code from the tag. To preview a change, run
+tourgen as above, then `TOUR_FROM=<dir> npm run check` in the site repo.
+
 ## The gate
 
 One definition, run before pushing and by CI:

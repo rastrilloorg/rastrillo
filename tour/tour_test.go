@@ -55,7 +55,7 @@ func TestTheScaffoldStepShowsARunnableNew(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if command != "rastrillo new --auth=magic chat" {
+		if command != "rastrillo new --scaffold accounts chat" {
 			t.Errorf("step %d shows %q", step.Number, command)
 		}
 	}
@@ -82,7 +82,7 @@ func TestAStepThatNamesAMissingFileIsRefused(t *testing.T) {
 	tour := Tour{Slug: "chat", Steps: []Step{{Number: 1, Title: "x",
 		Scaffold: true, Files: []string{"no/such/file.go"}}}}
 	if err := tour.check(); err == nil ||
-		!strings.Contains(err.Error(), "no/such/file.go") {
+		!strings.Contains(err.Error(), "no/such/file.go.patch") {
 		t.Errorf("check = %v, want the missing file named", err)
 	}
 }

@@ -1,0 +1,19 @@
+--- a/internal/chat/handlers.go
++++ b/internal/chat/handlers.go
+@@ -36,7 +36,8 @@
+ 	}
+ 	visit.Render("room", status, map[string]any{
+ 		"Room": page.room, "Messages": messages,
+-		"Echo": echoOf(page.parsed), "Errors": errors,
++		"Topic": roomTopic(page.room.ID),
++		"Echo":  echoOf(page.parsed), "Errors": errors,
+ 	})
+ }
+ 
+@@ -62,5 +63,6 @@
+ 	if visit.RefusedShowing(err, roomForm{app, room, parsed}) {
+ 		return
+ 	}
++	app.live.Notify(roomTopic(room.ID))
+ 	visit.Redirect(roomPage.For(room.ID))
+ }
