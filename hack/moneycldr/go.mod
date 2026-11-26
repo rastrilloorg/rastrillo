@@ -12,4 +12,4 @@ replace (
 	amadan.net/rastrillo/rastrillo/money => ../../money
 )
 
-require golang.org/x/text v0.41.0
+require golang.org/x/text v0.44.0

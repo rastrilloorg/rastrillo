@@ -10,6 +10,10 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+**Upgrade: the newer `golang.org/x` modules this release needs can break code that uses them directly.** Upgrading Rastrillo raises `x/crypto` to v0.59.0 and `x/net` to v0.63.0 in your app. `x/crypto` v0.59.0 removes `openpgp` and its subpackages, and no longer parses DSA SSH keys. In `x/net`, `quic.ApplicationError` is now `ConnectionCloseError`, `StreamErrorCode` is now `StreamError`, and several stream methods now return errors. If your app imports any of these, move it to a maintained OpenPGP package, a supported SSH key type or the new `quic` names before you upgrade.
+
+**Fixed: templates compile on Go 1.27.** On Go 1.27, `rastrillo new` scaffolded the app but printed `templates not compiled … export data version 5 is greater than maximum supported version 4`, and `rastrillo generate` failed with the same error. Rastrillo now requires `golang.org/x/tools` v0.53.0, which reads Go 1.27's export data. Upgrade Rastrillo in your app, install the new `rastrillo` command (`go install amadan.net/rastrillo/rastrillo/cmd/rastrillo@latest`), then run `rastrillo generate`. An older `rastrillo` binary still fails on Go 1.27, whatever your app requires.
+
 ## v0.49.0
 
 **Upgrade: add a `head-early` block to your own layouts, then put `signin-view-head` in it.** The five ui shell layouts now call a `head-early` block before their stylesheets. If your app keeps its own copy of a layout, add `{{block "head-early" .}}{{end}}` just before its first `<link rel="stylesheet">`. Apps made with `rastrillo new --auth=signin` own a copy at `templates/stage.html`; it does not have this block until you add it. In `templates/signin.html`, change the `signin-view-head` definition from `{{define "head"}}` to `{{define "head-early"}}`. If your app renders `signin` itself, move `signin-head` the same way. Add the block first. A template definition for a block the layout never calls renders nothing.

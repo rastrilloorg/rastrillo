@@ -193,11 +193,17 @@ test.%: | $(BIN)/tmp
 # fetches NEXT_GO through the module proxy on first use, as it does
 # GOTOOLCHAIN, and the runner's module cache keeps it. When GOTOOLCHAIN
 # moves to 1.27, NEXT_GO moves to 1.28.
+#
+# tmplgen and tmplmigrate read the standard library's export data
+# through x/tools, and a building tree says nothing about that: 1.27
+# writes export data version 5, x/tools v0.48.0 read only up to 4, and
+# every app scaffolded on 1.27 shipped with its templates uncompiled.
 NEXT_GO := go1.27.3
 next-go: | $(BIN)/tmp
 	GOTOOLCHAIN=$(NEXT_GO) go build ./...
 	GOTOOLCHAIN=$(NEXT_GO) go vet ./op/...
-	GOTOOLCHAIN=$(NEXT_GO) go test -count=1 ./op/... ./api/... ./mcp/...
+	GOTOOLCHAIN=$(NEXT_GO) go test -count=1 ./op/... ./api/... ./mcp/... \
+		./internal/tmplgen/... ./internal/tmplmigrate/...
 	GOEXPERIMENT=jsonv2 go test -count=1 ./op/... ./api/... ./mcp/...
 
 # staticcheck catches what vet does not: deprecated APIs, values that are
