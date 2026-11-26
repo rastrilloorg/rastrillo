@@ -6,7 +6,7 @@ APP := %[1]s
 # For one run: make ci GOTOOLCHAIN=local
 export GOTOOLCHAIN = %[5]s
 
-# carlos ship -target's default: a build for this machine fails there.
+# carlos deploy -target's default: a build for this machine fails there.
 # For one release: make release RELEASE_GOARCH=amd64
 RELEASE_GOOS   ?= linux
 RELEASE_GOARCH ?= arm64
@@ -26,16 +26,15 @@ RASTRILLO := go run amadan.net/rastrillo/rastrillo/cmd/rastrillo
 build:
 	CGO_ENABLED=0 go build ./...
 
-# -s -w takes a quarter off the binary; panic traces keep their lines.
+# -s -w cuts a quarter off the binary; panic traces keep their lines.
 release: version-check
 	@mkdir -p releases
 	CGO_ENABLED=0 GOOS=$(RELEASE_GOOS) GOARCH=$(RELEASE_GOARCH) \
 		go build -ldflags="-s -w -X 'amadan.net/rastrillo/rastrillo.BuildVersion=$(VERSION)'" \
 		-o $(RELEASE_BIN) ./cmd/$(APP)
 	@echo
-	@echo "built $(RELEASE_BIN) reporting version $(VERSION)"
-	@echo "ship it with:"
-	@echo "  carlos ship -app $(APP) -target $(RELEASE_GOOS)-$(RELEASE_GOARCH) $(RELEASE_BIN)"
+	@echo "built $(RELEASE_BIN) (version $(VERSION)); deploy it with:"
+	@echo "  carlos deploy -app $(APP) -version $(VERSION) -target $(RELEASE_GOOS)-$(RELEASE_GOARCH) $(RELEASE_BIN)"
 
 # An empty or -dirty stamp names no one binary, so the deploy check
 # could pass a stale one.
@@ -82,8 +81,7 @@ fix-check:
 	@go fix -tags browser,perf -diff ./... || { echo "go fix needed: run go fix -tags browser,perf ./..."; exit 1; }
 
 # At a version, not a tool line, which would move the app's own modules.
-# Raise it with the go directive. The cache: a runner's ~/.cache may be
-# read-only.
+# Raise it with the go directive. A runner's ~/.cache may be read-only.
 STATICCHECK := honnef.co/go/tools/cmd/staticcheck@%[2]s
 ifneq ($(filter /%%,$(firstword $(GOCACHE))),)
 export STATICCHECK_CACHE ?= $(GOCACHE)/staticcheck
@@ -104,7 +102,7 @@ GOVULNCHECK := golang.org/x/vuln/cmd/govulncheck@%[3]s
 govulncheck:
 	go run $(GOVULNCHECK) ./...
 
-# Every commit, and only at the root of this app's own repository.
+# Every commit, and only at the root of this app's repository.
 GITLEAKS := github.com/zricethezav/gitleaks/v8@%[4]s
 gitleaks:
 	@if [ "$$(git rev-parse --is-inside-work-tree 2>/dev/null)" = true ] && [ -z "$$(git rev-parse --show-prefix)" ]; then \

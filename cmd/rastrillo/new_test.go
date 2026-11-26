@@ -853,7 +853,7 @@ func TestScaffoldSeparatesReleaseBuildFromCompileCheck(t *testing.T) {
 	if !strings.Contains(got, "release: version-check") {
 		t.Errorf("release does not gate on version-check:\n%s", got)
 	}
-	// The deployment target, not the host. carlos ship defaults to
+	// The deployment target, not the host. carlos deploy defaults to
 	// -target linux-arm64; a release built for the developer's own
 	// machine uploads fine and then fails to exec on the instance.
 	if !strings.Contains(got, "RELEASE_GOOS   ?= linux") || !strings.Contains(got, "RELEASE_GOARCH ?= arm64") {

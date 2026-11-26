@@ -10,19 +10,25 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
-### Changed: `mail.FromEnv` sends through CARLOS mail once it is on
+## v0.48.0
 
-When CARLOS sets `CARLOS_MAIL=submit` for the app, `mail.FromEnv` now
-sends through the platform, as `mail.FromCarlos` does, and needs no SMTP
-settings. The platform sets it once submission is on
-(`carlos email submission on`) and the app's build declares
-`--mail submit`; `carlos email enable` alone still delivers SMTP
-settings, which `FromEnv` reads as before. A new app uses `FromEnv`, so
-its sign-in links go out through either with no change to its code.
-Without `CARLOS_MAIL=submit`, nothing changes: SMTP from
-`<prefix>_SMTP_*`, or the log. If platform
-mail is on but incomplete, `FromEnv` logs a warning and falls back
-rather than refusing to start; use `FromCarlos` to refuse.
+**Fixed: malformed passkey registrations could crash the request.** The WebAuthn CBOR reader panicked on some short attestation objects. A body of just 4 bytes was enough. It also accepted a second spelling of the ES256 algorithm and followed nested data without a limit. A 1 MiB body could use 256 MiB of stack space. Any signed-in person could send one of these objects while registering a passkey. The server recovered from each panic, returned a 500 error, and stayed up. The reader now rejects all three cases.
+
+**Fixed: `apitoken.Store.Redact` could log a token's secret.** If one token followed another token's public ID with nothing in between, the second token's secret was not redacted. Both public IDs now stay in the log, and every secret is replaced.
+
+### Changed: `mail.FromEnv` uses CARLOS mail when submission is enabled
+
+When CARLOS sets `CARLOS_MAIL=submit` for an app, `mail.FromEnv` sends
+through the platform, as `mail.FromCarlos` does, and needs no SMTP
+settings. CARLOS sets this variable only when submission is on (`carlos
+email submission on`) and the app's build declares `--mail submit`;
+`carlos email enable` alone still delivers SMTP settings, which
+`FromEnv` reads as before. New apps use `FromEnv`, so their sign-in
+links can go through either the platform or SMTP without code changes.
+Without `CARLOS_MAIL=submit`, nothing changes: `FromEnv` uses SMTP
+settings from `<prefix>_SMTP_*`, or logs the message. If platform mail
+is on but incomplete, `FromEnv` logs a warning and falls back instead of
+refusing to start. Use `FromCarlos` to refuse to start.
 
 **Upgrade: put `signin-view-head` in your sign-in page's `head` block so the passkey button stops moving the page.** A small script in `<head>` now shows the button before the page is first drawn. Before, the button appeared after its module loaded and moved the email form's Continue button by about 50px. A tap aimed at Continue could land on the email field. Without this line, the button still works, but appears late and moves Continue. The browser console says what to add. In an app made with `rastrillo new --auth=signin`, add this line to `templates/signin.html`: `{{define "head"}}{{$L := localizer $}}{{template "signin-view-head" (dict "L" $L "View" .View)}}{{end}}`. An app that renders `signin` itself should put `signin-head` there instead, serve `passkey.ProbeJS()`, and set its URL as `auth.PasskeyDoor.ProbeURL`. The `signin` package serves the script and sets the URL for you.
 
@@ -37,10 +43,6 @@ rather than refusing to start; use `FromCarlos` to refuse.
 - `privacy.Identity` holds every identifier for one person, and `auth.Auth.Identify` builds it.
 - `rastrillo audit exemptions` lists each table left out of the audit log or kept on erasure, with its reason.
 - There is no audit log, export or erasure in this version. Data outside the database is out of scope.
-
-**Fixed: malformed passkey registrations could crash the request.** The WebAuthn CBOR reader panicked on some short attestation objects. A body of just 4 bytes was enough. It also accepted a second spelling of the ES256 algorithm and followed nested data without a limit. A 1 MiB body could use 256 MiB of stack space. Any signed-in person could send one of these objects while registering a passkey. The server recovered from each panic, returned a 500 error, and stayed up. The reader now rejects all three cases.
-
-**Fixed: `apitoken.Store.Redact` could log a token's secret.** If one token followed another token's public ID with nothing in between, the second token's secret was not redacted. Both public IDs now stay in the log, and every secret is replaced.
 
 ### Added: fuzz tests for the security packages
 
@@ -57,10 +59,18 @@ rather than refusing to start; use `FromCarlos` to refuse.
 ### Changed: go fix and golangci-lint in a new app's gate
 
 - `rastrillo new` adds two lanes to `make ci` and `.amadan/ci.d/`. `fix-check` fails when `go fix` would change the code; `go fix -tags browser,perf ./...` applies the changes. `lint` runs golangci-lint v2.15.0 with errcheck, errorlint, forcetypeassert and wastedassign, set in the new `.golangci.yml`. errcheck ignores `Close` and `WriteTo`. To add these lanes to an existing app, copy the two targets, their steps and `.golangci.yml` from a fresh scaffold.
+- `make release` in a new app prints a `carlos deploy` command with the
+  version it stamped, in place of `carlos ship`, which uploads without
+  putting the build live.
 - The scaffold passes both lanes. Its perf test checks the error from `closeAll`, the sign-in tests' `TestMain` checks the one from `os.Setenv`, and the migration check builds its message with a `strings.Builder`.
 
 ### Docs
 
+- The chat tour follows today's scaffold: `rastrillo new --scaffold
+  accounts`, the current `make ci` lanes, and `carlos deploy` with
+  `carlos email enable`. Its test now checks each lesson's paths,
+  `rastrillo` commands, flags and code names against the app, and runs
+  the finished app's whole `make ci`.
 - The `crypto` docs now say that sealed blob bytes are not unique, so they must not stand for the plaintext as a key or a replay check. Signing a blob is still fine. The format is unchanged.
 
 ## v0.47.0

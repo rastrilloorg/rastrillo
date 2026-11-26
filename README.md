@@ -577,12 +577,12 @@ A scaffolded app's `Makefile` has two build targets, doing different jobs:
   with the version the built binary will report.
 
 `release` cross-compiles for **linux/arm64 by default**, not for your own
-machine, because that is what `carlos ship -target` defaults to. Building
+machine, because that is what `carlos deploy -target` defaults to. Building
 a release on an amd64 laptop and shipping it is a silent architecture
 mismatch — the upload succeeds and the binary fails to exec on the
 instance. Override for a one-off with `make release RELEASE_GOARCH=amd64`.
 The artifact is named for its architecture, and `make release` prints the
-matching `carlos ship` command.
+matching `carlos deploy` command.
 
 `releases/` is in the scaffolded `.gitignore`, along with the local
 SQLite database the app creates when you run it and its write-ahead log.

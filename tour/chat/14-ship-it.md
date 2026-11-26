@@ -8,9 +8,9 @@ check = "Your app is up at its URL, and sign-in emails arrive."
 > [carloku.com](https://carloku.com), or stop here: the app is finished.
 
 `make release` builds one small binary for the server. `carlos deploy`
-ships it, starts it and waits until it answers; the first deploy
-creates the app, `--version` names the release, and `--env` sets
-`CHAT_ADMINS` on it.
+uploads the build, puts it live, and waits until the app answers; the
+first deploy creates the app, `--version` names the release, and
+`--env` sets `CHAT_ADMINS` in the app's environment.
 
 `carlos email enable` switches on real email, so sign-in links go out
 from `noreply@` at the app's address. `--env-prefix CHAT_SMTP` delivers
