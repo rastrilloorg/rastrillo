@@ -10,7 +10,9 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
-**Upgrade: the newer `golang.org/x` modules this release needs can break code that uses them directly.** Upgrading Rastrillo raises `x/crypto` to v0.59.0 and `x/net` to v0.63.0 in your app. `x/crypto` v0.59.0 removes `openpgp` and its subpackages, and no longer parses DSA SSH keys. In `x/net`, `quic.ApplicationError` is now `ConnectionCloseError`, `StreamErrorCode` is now `StreamError`, and several stream methods now return errors. If your app imports any of these, move it to a maintained OpenPGP package, a supported SSH key type or the new `quic` names before you upgrade.
+## v0.50.0
+
+**Upgrade: the newer `golang.org/x` modules this release needs can break code that uses them directly.** Upgrading Rastrillo raises `x/crypto` to v0.59.0 and `x/net` to v0.63.0 in your app. `x/crypto` v0.59.0 removes `openpgp` and its subpackages, and no longer parses DSA SSH keys. In `x/net`, `quic.ApplicationError` is now `ConnectionCloseError`, `StreamErrorCode` is now `StreamError`, and several stream methods now return errors. Before upgrading, replace OpenPGP with a maintained package, stop parsing DSA SSH keys, and update any code that uses the renamed `quic` types or changed stream methods.
 
 **Fixed: templates compile on Go 1.27.** On Go 1.27, `rastrillo new` scaffolded the app but printed `templates not compiled … export data version 5 is greater than maximum supported version 4`, and `rastrillo generate` failed with the same error. Rastrillo now requires `golang.org/x/tools` v0.53.0, which reads Go 1.27's export data. Upgrade Rastrillo in your app, install the new `rastrillo` command (`go install amadan.net/rastrillo/rastrillo/cmd/rastrillo@latest`), then run `rastrillo generate`. An older `rastrillo` binary still fails on Go 1.27, whatever your app requires.
 

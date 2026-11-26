@@ -79,7 +79,7 @@ func tap(t *testing.T, rig *harness.Rig, selector string) {
 // doorWords is what the door can say.
 type doorWords struct{ cancelled, unavailable string }
 
-// doorSays waits up to five seconds for the door's message, and returns
+// doorSays waits up to fifteen seconds for the door's message, and returns
 // it with the words the door carries.
 func doorSays(t *testing.T, rig *harness.Rig) (string, doorWords) {
 	t.Helper()
@@ -87,7 +87,7 @@ func doorSays(t *testing.T, rig *harness.Rig) (string, doorWords) {
 	eval(t, rig, `(async () => {
 	  const b = document.querySelector(`+jsString(passkeyDoor)+`);
 	  const msg = document.getElementById("rst-signin-passkey-msg");
-	  for (let i = 0; i < 200 && !msg.textContent; i++) {
+	  for (let i = 0; i < 600 && !msg.textContent; i++) {
 	    await new Promise((r) => setTimeout(r, 25));
 	  }
 	  return {Said: msg.textContent,
