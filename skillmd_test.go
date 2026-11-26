@@ -307,8 +307,11 @@ const (
 	// signin-view and its title, its three pages and their brand
 	// column (the default sign-in's offer and add pages), and field's
 	// Minlength, which took it to 10,070. Raised on 2026-11-22 for the
-	// keys signin-options now lists, which took it to 10,109.
-	skillPartialsBudget = 10_200
+	// keys signin-options now lists, which took it to 10,109. Raised on
+	// 2026-11-26 for signin-head and signin-view-head, the passkey probe
+	// a sign-in page loads in its head (discussion #433), which took it
+	// to 10,233.
+	skillPartialsBudget = 10_300
 )
 
 // skillFiles are SKILL.md and every topic, by path.

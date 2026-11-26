@@ -362,7 +362,8 @@ func TestFillSetsTheDoorsOfTheWaysOn(t *testing.T) {
 	everything.signins.Fill(&state)
 	if state.Passkey == nil || state.Passkey.BeginPath != PasskeyBeginPath ||
 		state.Passkey.ModuleURL != WebauthnModulePath ||
-		state.Passkey.ScriptURL != PasskeyModulePath {
+		state.Passkey.ScriptURL != PasskeyModulePath ||
+		state.Passkey.ProbeURL != PasskeyProbePath {
 		t.Errorf("passkey door = %+v", state.Passkey)
 	}
 	if state.Authenticator == nil || state.Authenticator.Path != CodePath ||

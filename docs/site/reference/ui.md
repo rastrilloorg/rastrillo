@@ -686,15 +686,18 @@ optionally a one-line `Pitch` and a `Mark` (an `<img>` or inline SVG as
 `template.HTML`). Pass `HideBrand: true` to leave that brand column
 out when your page draws the app's mark and name itself; the heading
 and tab title still use `Brand.Name`. Every string comes from the base
-catalogs under `rastrillo.ui.signin_*`, in all twelve languages. The passkey button
-loads `passkey.JS()` from the `ScriptURL` you set, and only on a page
-that shows it; without that script it stays hidden, and the email form
-works as ever. See [Magic links](/docs/magic-links#use-the-shipped-screen-or-your-own).
+catalogs under `rastrillo.ui.signin_*`, in all twelve languages. The
+passkey button loads `passkey.JS()` from the `ScriptURL` you set, and
+only on a page that shows it. The button ships hidden. Put `signin-head`
+in the page's `head` block: its script, from `ProbeURL`, shows the button
+before the page is first drawn, where the browser supports passkeys.
+Without it, the button appears late, once its module loads, and moves
+the form below it. See [Magic links](/docs/magic-links#use-the-shipped-screen-or-your-own).
 
 With `auth.Config.SigninOneWay`, the card offers one way in, with
 **Other ways to sign in** below it. There the passkey button is the
-page's only way in. It is drawn disabled until its script enables it, so
-the page does not move. Where a passkey can't work, the script opens the
+page's only way in. `signin-head` shows it before the page is first
+drawn, as on the email screen, so the page does not move. Where a passkey can't work, the script opens the
 email way. With script off, a line says a passkey needs JavaScript.
 
 ## Styleguide

@@ -179,14 +179,16 @@ func TestAddPassphraseFieldIsANewPassword(t *testing.T) {
 }
 
 func TestAddPasskeyButtonCarriesTheRegisterPair(t *testing.T) {
-	out := render(t, "signin-view", viewData(signin.View{
+	view := signin.View{
 		Add: &signin.Add{Way: signin.Passkey, Address: "ada@example.com",
 			Passkey: &auth.PasskeyDoor{
 				BeginPath:  signin.RegisterBeginPath,
 				FinishPath: signin.RegisterFinishPath + "?return_to=%2Fx",
 				ModuleURL:  signin.WebauthnModulePath,
-				ScriptURL:  signin.RegisterModulePath}},
-	}))
+				ScriptURL:  signin.RegisterModulePath,
+				ProbeURL:   signin.PasskeyProbePath}},
+	}
+	out := render(t, "signin-view", viewData(view))
 	button := regexp.MustCompile(`<button[^>]*data-rst-passkey-register` +
 		`[^>]*>`).FindString(out)
 	for _, attr := range []string{
@@ -204,6 +206,15 @@ func TestAddPasskeyButtonCarriesTheRegisterPair(t *testing.T) {
 	script := `<script type="module" src="` + signin.RegisterModulePath
 	if !strings.Contains(out, script) {
 		t.Errorf("the register module is not loaded:\n%s", out)
+	}
+	// In the head, so the button is enabled in its first frame.
+	head := render(t, "signin-view-head", viewData(view))
+	if head != `<script src="`+signin.PasskeyProbePath+`"></script>`+"\n" {
+		t.Errorf("signin-view-head is %q, want the probe", head)
+	}
+	view.Add.Done = true
+	if head := render(t, "signin-view-head", viewData(view)); head != "" {
+		t.Errorf("signin-view-head is %q once the passkey is added", head)
 	}
 }
 

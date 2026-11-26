@@ -31,7 +31,10 @@ import (
 // Sign-in options links and AGENTS.md line elsewhere (684). The final
 // review added 1,118 more: with no instance key the app leaves the
 // authenticator off and says so, and a test checks it, while the
-// tests' TestMain sets a key (5,052 in all).
+// tests' TestMain sets a key (5,052 in all). The sign-in page's head
+// line, signin-view-head loading the passkey probe that shows the door
+// before the first paint (discussion #433), is 104 bytes, of which 99
+// went over: 5,151.
 //
 // lintGate is the third: make ci gained go fix and golangci-lint
 // (bench/agent/results/lint-sweep-groomer.md), with both apps at their
@@ -57,7 +60,7 @@ var before = map[string]struct {
 	"plainapp": {73438, 6536, 25, 508, 0, 1244, 409},
 	// magicapp was already 495 bytes under its limit, so only 54 of the
 	// 549 went over.
-	"magicapp": {91400, 7360, 19, 54, 5052, 1284, 485},
+	"magicapp": {91400, 7360, 19, 54, 5151, 1284, 485},
 }
 
 // iconGrowth is the code, not prose, that Fiesta 1.4.0's icons added to

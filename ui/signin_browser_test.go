@@ -72,11 +72,17 @@ func signinServer(body string) http.Handler {
 		w.Header().Set("Content-Type", "text/css")
 		w.Write(css)
 	})
-	// The door's script, empty: the drive measures the door as a
+	// The door's scripts, empty: the drive measures the door as a
 	// browser leaves it when no WebAuthn is found, button still hidden.
-	mux.HandleFunc("GET /static/passkey-signin.mjs", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/javascript")
-	})
+	for _, script := range []string{
+		"passkey-signin.mjs", "passkey-probe.js",
+	} {
+		mux.HandleFunc("GET /static/"+script, func(
+			w http.ResponseWriter, r *http.Request,
+		) {
+			w.Header().Set("Content-Type", "text/javascript")
+		})
+	}
 	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		fmt.Fprint(w, `<!doctype html><html lang="en"><head><meta charset="utf-8">`+

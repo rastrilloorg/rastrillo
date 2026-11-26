@@ -26,6 +26,7 @@ func (signins *Signins) ShowAddPasskey(
 			BeginPath:  RegisterBeginPath + carry(to),
 			FinishPath: RegisterFinishPath + carry(to),
 			ModuleURL:  WebauthnModulePath, ScriptURL: RegisterModulePath,
+			ProbeURL: PasskeyProbePath,
 		}}
 	if request.URL.Query().Get("done") == "1" {
 		enrolled, err := signins.passkeys.Enrolled(session.Subject)

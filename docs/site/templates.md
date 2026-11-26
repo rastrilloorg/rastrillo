@@ -218,6 +218,7 @@ bulk-bar      field-datetime   list-row-action     scheme-menu
 callout       field-money      list-search-submit  seg-tabs
 choice-field  field-number     live-head           signin
 confirm-form  field-select     locale-menu         signin-title
+                                                signin-head
 detail-list   field-text       media-grid          stat
 dropdown      field-textarea   meter               status-pill
 empty-state   field-time       notice
@@ -228,6 +229,7 @@ error-page    field-url        page-header      signin-app-problem
                                                 signin-secret-door
                                                 signin-view
                                                 signin-view-title
+                                                signin-view-head
                                                 signin-offer
                                                 signin-add
                                                 signin-options
@@ -239,8 +241,9 @@ error-page    field-url        page-header      signin-app-problem
 `signin`, not them.
 
 `signin-view` draws every page the `signin` package hands an app, the
-sign-in screen among them, and `signin-view-title` is its title. An app
-that uses the package calls those two and none of the others:
+sign-in screen among them. `signin-view-title` is its title, and
+`signin-view-head` goes in its `head` block. An app that uses the
+package calls those three and none of the others:
 `signin-offer`, `signin-add` and `signin-options` are its pages, and
 `signin-brand` is their brand column.
 

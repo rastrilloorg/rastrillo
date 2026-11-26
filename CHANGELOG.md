@@ -10,6 +10,10 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+**Upgrade: put `signin-view-head` in your sign-in page's `head` block so the passkey button stops moving the page.** A small script in `<head>` now shows the button before the page is first drawn. Before, the button appeared after its module loaded and moved the email form's Continue button by about 50px. A tap aimed at Continue could land on the email field. Without this line, the button still works, but appears late and moves Continue. The browser console says what to add. In an app made with `rastrillo new --auth=signin`, add this line to `templates/signin.html`: `{{define "head"}}{{$L := localizer $}}{{template "signin-view-head" (dict "L" $L "View" .View)}}{{end}}`. An app that renders `signin` itself should put `signin-head` there instead, serve `passkey.ProbeJS()`, and set its URL as `auth.PasskeyDoor.ProbeURL`. The `signin` package serves the script and sets the URL for you.
+
+**Fixed: a press on a passkey button before its script loaded did nothing.** The press now starts the passkey prompt when the module is ready. If the person sends the email form or leaves the page first, the press is dropped. No prompt appears later. If the script fails to load because of a network failure or the site's Content Security Policy, pressing the button says passkeys don't work here. On the one-way screen, it then opens the email way. The passkey button on that screen is enabled before the page is first drawn. With JavaScript off, it stays hidden, and the line saying a passkey needs JavaScript remains. The passkey add page's button is also enabled before the page is first drawn.
+
 **Upgrade: rerun `rastrillo generate` if your app has manifest stores.** The generator now writes a `declare.go` in each store package, holding the table's `Declaration`. Declare it on the set that wraps the store's migrations. `generate --check` fails until you rerun `generate`, and your schema test fails until you declare the table. Resource names `declaration` and `declarations` are no longer allowed because the generated package already uses that name.
 
 ### Added: table declarations

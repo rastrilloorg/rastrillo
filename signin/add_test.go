@@ -201,7 +201,8 @@ func TestAddPasskeyRegistersWithAuthtest(t *testing.T) {
 		door.BeginPath != RegisterBeginPath+"?return_to=%2Freports" ||
 		door.FinishPath != RegisterFinishPath+"?return_to=%2Freports" ||
 		door.ModuleURL != WebauthnModulePath ||
-		door.ScriptURL != RegisterModulePath {
+		door.ScriptURL != RegisterModulePath ||
+		door.ProbeURL != PasskeyProbePath {
 		t.Fatalf("passkey door: %+v", door)
 	}
 	device, _ := authtest.New()

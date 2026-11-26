@@ -327,22 +327,29 @@ func TestTheFederatedDoorIsALinkWithItsGlyph(t *testing.T) {
 	}
 }
 
-// No pop-in: the passkey door is drawn visible and disabled, with the
-// email way to fall back to, and a line for a browser with no script.
-func TestThePasskeyDoorIsVisibleBeforeItsScript(t *testing.T) {
+// No pop-in: the passkey door ships hidden, as on the classic screen,
+// and signin-head's probe shows it before the first paint (#433). It
+// falls back to the email way, and a browser with no script gets a
+// line instead.
+func TestTheOneWayPasskeyDoorWaitsForTheProbe(t *testing.T) {
 	out := render(t, "signin", signinData(oneWayByName()["id, a passkey"]))
 	button := regexp.MustCompile(`<button[^>]*data-rst-passkey[^>]*>`).
 		FindString(out)
 	for _, want := range []string{
-		" disabled ", `data-rst-passkey-fallback="/signin?way=email"`,
+		" hidden ", `data-rst-passkey-fallback="/signin?way=email"`,
 		`data-rst-passkey-unavailable="`,
 	} {
 		if !strings.Contains(button, want) {
 			t.Errorf("the passkey button lacks %s: %s", want, button)
 		}
 	}
-	if strings.Contains(button, " hidden") {
-		t.Errorf("the one-way passkey door is hidden: %s", button)
+	if strings.Contains(button, "disabled") {
+		t.Errorf("the one-way passkey door is disabled: %s", button)
+	}
+	head := render(t, "signin-head",
+		signinData(oneWayByName()["id, a passkey"]))
+	if head != `<script src="/static/passkey-probe.js"></script>`+"\n" {
+		t.Errorf("signin-head is %q, want the probe", head)
 	}
 	if !strings.Contains(out, "<noscript><p>"+html.EscapeString(
 		defaultT("rastrillo.ui.signin_passkey_noscript"))) {
@@ -351,9 +358,11 @@ func TestThePasskeyDoorIsVisibleBeforeItsScript(t *testing.T) {
 	data := signinData(oneWayByName()["id, a passkey"])
 	data["Preview"] = true
 	preview := render(t, "signin", data)
-	if strings.Contains(preview, "disabled") ||
+	shown := regexp.MustCompile(`<div rst-signin-passkey><button[^>]*>`).
+		FindString(preview)
+	if shown == "" || strings.Contains(shown, "hidden") ||
 		strings.Contains(preview, "<script") {
-		t.Errorf("a Preview shows a disabled door or loads a script:\n%s",
+		t.Errorf("a Preview hides the door or loads a script:\n%s",
 			preview)
 	}
 }

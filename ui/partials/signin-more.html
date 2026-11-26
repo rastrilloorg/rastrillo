@@ -13,6 +13,11 @@
                 page draws it
        HideBrand  bool, optional — as signin's */}}
 {{define "signin-view"}}{{$L := localizer $}}{{$v := .View}}{{$preview := opt . "Preview"}}{{$hide := opt . "HideBrand"}}{{if $v.Offer}}{{template "signin-offer" (dict "L" $L "Offer" $v.Offer "Brand" .Brand "HideBrand" $hide)}}{{else if $v.Add}}{{template "signin-add" (dict "L" $L "Add" $v.Add "Brand" .Brand "Preview" $preview "HideBrand" $hide)}}{{else if $v.Options}}{{template "signin-options" (dict "L" $L "Options" $v.Options "Brand" .Brand "HideBrand" $hide)}}{{else if $v.Signin}}{{template "signin" (dict "L" $L "State" $v.Signin "Brand" .Brand "Preview" $preview "HideBrand" $hide)}}{{end}}{{end}}
+{{/* signin-view-head — signin-head for signin-view. It loads the probe
+     for the sign-in screen's door, or the passkey add page's button.
+     Keys: View. */}}
+{{define "signin-view-head"}}{{$L := localizer $}}{{$v := .View}}{{if $v.Offer}}{{else if $v.Add}}{{if and (eq $v.Add.Way.Name "passkey") (not $v.Add.Done) $v.Add.Passkey}}{{with $v.Add.Passkey.ProbeURL}}<script src="{{.}}"></script>
+{{end}}{{end}}{{else if $v.Options}}{{else if $v.Signin}}{{template "signin-head" (dict "L" $L "State" $v.Signin)}}{{end}}{{end}}
 {{/* signin-view-title — the title for the same page. It goes in the
      page's title block and says what the page's heading says. Keys:
      View, Brand (as signin-view). */}}
@@ -35,9 +40,10 @@
 </section>{{end}}
 {{/* signin-add — part of signin-view. It draws one way's add page, on
      the same card: the passkey's
-     button, which register.mjs (Add.Passkey.ScriptURL) enables where a
-     passkey can be made; the authenticator's QR, key and one code to
-     confirm; or the passphrase, with the address as a username a
+     button, which signin-view-head's probe (Add.Passkey.ProbeURL)
+     enables before the first paint where a passkey can be made and
+     register.mjs (Add.Passkey.ScriptURL) works; the authenticator's
+     QR, key and one code to confirm; or the passphrase, with the address as a username a
      password manager saves it under. With Add.Done it says the way
      works and links on to Add.ReturnTo. Add.Problem, a locale key, is
      drawn on the field, where focus starts.
@@ -52,7 +58,7 @@
 <p rst-signin-passkey-msg id="rst-signin-passkey-msg" aria-live="polite"></p>
 </div>
 {{if not $preview}}<noscript><p>{{T $L "rastrillo.ui.signin_passkey_noscript"}}</p></noscript>
-<script type="module" src="{{$a.Passkey.ScriptURL}}"></script>
+<script type="module" src="{{$a.Passkey.ScriptURL}}" data-rst-passkey-script></script>
 {{end}}{{else if eq $way "authenticator"}}<p>{{T $L "rastrillo.ui.signin_add_authenticator_body"}}</p>
 {{$a.QR (T $L "rastrillo.ui.signin_add_authenticator_qr")}}
 <p>{{T $L "rastrillo.ui.signin_add_authenticator_key"}} <code>{{$a.Key}}</code></p>

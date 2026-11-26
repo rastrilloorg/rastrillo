@@ -61,6 +61,15 @@ type screenApp struct {
 	// oneWay builds the app with Config.SigninOneWay and an Oficina ID
 	// door at /signin/oficina; set it before the rig builds the app.
 	oneWay bool
+
+	// proofOff builds it with Config.ProofOff, for a drive that measures
+	// the passkey door alone: pow's status line moves the card on its own
+	// when the module hides it.
+	proofOff bool
+
+	// noHead leaves signin-head out of the page's head, as in an app
+	// that upgraded without adding it.
+	noHead bool
 }
 
 type seenRequest struct{ method, path, referer, origin string }
@@ -104,9 +113,13 @@ func newScreenApp(t *testing.T) (*screenApp, func(origin string) http.Handler) {
 		if err != nil {
 			t.Fatalf("pow.New: %v", err)
 		}
-		a, err := New(Config{DB: d.Writer(), Origin: origin,
+		cfg := Config{DB: d.Writer(), Origin: origin,
 			InstanceKey: "browser-instance-key", Mailer: app.mail,
-			SigninScreen: true, SigninOneWay: app.oneWay, Proof: g})
+			SigninScreen: true, SigninOneWay: app.oneWay, Proof: g}
+		if app.proofOff {
+			cfg.Proof, cfg.ProofOff = nil, true
+		}
+		a, err := New(cfg)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -128,6 +141,10 @@ func newScreenApp(t *testing.T) (*screenApp, func(origin string) http.Handler) {
 		template.Must(tmpl.Parse(string(stage)))
 		template.Must(tmpl.Parse(`{{define "title"}}{{template "signin-title" (dict "State" .Signin "Brand" .Brand)}}{{end}}` +
 			`{{define "content"}}{{template "signin" (dict "State" .Signin "Brand" .Brand)}}{{end}}`))
+		if !app.noHead {
+			template.Must(tmpl.Parse(`{{define "head"}}` +
+				`{{template "signin-head" (dict "State" .Signin)}}{{end}}`))
+		}
 
 		mux := http.NewServeMux()
 		mux.Handle("GET /pow/", http.StripPrefix("/pow/", powAssets.Handler()))
@@ -141,6 +158,8 @@ func newScreenApp(t *testing.T) (*screenApp, func(origin string) http.Handler) {
 		}
 		mux.HandleFunc("GET /static/webauthn.mjs", serveBytes(webauthn.JS(), "text/javascript; charset=utf-8"))
 		mux.HandleFunc("GET /static/passkey-signin.mjs", serveBytes(passkey.JS(), "text/javascript; charset=utf-8"))
+		mux.HandleFunc("GET /static/passkey-probe.js", serveBytes(
+			passkey.ProbeJS(), "text/javascript; charset=utf-8"))
 		signinPage := func(door bool) http.HandlerFunc {
 			return func(w http.ResponseWriter, r *http.Request) {
 				st := a.SigninState(r)
@@ -148,6 +167,7 @@ func newScreenApp(t *testing.T) (*screenApp, func(origin string) http.Handler) {
 					st.Passkey = &PasskeyDoor{
 						BeginPath: "/passkey/discover/begin", FinishPath: "/passkey/discover/finish",
 						ModuleURL: "/static/webauthn.mjs", ScriptURL: "/static/passkey-signin.mjs",
+						ProbeURL: "/static/passkey-probe.js",
 					}
 				}
 				if app.oneWay {
@@ -417,15 +437,6 @@ func arrive(marker string) chromedp.Action[chromedp.Void] {
 	)
 }
 
-// doorRevealed waits for the passkey door before a click on the email
-// form beside it. The door ships hidden and its module reveals it when
-// an import resolves, which can be after the load. The reveal moves the
-// submit about 50px, so a Click aimed before it and pressed after lands
-// on the email field and nothing is sent.
-func doorRevealed() chromedp.Action[chromedp.Void] {
-	return chromedp.WaitVisible(chromedp.CSS(`[data-rst-passkey]`))
-}
-
 // read is run for one action that returns a value.
 func read[T any](t *testing.T, rig *harness.Rig, action chromedp.Action[T]) T {
 	t.Helper()
@@ -662,7 +673,7 @@ func TestSigninScreenInTheBrowser(t *testing.T) {
 	}
 
 	// Ask: focus starts in the field, and Tab reaches Continue, then the
-	// passkey door, which its module revealed.
+	// passkey door, which the probe showed before the first paint.
 	run(t, rig, chromedp.Navigate(rig.Origin+"/signin"), chromedp.WaitVisible(chromedp.CSS(`[data-rst-passkey]`)))
 	if module.loads() == 0 {
 		t.Fatal("the screen with a passkey door never loaded its module")
@@ -731,7 +742,7 @@ func TestSigninScreenInTheBrowser(t *testing.T) {
 	// Keymail, scripts on: POST → 303 → the continuation page → the
 	// provider, with the page's CSP still form-action 'self'. A CSP
 	// violation is a console error, which the Screen below reports.
-	run(t, rig, doorRevealed(),
+	run(t, rig,
 		chromedp.SendKeys(chromedp.CSS("#rst-signin-email"), "kay@example.org"),
 		chromedp.Click(chromedp.CSS(`form[action="/signin"] button[type="submit"]`)),
 	)
@@ -775,7 +786,7 @@ func TestSigninScreenInTheBrowser(t *testing.T) {
 	// the server is certain to refuse. The keymail continuation page has
 	// no form: its meta refresh needs no script and still moves on.
 	// The same half-second is given to the page scripts-on would need to
-	// reveal the door, so "hidden" is the scripts' absence and not a read
+	// show the door, so "hidden" is the scripts' absence and not a read
 	// taken before they ran.
 	run(t, rig, scriptExecutionDisabled(true), chromedp.Navigate(rig.Origin+"/signin"), chromedp.WaitVisible(chromedp.CSS("#rst-signin-email")),
 		chromedp.Sleep(500*time.Millisecond))
@@ -851,7 +862,6 @@ func TestSigninScreenInTheBrowser(t *testing.T) {
 		}
 		step("asking for a link")
 		run(t, rig, chromedp.Navigate(rig.Origin+"/signin"), chromedp.WaitVisible(chromedp.CSS("#rst-signin-email")),
-			doorRevealed(),
 			chromedp.SetValue(chromedp.CSS("#rst-signin-email"), address),
 			chromedp.Click(chromedp.CSS(`form[action="/signin"] button[type="submit"]`)))
 		step("waiting for Sent")
@@ -907,11 +917,12 @@ func TestThePasskeyDoorFailsQuietlyAndOnce(t *testing.T) {
 	}))
 	run(t, rig, chromedp.Navigate(rig.Origin+"/signin"), chromedp.WaitVisible(chromedp.CSS(`[data-rst-passkey]`)))
 
+	// Pressed with the mouse: the door ignores a script's click().
 	var raw string
+	tap(t, rig, passkeyDoor)
 	eval(t, rig, `(async () => {
 	  const b = document.querySelector("[data-rst-passkey]");
 	  const msg = document.getElementById("rst-signin-passkey-msg");
-	  b.focus(); b.click();
 	  for (let i = 0; i < 100 && !msg.textContent; i++) await new Promise(r => setTimeout(r, 50));
 	  return JSON.stringify({msg: msg.textContent, live: msg.getAttribute("aria-live"), want: b.getAttribute("data-rst-passkey-cancelled"),
 	    focused: document.activeElement === b, disabled: b.disabled, busy: b.getAttribute("aria-busy")});
@@ -928,13 +939,17 @@ func TestThePasskeyDoorFailsQuietlyAndOnce(t *testing.T) {
 		t.Fatalf("after a dismissed prompt: %+v; want the cancelled words in the live region, focus still on the button, never disabled, no longer busy", got)
 	}
 
-	eval(t, rig, `(async () => {
+	var before float64
+	eval(t, rig, `window.__hold = true, window.__begins`, &before)
+	for range 2 {
+		tap(t, rig, passkeyDoor)
+		run(t, rig, chromedp.Sleep(300*time.Millisecond))
+	}
+	eval(t, rig, `(() => {
 	  const b = document.querySelector("[data-rst-passkey]");
-	  window.__hold = true;
-	  const before = window.__begins;
-	  b.click(); await new Promise(r => setTimeout(r, 300));
-	  b.click(); await new Promise(r => setTimeout(r, 300));
-	  return JSON.stringify({started: window.__begins - before, busy: b.getAttribute("aria-busy"), disabled: b.disabled});
+	  return JSON.stringify({started: window.__begins - `+
+		fmt.Sprint(before)+`, busy: b.getAttribute("aria-busy"),
+	    disabled: b.disabled});
 	})()`, &raw)
 	var busy struct {
 		Started  int

@@ -59,6 +59,8 @@ func (signins *Signins) mountPasskey(routes *action.Routes) {
 	module(routes, PasskeyModulePath, passkey.JS(), "passkeyModule")
 	module(routes, RegisterModulePath, passkey.RegisterJS(),
 		"passkeyRegisterModule")
+	script(routes, action.Path(PasskeyProbePath), passkey.ProbeJS(),
+		"passkeyProbe", "public, max-age=31536000, immutable")
 }
 
 func (signins *Signins) mountPassphrase(routes *action.Routes) {
@@ -110,16 +112,28 @@ func (signins *Signins) mountManagement(routes *action.Routes) {
 func module(
 	routes *action.Routes, path action.Path, body []byte, name string,
 ) {
-	sum := sha256.Sum256(body)
-	tag := `"` + hex.EncodeToString(sum[:])[:16] + `"`
+	script(routes, path, body, name, "no-cache")
+}
+
+func script(
+	routes *action.Routes, path action.Path, body []byte,
+	name, cache string,
+) {
+	tag := `"` + hash(body) + `"`
 	routes.Handle(http.MethodGet, path, http.HandlerFunc(func(
 		response http.ResponseWriter, request *http.Request,
 	) {
 		header := response.Header()
 		header.Set("Content-Type", "text/javascript; charset=utf-8")
-		header.Set("Cache-Control", "no-cache")
+		header.Set("Cache-Control", cache)
 		header.Set("ETag", tag)
 		http.ServeContent(response, request, "", time.Time{},
 			bytes.NewReader(body))
 	}), name)
+}
+
+// hash is the part of body's SHA-256 a URL or an ETag carries.
+func hash(body []byte) string {
+	sum := sha256.Sum256(body)
+	return hex.EncodeToString(sum[:])[:16]
 }

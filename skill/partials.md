@@ -52,12 +52,14 @@ Call one as `{{template "name" dict "L" $L "Key" value ...}}`; `L` is the locali
 - **signin-brand**: Part of signin-view. Keys: `Brand`.
 - **signin-forget-way**: Part of signin. Keys: `State`.
 - **signin-glyph**: Part of signin. Keys: `Glyph`.
+- **signin-head**: The passkey probe, for the head block. Keys: `State`.
 - **signin-offer**: Part of signin-view. Keys: `Brand`, `HideBrand`, `Offer`.
 - **signin-one-way**: Part of signin. Keys: `Door`, `Focus`, `Gated`, `Name`, `Preview`, `Proof`, `State`.
 - **signin-options**: Part of signin-view. Keys: `Brand`, `HideBrand`, `Options`.
 - **signin-secret-door**: Part of signin. Keys: `Autocomplete`, `Door`, `Focus`, `Gated`, `ID`, `Inputmode`, `Label`, `Name`, `Proof`, `State`, `Type`.
 - **signin-title**: The document title for the same state, for the page's title block: every state has one heading and a title that says the same thing, so a screen-reader user who lands on the page hears where they are. Keys: `Brand`, `State`.
 - **signin-view**: Every page of the signin package, from its View. Keys: `Brand`, `HideBrand`, `Preview`, `View`.
+- **signin-view-head**: Signin-head for signin-view. Keys: `View`.
 - **signin-view-title**: The title for the same page. Keys: `Brand`, `View`.
 - **stat**: One reading in a stat band: a label over a number, with an optional change under it. Keys: `Delta`, `Exact`, `Label`, `Lead`, `Note`, `Tone`, `Value`.
 - **status-pill**: A status as a tinted pill. Keys: `Label`, `Tone`.

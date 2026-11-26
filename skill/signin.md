@@ -82,9 +82,10 @@ state)` before rendering; make that handler `RenderConfirm` too, as an
 `app.auth.Forget`. `SigninOneWay: true` draws one way in per page, with
 "Other ways to sign in" (`?ways=1`, `?way=`); set `state.Federated`
 (`auth.FederatedDoor{Provider, Href, Label}`) for Oficina ID and
-`state.AppProblem` for your refusal text. With passkeys, serve `passkey.JS()` beside
-`webauthn.JS()`, set both URLs (`ScriptURL`, `ModuleURL`) on
-`state.Passkey`, and wire `passkey.Config.Remember:
+`state.AppProblem` for your refusal text. With passkeys, serve `passkey.JS()` and
+`passkey.ProbeJS()` beside `webauthn.JS()`, set the URLs (`ScriptURL`,
+`ProbeURL`, `ModuleURL`) on `state.Passkey`, render `signin-head` in the
+page's `head` block, and wire `passkey.Config.Remember:
 app.auth.RememberJar()`. An admission check in front of `Begin` answers
 refusals with `app.auth.AnswerAsSent(response, request)`, never its own
 `?sent=1`.

@@ -141,6 +141,7 @@ type Step struct {
 | `WebauthnModulePath`, `/signin/js/webauthn.mjs` | GET | `webauthn.JS()` |
 | `PasskeyModulePath`, `/signin/js/signin.mjs` | GET | `passkey.JS()` |
 | `RegisterModulePath`, `/signin/js/register.mjs` | GET | `passkey.RegisterJS()` |
+| `PasskeyProbePath`, `/signin/js/probe.<hash>.js` | GET | `passkey.ProbeJS()`, cached for a year |
 | `RevealModulePath`, `/signin/js/reveal.mjs` | GET | `RevealJS()` |
 
 `SignInWithCode` and `SignInWithPassphrase` take `address` with `code`
@@ -228,8 +229,10 @@ type OptionRow struct {
 
 `signin` writes no HTML. It hands `Config.Render` a `View` with one of
 `Signin`, `Offer`, `Add` or `Options` set, and the status to answer
-with (0 for 200). ui's `signin-view` partial draws whichever it is, and
-`signin-view-title` its title, so one render function on the stage
-shell serves the sign-in screen and every page here. `Choices` lists the
+with (0 for 200). ui's `signin-view` partial draws whichever it is, `signin-view-title`
+its title, and `signin-view-head`, in the page's `head` block, the
+script that shows the passkey button before the page is first drawn.
+One render function on the stage shell serves the sign-in screen and
+every page here. `Choices` lists the
 offer's rows, passkey first, each carrying `ReturnTo` on to its add
 page. A passkey has an `OptionRow` per credential, named by `Label`.

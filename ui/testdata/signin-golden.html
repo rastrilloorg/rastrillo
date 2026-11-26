@@ -82,10 +82,10 @@ Sign in to Harbour
 <button rst-btn="primary block" type="submit">Continue</button>
 </form>
 <p rst-signin-or>or</p>
-<div rst-signin-passkey><button rst-btn="block" type="button" hidden data-rst-passkey data-rst-passkey-begin="/passkey/discover/begin" data-rst-passkey-finish="/passkey/discover/finish" data-rst-passkey-module="/static/webauthn.mjs" data-rst-passkey-cancelled="No passkey was used. Try again, or use your email." data-rst-passkey-failed="That didn&#39;t work. Try again, or use your email." aria-describedby="rst-signin-passkey-msg">Sign in with a passkey</button>
+<div rst-signin-passkey><button rst-btn="block" type="button" hidden data-rst-passkey data-rst-passkey-begin="/passkey/discover/begin" data-rst-passkey-finish="/passkey/discover/finish" data-rst-passkey-module="/static/webauthn.mjs" data-rst-passkey-cancelled="No passkey was used. Try again, or use your email." data-rst-passkey-failed="That didn&#39;t work. Try again, or use your email." data-rst-passkey-unavailable="Passkeys don&#39;t work in this browser. Use your email instead." aria-describedby="rst-signin-passkey-msg">Sign in with a passkey</button>
 <p rst-signin-passkey-msg id="rst-signin-passkey-msg" aria-live="polite"></p>
 </div>
-<script type="module" src="/static/passkey-signin.mjs"></script>
+<script type="module" src="/static/passkey-signin.mjs" data-rst-passkey-script></script>
 </div>
 </section>
 Sign in to Harbour
@@ -103,10 +103,10 @@ Sign in to Harbour
 <button rst-btn="primary block" type="submit">Continue</button>
 </form>
 <p rst-signin-or>or</p>
-<div rst-signin-passkey><button rst-btn="block" type="button" hidden data-rst-passkey data-rst-passkey-begin="/passkey/discover/begin" data-rst-passkey-finish="/passkey/discover/finish?return_to=%2Fdocs%2F7%3Ftab%3Da%26b%3Dc" data-rst-passkey-module="/static/webauthn.mjs" data-rst-passkey-cancelled="No passkey was used. Try again, or use your email." data-rst-passkey-failed="That didn&#39;t work. Try again, or use your email." aria-describedby="rst-signin-passkey-msg">Sign in with a passkey</button>
+<div rst-signin-passkey><button rst-btn="block" type="button" hidden data-rst-passkey data-rst-passkey-begin="/passkey/discover/begin" data-rst-passkey-finish="/passkey/discover/finish?return_to=%2Fdocs%2F7%3Ftab%3Da%26b%3Dc" data-rst-passkey-module="/static/webauthn.mjs" data-rst-passkey-cancelled="No passkey was used. Try again, or use your email." data-rst-passkey-failed="That didn&#39;t work. Try again, or use your email." data-rst-passkey-unavailable="Passkeys don&#39;t work in this browser. Use your email instead." aria-describedby="rst-signin-passkey-msg">Sign in with a passkey</button>
 <p rst-signin-passkey-msg id="rst-signin-passkey-msg" aria-live="polite"></p>
 </div>
-<script type="module" src="/static/passkey-signin.mjs"></script>
+<script type="module" src="/static/passkey-signin.mjs" data-rst-passkey-script></script>
 </div>
 </section>
 Sign in to Harbour
@@ -133,10 +133,10 @@ Sign in to Harbour
 <p data-pow-status>If this form doesn&#39;t respond, reload the page.</p><noscript><p>This form needs JavaScript to work.</p></noscript>
 </form>
 <p rst-signin-or>or</p>
-<div rst-signin-passkey><button rst-btn="block" type="button" hidden data-rst-passkey data-rst-passkey-begin="/passkey/discover/begin" data-rst-passkey-finish="/passkey/discover/finish" data-rst-passkey-module="/static/webauthn.mjs" data-rst-passkey-cancelled="No passkey was used. Try again, or use your email." data-rst-passkey-failed="That didn&#39;t work. Try again, or use your email." aria-describedby="rst-signin-passkey-msg">Sign in with a passkey</button>
+<div rst-signin-passkey><button rst-btn="block" type="button" hidden data-rst-passkey data-rst-passkey-begin="/passkey/discover/begin" data-rst-passkey-finish="/passkey/discover/finish" data-rst-passkey-module="/static/webauthn.mjs" data-rst-passkey-cancelled="No passkey was used. Try again, or use your email." data-rst-passkey-failed="That didn&#39;t work. Try again, or use your email." data-rst-passkey-unavailable="Passkeys don&#39;t work in this browser. Use your email instead." aria-describedby="rst-signin-passkey-msg">Sign in with a passkey</button>
 <p rst-signin-passkey-msg id="rst-signin-passkey-msg" aria-live="polite"></p>
 </div>
-<script type="module" src="/static/passkey-signin.mjs"></script>
+<script type="module" src="/static/passkey-signin.mjs" data-rst-passkey-script></script>
 <script type="module" src="/pow/pow.js"></script></div>
 </section>
 Sign in to Harbour
@@ -305,11 +305,11 @@ Sign in to Harbour
 <div rst-signin-brand><p rst-signin-name>Harbour</p></div>
 <div rst-signin-door>
 <h1 id="rst-signin-heading">Sign in to Harbour</h1>
-<div rst-signin-passkey><button rst-btn="primary block" type="button" hidden data-rst-passkey data-rst-passkey-begin="/passkey/discover/begin" data-rst-passkey-finish="/passkey/discover/finish" data-rst-passkey-module="/static/webauthn.mjs" data-rst-passkey-cancelled="No passkey was used. Try again, or use your email." data-rst-passkey-failed="That didn&#39;t work. Try again, or use your email." aria-describedby="rst-signin-passkey-msg">Sign in with your passkey</button>
+<div rst-signin-passkey><button rst-btn="primary block" type="button" hidden data-rst-passkey data-rst-passkey-begin="/passkey/discover/begin" data-rst-passkey-finish="/passkey/discover/finish" data-rst-passkey-module="/static/webauthn.mjs" data-rst-passkey-cancelled="No passkey was used. Try again, or use your email." data-rst-passkey-failed="That didn&#39;t work. Try again, or use your email." data-rst-passkey-unavailable="Passkeys don&#39;t work in this browser. Use your email instead." aria-describedby="rst-signin-passkey-msg">Sign in with your passkey</button>
 <p rst-signin-passkey-msg id="rst-signin-passkey-msg" aria-live="polite"></p>
 </div>
 <p rst-signin-or>or</p>
-<script type="module" src="/static/passkey-signin.mjs"></script>
+<script type="module" src="/static/passkey-signin.mjs" data-rst-passkey-script></script>
 <form rst-signin-form method="post" action="/signin">
 <div rst-field><label rst-field-label for="rst-signin-email">Email</label>
 <input rst-input type="email" id="rst-signin-email" name="address" required autocomplete="email">
@@ -326,11 +326,11 @@ Sign in to Harbour
 <div rst-signin-brand><p rst-signin-name>Harbour</p></div>
 <div rst-signin-door>
 <h1 id="rst-signin-heading">Sign in to Harbour</h1>
-<div rst-signin-passkey><button rst-btn="primary block" type="button" hidden data-rst-passkey data-rst-passkey-begin="/passkey/discover/begin" data-rst-passkey-finish="/passkey/discover/finish?return_to=%2Fdocs%2F7%3Ftab%3Da%26b%3Dc" data-rst-passkey-module="/static/webauthn.mjs" data-rst-passkey-cancelled="No passkey was used. Try again, or use your email." data-rst-passkey-failed="That didn&#39;t work. Try again, or use your email." aria-describedby="rst-signin-passkey-msg">Sign in with your passkey</button>
+<div rst-signin-passkey><button rst-btn="primary block" type="button" hidden data-rst-passkey data-rst-passkey-begin="/passkey/discover/begin" data-rst-passkey-finish="/passkey/discover/finish?return_to=%2Fdocs%2F7%3Ftab%3Da%26b%3Dc" data-rst-passkey-module="/static/webauthn.mjs" data-rst-passkey-cancelled="No passkey was used. Try again, or use your email." data-rst-passkey-failed="That didn&#39;t work. Try again, or use your email." data-rst-passkey-unavailable="Passkeys don&#39;t work in this browser. Use your email instead." aria-describedby="rst-signin-passkey-msg">Sign in with your passkey</button>
 <p rst-signin-passkey-msg id="rst-signin-passkey-msg" aria-live="polite"></p>
 </div>
 <p rst-signin-or>or</p>
-<script type="module" src="/static/passkey-signin.mjs"></script>
+<script type="module" src="/static/passkey-signin.mjs" data-rst-passkey-script></script>
 <form rst-signin-form method="post" action="/signin">
 <input type="hidden" name="return_to" value="/docs/7?tab=a&amp;b=c">
 <div rst-field><label rst-field-label for="rst-signin-email">Email</label>
@@ -349,11 +349,11 @@ Sign in to Harbour
 <div rst-signin-brand><p rst-signin-name>Harbour</p></div>
 <div rst-signin-door>
 <h1 id="rst-signin-heading">Sign in to Harbour</h1>
-<div rst-signin-passkey><button rst-btn="primary block" type="button" hidden data-rst-passkey data-rst-passkey-begin="/passkey/discover/begin" data-rst-passkey-finish="/passkey/discover/finish" data-rst-passkey-module="/static/webauthn.mjs" data-rst-passkey-cancelled="No passkey was used. Try again, or use your email." data-rst-passkey-failed="That didn&#39;t work. Try again, or use your email." aria-describedby="rst-signin-passkey-msg">Sign in with your passkey</button>
+<div rst-signin-passkey><button rst-btn="primary block" type="button" hidden data-rst-passkey data-rst-passkey-begin="/passkey/discover/begin" data-rst-passkey-finish="/passkey/discover/finish" data-rst-passkey-module="/static/webauthn.mjs" data-rst-passkey-cancelled="No passkey was used. Try again, or use your email." data-rst-passkey-failed="That didn&#39;t work. Try again, or use your email." data-rst-passkey-unavailable="Passkeys don&#39;t work in this browser. Use your email instead." aria-describedby="rst-signin-passkey-msg">Sign in with your passkey</button>
 <p rst-signin-passkey-msg id="rst-signin-passkey-msg" aria-live="polite"></p>
 </div>
 <p rst-signin-or>or</p>
-<script type="module" src="/static/passkey-signin.mjs"></script>
+<script type="module" src="/static/passkey-signin.mjs" data-rst-passkey-script></script>
 <form rst-signin-form method="post" action="/signin" data-pow-form data-pow-nonce="…" data-pow-difficulty="12" data-pow-worker="/pow/pow-worker.js" data-pow-min-age="3000"><input type="hidden" name="pow_scope" value="…">
 <input type="hidden" name="pow_nonce" value="…">
 <input type="hidden" name="pow_issued" value="…">

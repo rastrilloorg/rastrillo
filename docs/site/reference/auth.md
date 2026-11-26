@@ -301,9 +301,9 @@ type SigninWayRow struct {
 }
 
 type PasskeyDoor struct {
-	BeginPath, FinishPath string
-	ModuleURL, ScriptURL  string
-	LegacyRPID            string
+	BeginPath, FinishPath          string
+	ModuleURL, ScriptURL, ProbeURL string
+	LegacyRPID                     string
 }
 
 type SecretDoor struct{ Path string }

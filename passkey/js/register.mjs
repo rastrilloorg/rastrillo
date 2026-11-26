@@ -3,11 +3,14 @@
 // serves it from passkey.RegisterJS(), with passkey.JS() beside it as
 // signin.mjs, whose safeNext and busy it imports.
 //
-// The button ships disabled, keeping its place, and is enabled only
-// where a ceremony can run: PublicKeyCredential exists and the app's
-// webauthn module (data-rst-passkey-module) loads and says so. Where
-// one cannot, the message line says the passkey did not work, so the
-// page is never a button that does nothing.
+// The button ships disabled, keeping its place, and probe.js enables it
+// before the first paint where WebAuthn exists. On a page without the
+// probe, an app not yet updated, this module enables it, as it always
+// did. A press is kept until
+// the app's webauthn module (data-rst-passkey-module) has loaded; where
+// that module fails or says credentials are unavailable, or WebAuthn is
+// missing, the message line says the passkey did not work, so the page
+// is never a button that does nothing.
 //
 // The session can go stale between the page loading and the button
 // being pressed. Then begin or finish answers 401 naming the sign-in
@@ -16,17 +19,18 @@
 // The passkey's user handle is random, made here per passkey: it is
 // stored on the device and must not carry the address, which the
 // device shows as the passkey's name instead (data-rst-passkey-user).
-import { safeNext, busy } from "./signin.mjs";
+import { safeNext, busy, claim, probed, startAttempt, idle } from "./signin.mjs";
 
 // postOrReauth is signin.mjs's postJSON, plus one answer of its own: a
 // 401 naming a sign-in page throws an error carrying it as reauth. Any
 // other non-2xx answer is an error, never a body to act on.
-export async function postOrReauth(url, body) {
+export async function postOrReauth(url, body, signal) {
   const res = await fetch(url, {
     method: "POST",
     credentials: "same-origin",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body || {}),
+    signal,
   });
   if (res.status === 401) {
     const answer = await res.json().catch(() => null);
@@ -51,22 +55,30 @@ function userId() {
 // can drive every branch. It never throws: it resolves to {navigate}
 // when finish answered ok:true or a request named a sign-in page to
 // go to first, else to {message: "failed"}. A failure must never
-// navigate as if it had worked.
-export async function enrol({ post, register, begin, finish, rpId, rpName, userName, loc }) {
+// navigate as if it had worked. signal, as ceremony's in signin.mjs,
+// ends the attempt: once it is aborted enrol resolves to {} and sends
+// nothing more.
+export async function enrol({ post, register, begin, finish, rpId, rpName, userName, loc, signal }) {
+  const ended = () => !!(signal && signal.aborted);
   try {
-    const b = await post(begin, {});
+    if (ended()) return {};
+    const b = await post(begin, {}, signal);
+    if (ended()) return {};
     if (!b || typeof b.challenge !== "string") return { message: "failed" };
     const created = await register({
       challenge: b.challenge, rpId, rpName, userId: userId(), userName,
     });
+    if (ended()) return {};
     // The prf output, if any, is a client-side secret: never sent.
     const done = await post(finish, {
       clientDataJSON: created.clientDataJSON,
       attestationObject: created.attestationObject,
-    });
+    }, signal);
+    if (ended()) return {};
     if (!done || done.ok !== true) return { message: "failed" };
     return { navigate: safeNext(done.to, loc) };
   } catch (err) {
+    if (ended()) return {};
     if (err && typeof err.reauth === "string") {
       return { navigate: safeNext(err.reauth, loc) };
     }
@@ -83,20 +95,23 @@ function button(btn) {
     failed();
     return;
   }
-  let mod = null;
-  import(btn.getAttribute("data-rst-passkey-module")).then((m) => {
-    if (m && m.available && m.available()) {
-      mod = m;
-      btn.disabled = false;
-    } else {
-      failed();
-    }
-  }, failed);
-  btn.addEventListener("click", async () => {
-    if (!mod || btn.getAttribute("aria-busy") === "true") return;
+  const loaded = import(btn.getAttribute("data-rst-passkey-module")).then(
+    (m) => (m && m.available && m.available() ? m : null),
+    () => null,
+  );
+  if (!probed()) {
+    loaded.then((mod) => {
+      if (mod) btn.disabled = false;
+      else failed();
+    });
+  }
+  claim(btn, async () => {
+    if (btn.getAttribute("aria-busy") === "true") return;
+    const signal = startAttempt(btn);
     busy(btn, true);
     if (msg) msg.textContent = "";
-    const out = await enrol({
+    const mod = await loaded;
+    const out = signal.aborted ? {} : !mod ? { message: "failed" } : await enrol({
       post: postOrReauth,
       register: mod.register,
       begin: btn.getAttribute("data-rst-passkey-begin"),
@@ -105,12 +120,17 @@ function button(btn) {
       rpName: btn.getAttribute("data-rst-passkey-rp-name") || location.hostname,
       userName: btn.getAttribute("data-rst-passkey-user") || "",
       loc: location,
+      signal,
     });
+    if (signal.aborted) {
+      idle(btn, signal);
+      return;
+    }
     if (out.navigate) {
       location.assign(out.navigate);
       return;
     }
-    busy(btn, false);
+    idle(btn, signal);
     failed();
   });
 }

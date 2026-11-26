@@ -1,14 +1,17 @@
 package signin
 
 import (
+	"bytes"
 	"net/http"
 	"net/http/httptest"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/go-chi/chi/v5"
 
 	"amadan.net/rastrillo/rastrillo/action"
+	"amadan.net/rastrillo/rastrillo/passkey"
 )
 
 func listed(routes *action.Routes) []string {
@@ -23,6 +26,7 @@ func listed(routes *action.Routes) []string {
 var passkeyRoutes = []string{
 	"GET /signin/add/passkey showAddPasskey",
 	"GET /signin/js/register.mjs passkeyRegisterModule",
+	"GET " + PasskeyProbePath + " passkeyProbe",
 	"GET /signin/js/signin.mjs passkeyModule",
 	"GET /signin/js/webauthn.mjs webauthnModule",
 	"POST /passkey/discover/begin passkeySignInBegin",
@@ -120,5 +124,27 @@ func TestModulesServeAsJavaScript(t *testing.T) {
 		if second.Code != http.StatusNotModified {
 			t.Errorf("%s: revalidation answered %d", path, second.Code)
 		}
+	}
+}
+
+// The card waits for the probe, so a repeat visit must not ask for it
+// again: its name carries its bytes' hash, and it is cached for good.
+func TestTheProbeIsCachedForGood(t *testing.T) {
+	test := newRig(t, nil)
+	router := chi.NewRouter()
+	test.signins.Mount(action.NewRoutes(router, nil))
+	response := httptest.NewRecorder()
+	router.ServeHTTP(response,
+		httptest.NewRequest(http.MethodGet, PasskeyProbePath, nil))
+	header := response.Header()
+	if response.Code != http.StatusOK ||
+		header.Get("Content-Type") != "text/javascript; charset=utf-8" ||
+		header.Get("Cache-Control") != "public, max-age=31536000, immutable" ||
+		!bytes.Equal(response.Body.Bytes(), passkey.ProbeJS()) {
+		t.Errorf("%s: %d %q %q", PasskeyProbePath, response.Code,
+			header.Get("Content-Type"), header.Get("Cache-Control"))
+	}
+	if !strings.Contains(PasskeyProbePath, "."+hash(passkey.ProbeJS())+".") {
+		t.Errorf("%s does not carry its bytes' hash", PasskeyProbePath)
 	}
 }

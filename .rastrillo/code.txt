@@ -2388,7 +2388,6 @@ columns auth/signinscreen_browser_test.go df5eba7eea19 1 rewritten by the chrome
 columns auth/signinscreen_browser_test.go dfac188e8ce2 1
 columns auth/signinscreen_browser_test.go e6d514676aea 1
 columns auth/signinscreen_browser_test.go eba7da6e9ed3 1
-columns auth/signinscreen_browser_test.go ed1e021c5450 1
 columns auth/signinscreen_browser_test.go edcccf1b4179 1
 columns auth/signinscreen_browser_test.go ef6efbcc4c6a 1
 columns auth/signinscreen_browser_test.go f22fdb59a2f0 1
@@ -24087,7 +24086,6 @@ columns ui/signin_browser_test.go 92e1aa47f489 1
 columns ui/signin_browser_test.go 936988f49f4b 1
 columns ui/signin_browser_test.go b4fdf8b96e99 1
 columns ui/signin_browser_test.go b56c91be03a4 1
-columns ui/signin_browser_test.go c5d69b2887c3 1
 columns ui/signin_browser_test.go cc92b6b41ec2 1
 columns ui/signin_browser_test.go dbab5c6cf431 2
 columns ui/signin_browser_test.go dd03ef84da6d 1
@@ -24159,7 +24157,6 @@ columns ui/signin_test.go 460e40d59d09 1
 columns ui/signin_test.go 5075e60b25a9 1
 columns ui/signin_test.go 535d3a5735c3 1
 columns ui/signin_test.go 5591189b3159 1
-columns ui/signin_test.go 5759dcfa568f 1
 columns ui/signin_test.go 57f1fc9d8ae4 1
 columns ui/signin_test.go 58886cc375c8 1
 columns ui/signin_test.go 5b3769321d62 1
@@ -24177,8 +24174,6 @@ columns ui/signin_test.go 7664f6eab428 1
 columns ui/signin_test.go 78f84ff49ca7 1
 columns ui/signin_test.go 7b33946ad323 1
 columns ui/signin_test.go 80074512aa5e 1
-columns ui/signin_test.go 836462fb9550 1
-columns ui/signin_test.go 842139bc8ad4 1
 columns ui/signin_test.go 8773da00898b 1
 columns ui/signin_test.go 88181825e6d5 1
 columns ui/signin_test.go 890a8cb07eb8 1

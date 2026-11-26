@@ -50,6 +50,11 @@ const (
 	PasskeyModulePath  = "/signin/js/signin.mjs"
 )
 
+// PasskeyProbePath is where Mount serves passkey.ProbeJS(). The card
+// waits for it, so its name carries its bytes' hash and it is cached
+// for good, where the modules are asked for again on every load.
+var PasskeyProbePath = "/signin/js/probe." + hash(passkey.ProbeJS()) + ".js"
+
 // Config configures New. Auth, DB and Render are always required;
 // Origin, Key and Issuer when the passkey or authenticator way is on.
 type Config struct {
@@ -213,6 +218,7 @@ func (signins *Signins) Fill(state *auth.SigninState) {
 		state.Passkey = &auth.PasskeyDoor{
 			BeginPath: PasskeyBeginPath, FinishPath: PasskeyFinishPath,
 			ModuleURL: WebauthnModulePath, ScriptURL: PasskeyModulePath,
+			ProbeURL: PasskeyProbePath,
 		}
 	}
 	if ways&Authenticator != 0 {

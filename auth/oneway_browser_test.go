@@ -185,27 +185,31 @@ func TestTheOneWayScreenInTheBrowser(t *testing.T) {
 	}
 }
 
-// The passkey door on the one-way screen is the page's one way in, so it
-// is never hidden: drawn disabled, enabled by its script, and, in a
-// browser that cannot use a passkey, it says so and opens the email way.
+// The passkey door on the one-way screen is the page's one way in. It
+// is never shown late: the probe shows it, enabled, before the first
+// paint; scripts off it stays hidden beside a noscript line; and in a
+// browser that cannot use a passkey the page opens the email way.
 func TestTheOneWayPasskeyDoorNeverPopsIn(t *testing.T) {
 	_, rig := oneWayRig(t)
 	door := `[data-rst-passkey]`
 	way := rig.Origin + "/signin?way=passkey"
 
-	run(t, rig, chromedp.Navigate(way), arrive(door),
-		chromedp.Poll[chromedp.Void](`!document.querySelector("`+
-			`[data-rst-passkey]").disabled`))
+	run(t, rig, chromedp.Navigate(way), arrive(door))
+	var state string
+	eval(t, rig, `(b => b.disabled + " " + b.hidden)(document.`+
+		`querySelector("[data-rst-passkey]"))`, &state)
+	if state != "false false" {
+		t.Fatalf("the door is disabled/hidden %q", state)
+	}
 	rig.Screen("[rst-signin]", "the passkey way, enabled")
 
 	run(t, rig, scriptExecutionDisabled(true), chromedp.Navigate(way),
-		chromedp.WaitVisible(chromedp.CSS(door)))
-	var state string
-	eval(t, rig, `(b => b.disabled + " " + b.hidden + " " + `+
+		chromedp.WaitVisible(chromedp.CSS("noscript, [rst-signin-door]")))
+	eval(t, rig, `(b => b.hidden + " " + `+
 		`(b.getBoundingClientRect().height > 0))(document.querySelector("`+
 		`[data-rst-passkey]"))`, &state)
-	if state != "true false true" {
-		t.Fatalf("scripts off, the door is disabled/hidden/drawn %q", state)
+	if state != "true false" {
+		t.Fatalf("scripts off, the door is hidden/drawn %q", state)
 	}
 	if line := textOf(t, rig, "noscript"); line == "" {
 		t.Fatal("scripts off, no noscript line")

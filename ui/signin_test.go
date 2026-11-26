@@ -17,7 +17,13 @@ const keymailURL = "https://keymail.test/oauth/authorize?client_id=https%3A%2F%2
 // The module URLs are absolute paths on purpose: the door's script
 // import()s ModuleURL, which resolves against the script's own URL, so
 // a relative one would name a file beside the script and not the page.
-var signinDoor = &auth.PasskeyDoor{BeginPath: "/passkey/discover/begin", FinishPath: "/passkey/discover/finish", ModuleURL: "/static/webauthn.mjs", ScriptURL: "/static/passkey-signin.mjs"}
+var signinDoor = &auth.PasskeyDoor{
+	BeginPath:  "/passkey/discover/begin",
+	FinishPath: "/passkey/discover/finish",
+	ModuleURL:  "/static/webauthn.mjs",
+	ScriptURL:  "/static/passkey-signin.mjs",
+	ProbeURL:   "/static/passkey-probe.js",
+}
 
 func signinData(st auth.SigninState) map[string]any {
 	if st.BeginPath == "" {
@@ -381,19 +387,35 @@ func htmlEscapeText(s string) string {
 }
 
 func TestThePasskeyButtonWaitsForItsScript(t *testing.T) {
-	st := auth.SigninState{Step: auth.StepAsk, Passkey: &auth.PasskeyDoor{BeginPath: "/b", FinishPath: "/f", ModuleURL: "/m.mjs", ScriptURL: "/door.mjs", LegacyRPID: "old.example"}}
+	st := auth.SigninState{Step: auth.StepAsk, Passkey: &auth.PasskeyDoor{
+		BeginPath: "/b", FinishPath: "/f", ModuleURL: "/m.mjs",
+		ScriptURL: "/door.mjs", ProbeURL: "/probe.js",
+		LegacyRPID: "old.example",
+	}}
 	out := render(t, "signin", signinData(st))
 	for _, want := range []string{
 		" hidden", `data-rst-passkey-begin="/b"`, `data-rst-passkey-finish="/f"`, `data-rst-passkey-module="/m.mjs"`,
-		`<script type="module" src="/door.mjs"></script>`,
+		`<script type="module" src="/door.mjs" data-rst-passkey-script>` +
+			`</script>`,
 		`data-rst-passkey-legacy-rpid="old.example"`, `aria-describedby="rst-signin-passkey-msg"`,
 		`id="rst-signin-passkey-msg"`, `aria-live="polite"`,
 		`data-rst-passkey-cancelled="` + html.EscapeString(defaultT("rastrillo.ui.signin_passkey_cancelled")) + `"`,
 		`data-rst-passkey-failed="` + html.EscapeString(defaultT("rastrillo.ui.signin_passkey_failed")) + `"`,
+		`data-rst-passkey-unavailable="` + html.EscapeString(
+			defaultT("rastrillo.ui.signin_passkey_unavailable")) + `"`,
 	} {
 		if !strings.Contains(out, want) {
 			t.Errorf("the passkey door lacks %s:\n%s", want, out)
 		}
+	}
+	head := render(t, "signin-head", signinData(st))
+	if head != `<script src="/probe.js"></script>`+"\n" {
+		t.Errorf("signin-head is %q, want the probe", head)
+	}
+	// No script with an empty src, which would load the page itself.
+	st.Passkey.ProbeURL = ""
+	if head := render(t, "signin-head", signinData(st)); head != "" {
+		t.Errorf("a door with no ProbeURL: signin-head is %q", head)
 	}
 	data := signinData(st)
 	data["Preview"] = true
@@ -402,20 +424,31 @@ func TestThePasskeyButtonWaitsForItsScript(t *testing.T) {
 	}
 }
 
-// The door's script is the one request the screen adds, and only a page
-// that renders the door makes it: an email-only screen, a Sent or
-// Continue page, a one-tap for keymail or a link, and every Preview
-// load nothing. ui's shells never name it either.
+// The door's scripts, its module in the card and its probe in the head,
+// are the requests the screen adds, and only a page that renders the
+// door makes them: an email-only screen, a Sent or Continue page, a
+// one-tap for keymail or a link, and every Preview load nothing. ui's
+// shells never name them either.
+// doorScript is the door's module, marked for the probe to watch.
+const doorScript = `<script type="module" ` +
+	`src="/static/passkey-signin.mjs" data-rst-passkey-script></script>`
+
 func TestOnlyAPasskeyDoorLoadsItsScript(t *testing.T) {
 	for _, c := range signinStates() {
 		out := render(t, "signin", signinData(c.st))
 		n := strings.Count(out, "<script")
 		door := c.st.Passkey != nil && (c.st.Door() == "ask" || c.st.Door() == "passkey")
 		switch {
-		case door && (n != 1 || !strings.Contains(out, `<script type="module" src="/static/passkey-signin.mjs"></script>`)):
+		case door && (n != 1 || !strings.Contains(out, doorScript)):
 			t.Errorf("%s renders a passkey door and %d scripts; want exactly its module", c.name, n)
 		case !door && n != 0:
 			t.Errorf("%s renders no passkey door but loads %d scripts", c.name, n)
+		}
+		head := render(t, "signin-head", signinData(c.st))
+		probe := `<script src="/static/passkey-probe.js"></script>` + "\n"
+		if door && head != probe || !door && head != "" {
+			t.Errorf("%s: signin-head is %q; want the probe exactly "+
+				"where there is a door", c.name, head)
 		}
 		data := signinData(c.st)
 		data["Preview"] = true

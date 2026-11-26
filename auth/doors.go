@@ -8,9 +8,9 @@ import "html/template"
 
 // PasskeyDoor is where the app mounted passkey discovery (BeginPath,
 // FinishPath), where it serves webauthn.JS() (ModuleURL, the WebAuthn
-// helper) and passkey.JS() (ScriptURL, the door's own script, which the
-// partial loads only when it renders the door), and
-// passkey.Config.LegacyRPID, if any.
+// helper), passkey.JS() (ScriptURL, the door's own script) and
+// passkey.ProbeJS() (ProbeURL), and passkey.Config.LegacyRPID, if any.
+// The partial loads the two scripts only when it renders the door.
 type PasskeyDoor struct {
 	BeginPath, FinishPath string
 	// ModuleURL must be an absolute path ("/static/webauthn.mjs"), not a
@@ -19,8 +19,13 @@ type PasskeyDoor struct {
 	// and refuses "static/x.mjs" as a bare specifier: either way the
 	// import fails and the button stays hidden on every page, with no
 	// error anyone sees.
-	ModuleURL  string
-	ScriptURL  string
+	ModuleURL string
+	ScriptURL string
+	// ProbeURL's script shows the door, shipped hidden, before the first
+	// paint, so that nothing on the screen moves when it appears. Without
+	// it the door's module shows it late, as before discussion #433.
+	// Serve it fingerprinted and cached: the card waits for it.
+	ProbeURL   string
 	LegacyRPID string
 }
 

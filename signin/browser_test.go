@@ -34,6 +34,10 @@ import (
 type browserApp struct {
 	signins *Signins
 	page    *template.Template
+
+	// noHead leaves signin-view-head out of the page's head, as in an
+	// app that upgraded without adding it.
+	noHead bool
 }
 
 // newBrowserApp builds the app for the harness, which knows its origin
@@ -51,7 +55,7 @@ func newBrowserApp(
 		if err != nil {
 			t.Fatalf("auth.New: %v", err)
 		}
-		app.page = browserTemplate(t)
+		app.page = browserTemplate(t, !app.noHead)
 		app.signins, err = New(Config{
 			Auth: authority, Sessions: authority.Sessions(), DB: database,
 			Origin: origin, Key: [32]byte{7}, Issuer: "Harbour",
@@ -66,7 +70,7 @@ func newBrowserApp(
 	}
 }
 
-func browserTemplate(t *testing.T) *template.Template {
+func browserTemplate(t *testing.T, head bool) *template.Template {
 	funcs := ui.Funcs()
 	funcs["asset"] = func(path string) string { return "/" + path }
 	stage, _ := ui.Layout("stage")
@@ -76,6 +80,10 @@ func browserTemplate(t *testing.T) *template.Template {
 	template.Must(page.Parse(`{{define "title"}}` +
 		`{{template "signin-view-title" .}}{{end}}` +
 		`{{define "content"}}{{template "signin-view" .}}{{end}}`))
+	if head {
+		template.Must(page.Parse(
+			`{{define "head"}}{{template "signin-view-head" .}}{{end}}`))
+	}
 	return page
 }
 
@@ -188,8 +196,21 @@ const (
 func TestTheAuthenticatorWayRememberedInTheBrowser(t *testing.T) {
 	app := &browserApp{}
 	rig := harness.New(t, newBrowserApp(t, app))
-	key := enrolBrowser(t, app.signins, ada)
+	signInByCode(t, rig, app)
 
+	walk(t, rig, chromedp.Click(chromedp.CSS("#signout")),
+		arrive("[rst-signin]"),
+		chromedp.Reload(),
+		chromedp.WaitVisible(chromedp.CSS(codeField)))
+	rig.Screen("[rst-signin]", "the code door, remembered")
+	leadsWithTheCodeDoor(t, rig)
+}
+
+// signInByCode enrols an authenticator for ada and signs her in with
+// it through the one-way screen.
+func signInByCode(t *testing.T, rig *harness.Rig, app *browserApp) {
+	t.Helper()
+	key := enrolBrowser(t, app.signins, ada)
 	walk(t, rig, chromedp.Navigate(rig.Origin+"/signin"),
 		chromedp.WaitVisible(chromedp.CSS(otherWays)),
 		chromedp.Click(chromedp.CSS(otherWays)),
@@ -207,13 +228,6 @@ func TestTheAuthenticatorWayRememberedInTheBrowser(t *testing.T) {
 	if got := textAt(t, rig, "#home"); got != ada {
 		t.Fatalf("signed in as %q, want %q", got, ada)
 	}
-
-	walk(t, rig, chromedp.Click(chromedp.CSS("#signout")),
-		arrive("[rst-signin]"),
-		chromedp.Reload(),
-		chromedp.WaitVisible(chromedp.CSS(codeField)))
-	rig.Screen("[rst-signin]", "the code door, remembered")
-	leadsWithTheCodeDoor(t, rig)
 }
 
 // leadsWithTheCodeDoor checks the remembered page: the code door is

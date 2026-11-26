@@ -73,13 +73,15 @@ type screenDoc struct {
 // IS a page and buildFamilies refuses a partial no page claims; the
 // sign-in partials belong here, on the page about whole screens, and
 // this is that claim. live-head is here too: every shell calls it in its
-// head, and a meta tag has nothing a preview could show. The signin-
-// helpers are the one-way screen's parts, which only signin calls.
+// head, and a meta tag has nothing a preview could show; so are
+// signin-head and signin-view-head, whose script tag has nothing to show
+// either. The signin- helpers are the one-way screen's parts, which
+// only signin calls.
 var screenPartials = []string{"signin", "signin-title", "live-head",
 	"signin-one-way", "signin-secret-door", "signin-app-problem",
 	"signin-forget-way", "signin-glyph", "signin-view",
 	"signin-view-title", "signin-offer", "signin-add", "signin-options",
-	"signin-brand"}
+	"signin-brand", "signin-head", "signin-view-head"}
 
 // screenPartialView is one of screenPartials as the page shows it: its
 // name under the page's lead, carrying the marker the coverage gates
@@ -136,6 +138,7 @@ func signinScreen(mut func(*auth.SigninState)) *auth.SigninState {
 // the partial's to produce, and a copied snapshot of it would freeze a
 // screen the module keeps improving.
 const signinSource = `{{define "title"}}{{template "signin-title" (dict "State" .Signin "Brand" .Brand)}}{{end}}
+{{define "head"}}{{template "signin-head" (dict "State" .Signin)}}{{end}}
 {{define "content"}}{{template "signin" (dict "State" .Signin "Brand" .Brand)}}{{end}}`
 
 // screenFrame is the stage shell in miniature for a preview frame: the
@@ -153,7 +156,9 @@ const screenFrame = `{{define "ds-screen-stage"}}<div rst-stage>` +
 // which an app draws through signin-view.
 const signinViewSource = `{{define "title"}}` +
 	`{{template "signin-view-title" (dict "View" .View "Brand" .Brand)}}` +
-	"{{end}}\n" + `{{define "content"}}` +
+	"{{end}}\n" + `{{define "head"}}` +
+	`{{template "signin-view-head" (dict "View" .View)}}{{end}}` + "\n" +
+	`{{define "content"}}` +
 	`{{template "signin-view" (dict "View" .View "Brand" .Brand)}}{{end}}`
 
 // screenDocs is the page's content, in page order.

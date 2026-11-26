@@ -80,6 +80,7 @@ signinPage = func(w http.ResponseWriter, r *http.Request) {
 		FinishPath: "/passkey/discover/finish",
 		ModuleURL:  "/passkey/webauthn.mjs", // serves webauthn.JS()
 		ScriptURL:  "/passkey/signin.mjs",   // serves passkey.JS()
+		ProbeURL:   "/passkey/probe.js",     // serves passkey.ProbeJS()
 	}
 	a.PrepareSigninResponse(w, st)
 	data := map[string]any{"L": signinPages.LocalizerFor(r), "Signin": st, "Brand": map[string]any{"Name": "Harbour"}}
@@ -91,6 +92,7 @@ r.Get("/signin", signinPage)
 r.Post("/signin/forget", a.Forget)
 r.Get("/passkey/webauthn.mjs", serveJS(webauthn.JS()))
 r.Get("/passkey/signin.mjs", serveJS(passkey.JS()))
+r.Get("/passkey/probe.js", serveJS(passkey.ProbeJS()))
 ```
 
 ```go
@@ -107,6 +109,7 @@ func serveJS(b []byte) http.HandlerFunc {
 
 ```html
 {{define "title"}}{{$L := localizer $}}{{template "signin-title" (dict "L" $L "State" .Signin "Brand" .Brand)}}{{end}}
+{{define "head"}}{{$L := localizer $}}{{template "signin-head" (dict "L" $L "State" .Signin)}}{{end}}
 {{define "content"}}{{$L := localizer $}}{{template "signin" (dict "L" $L "State" .Signin "Brand" .Brand)}}{{end}}
 ```
 
@@ -125,7 +128,7 @@ signinPages, err := ui.NewPages(ui.PagesConfig{
 
 Set `Remember` to a pointer to `false` to keep the screen and stop remembering, for a kiosk or a shared computer. It also deletes anything remembered before. The remembered cookie is a hint for the screen and nothing else: it signs nobody in, and a one-tap is checked from scratch like a typed address.
 
-If you use passkeys, serve `passkey.JS()` beside `webauthn.JS()` and set both addresses on the page's `Passkey` door, as above; the screen loads the passkey script only when it shows the door. Pass `a.RememberJar()` as `passkey.Config.Remember`: a passkey sign-in then clears an address typed earlier in the same browser, and the next visit offers the passkey first.
+If you use passkeys, serve `passkey.JS()` and `passkey.ProbeJS()` beside `webauthn.JS()`, and set their addresses on the page's `Passkey` door, as above. Put `signin-head` in the page's `head` block: its script shows the passkey button before the page is first drawn, so the form does not move under a tap. The screen loads these scripts only when it shows the door. Pass `a.RememberJar()` as `passkey.Config.Remember`: a passkey sign-in then clears an address typed earlier in the same browser, and the next visit offers the passkey first.
 
 The `stage` shell is made for this page: one card over a generated backdrop. Redefine its `backdrop` block for a pattern or a picture of your own.
 
