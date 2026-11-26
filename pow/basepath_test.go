@@ -26,6 +26,10 @@ func TestFormURLsFollowTheRequest(t *testing.T) {
 		if want := `src="` + prefix + `/pow/pow.abc.js"`; !strings.Contains(string(f.Script()), want) {
 			t.Errorf("%s: Script() = %s, want %s", where, f.Script(), want)
 		}
+		hint := `src="` + prefix + `/pow/pow-hint.js"`
+		if !strings.Contains(string(f.Script()), hint) {
+			t.Errorf("%s: Script() = %s, want %s", where, f.Script(), hint)
+		}
 	}
 	through := func(c basepath.Config, host string) *http.Request {
 		var got *http.Request

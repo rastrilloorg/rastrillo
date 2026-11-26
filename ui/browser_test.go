@@ -2697,18 +2697,22 @@ func TestBusyButtonDrive(t *testing.T) {
 
 	// ── 5b. The swap stands down where a lone ring fails ──────────────
 	//
-	// Two readers for whom a spinner alone is the wrong trade, so the
-	// label stays and the ring sits beside it as it used to:
-	//
-	//   - reduced motion: the ring stops turning and is dimmed, and a
-	//     pale, still, open ring on its own reads as a stray "C";
-	//   - forced colours: the engine repaints the text fill, so the
-	//     "hidden" label paints anyway and a centred ring lands on top
-	//     of it. The computed fill still reads transparent there, which
-	//     is why this leg asserts position and not only ink.
+	// Under reduced motion the ring takes the label's place too, still
+	// and closed, since Fiesta 1.8: beside the label it pushed the words
+	// along inside the button (#437). Forced colours are the one reader
+	// for whom a spinner alone is the wrong trade: the engine repaints
+	// the text fill, so the "hidden" label paints anyway and a centred
+	// ring lands on top of it, so the ring sits beside the label. The
+	// computed fill still reads transparent there, which is why this leg
+	// asserts position and not only ink.
 	for _, media := range []struct {
-		name, value string
-	}{{"prefers-reduced-motion", "reduce"}, {"forced-colors", "active"}} {
+		name, value, want, position string
+	}{
+		{"prefers-reduced-motion", "reduce", "label-ink:none icon-ink:none " +
+			"spin-ink:shown spin-centred:true", "absolute"},
+		{"forced-colors", "active", "label-ink:shown icon-ink:shown " +
+			"spin-ink:shown spin-centred:false", "static"},
+	} {
 		var state, pos string
 		fail(chromedp.Do(ctx,
 			chromedp.Func(func(
@@ -2734,9 +2738,10 @@ func TestBusyButtonDrive(t *testing.T) {
 				`getComputedStyle(document.querySelector("#swapgo > [rst-spin]")).position`)),
 		))
 		took(t, payloads, media.name)
-		const want = "label-ink:shown icon-ink:shown spin-ink:shown spin-centred:false"
-		if state != want || pos != "static" {
-			t.Errorf("under %s: %s the busy button reads %q with the spinner %s, want %q with it static beside the label", media.name, media.value, state, pos, want)
+		if state != media.want || pos != media.position {
+			t.Errorf("under %s: %s the busy button reads %q with the "+
+				"spinner %s, want %q with it %s", media.name, media.value,
+				state, pos, media.want, media.position)
 		}
 	}
 

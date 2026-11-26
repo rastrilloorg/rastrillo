@@ -21,6 +21,10 @@
 // drops a kept press. If a module script marked data-rst-passkey-script
 // fails to load, a press says what the module would have said, since
 // that module will never answer it.
+//
+// It also puts away a door's note on Escape or its close button, for
+// the module as for itself, and marks <html data-rst-passkey-notes> so
+// the module does not do it twice.
 (function () {
   "use strict";
   if (!window.PublicKeyCredential || !navigator.credentials) return;
@@ -41,14 +45,43 @@
   var drop = function () {
     each(function (button) { button.rstPasskeyPress = false; });
   };
+  // say is signin.mjs's say(): the words, and the note's close button
+  // shown only with them.
+  var say = function (msg, words) {
+    msg.textContent = words;
+    var note = msg.closest("[rst-signin-passkey-note]");
+    var close = note && note.querySelector("[rst-signin-passkey-close]");
+    if (close) close.hidden = !words;
+  };
+  // unsay is signin.mjs's unsay(): every note cleared, and focus that was
+  // in one back on its door's button.
+  var unsay = function () {
+    var notes = document.querySelectorAll("[rst-signin-passkey-note]");
+    for (var i = 0; i < notes.length; i++) {
+      var msg = notes[i].querySelector("[rst-signin-passkey-msg]");
+      if (!msg || !msg.textContent) continue;
+      var inside = notes[i].contains(document.activeElement);
+      say(msg, "");
+      var door = notes[i].parentElement.querySelector("[data-rst-passkey]");
+      if (inside && door) door.focus();
+    }
+  };
+  document.documentElement.setAttribute("data-rst-passkey-notes", "");
+  document.addEventListener("keydown", function (event) {
+    if (event.key === "Escape") unsay();
+  });
+  document.addEventListener("click", function (event) {
+    if (event.target.closest &&
+        event.target.closest("[rst-signin-passkey-close]")) unsay();
+  });
   // fail is signin.mjs's unavailable(), and register.mjs's failed(): the
   // words, and on the one-way door the email way.
   var fail = function (button) {
     var msg = document.getElementById(
       button.getAttribute("aria-describedby") || "");
     if (msg) {
-      msg.textContent = button.getAttribute("data-rst-passkey-unavailable") ||
-        button.getAttribute("data-rst-passkey-failed") || "";
+      say(msg, button.getAttribute("data-rst-passkey-unavailable") ||
+        button.getAttribute("data-rst-passkey-failed") || "");
     }
     var to = button.getAttribute("data-rst-passkey-fallback") || "";
     if (to.charAt(0) === "/" && to.charAt(1) !== "/" &&
@@ -80,5 +113,6 @@
     });
   }, true);
   document.addEventListener("submit", drop, true);
+  document.addEventListener("submit", unsay, true);
   window.addEventListener("pagehide", drop);
 })();

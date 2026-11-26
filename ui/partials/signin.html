@@ -34,21 +34,22 @@
 
      State.Proof, when set, is rendered on the one form this state shows
      that begins a sign-in (Begin's, or a secret door's): its fields,
-     its attributes, a disabled submit the module enables, the status
-     line and a <noscript> line, and the module once. The Forget form
-     carries none of it.
+     its attributes, a disabled submit the module enables, pow's
+     status (a live region out of sight) and a <noscript> line, and the
+     module once. The Forget form carries none of it.
 
      The passkey door loads its own module, State.Passkey.ScriptURL
      (passkey.JS(), served by the app), and only when it renders: every
      other page of the app, and every other state of this one, requests
-     nothing. The door ships hidden: signin-head, in the page's head
-     block, loads the probe that shows it before the first paint. The
+     nothing. The door ships hidden: signin-head, in the page's
+     head-early block, loads the probe that shows it before the first paint. The
      module's tag carries data-rst-passkey-script so the probe can tell
      when it fails to load and answer a press itself.
 
      No role="alert" anywhere: every message present at load is where
      focus starts (State.Focus), and a live alert would race the focus
-     announcement. The only live region is the passkey message. */}}
+     announcement. The only live regions are the passkey message and
+     pow's status, which speaks only when the proof fails. */}}
 {{define "signin"}}{{$L := localizer $}}{{$s := .State}}{{$door := $s.Door}}{{$focus := $s.Focus}}{{$name := .Brand.Name}}{{$preview := opt . "Preview"}}{{$proof := $s.Proof}}{{$gated := and $proof $proof.NeedsScript}}{{if not $s.Unavailable}}<section rst-signin aria-labelledby="rst-signin-heading">
 {{if not (opt . "HideBrand")}}<div rst-signin-brand>{{with opt .Brand "Mark"}}<div rst-signin-mark>{{.}}</div>{{end}}<p rst-signin-name>{{$name}}</p>{{with opt .Brand "Pitch"}}<p rst-signin-pitch>{{.}}</p>{{end}}</div>
 {{end}}<div rst-signin-door{{if $s.OneWay}}="one-way"{{end}}>
@@ -100,14 +101,15 @@
 {{end}}<button rst-btn="primary block" type="submit"{{if $gated}} disabled data-pow-submit{{end}}>{{if eq $s.Problem "keymail"}}{{T $L "rastrillo.ui.signin_send_link_instead"}}{{else}}{{T $L "rastrillo.ui.signin_submit"}}{{end}}</button>
 {{if $gated}}{{$proof.StatusLine (T $L "rastrillo.ui.pow_status")}}<noscript><p>{{T $L "rastrillo.ui.pow_noscript"}}</p></noscript>
 {{end}}</form>
-{{else if and $s.Passkey (eq . $pkSlot)}}{{/* The button and its message are one child of the door, so the
-     message, empty until the script writes to it, takes none of the
-     door's gaps. The "or" between it and the form is the wrapper's
+{{else if and $s.Passkey (eq . $pkSlot)}}{{/* The button and its note are one child of the door. The note
+     floats beside the button and takes no space, so a message moves
+     nothing (#437); rst-signin-passkey names the slot, and "before"
+     opens it upward, over the heading rather than the email field. The "or" between it and the form is the wrapper's
      immediate neighbour on the form's side, because tokens.css hides it
      with the pair through that adjacency: with the button hidden the
      page has one way in, and an "or" would point at nothing. */}}{{if eq . "after"}}<p rst-signin-or>{{T $L "rastrillo.ui.signin_or"}}</p>
-{{end}}<div rst-signin-passkey><button rst-btn="{{if eq $door "passkey"}}primary block{{else}}block{{end}}" type="button"{{if not $preview}} hidden data-rst-passkey data-rst-passkey-begin="{{$s.Passkey.BeginPath}}" data-rst-passkey-finish="{{$s.PasskeyFinish}}" data-rst-passkey-module="{{$s.Passkey.ModuleURL}}"{{with $s.Passkey.LegacyRPID}} data-rst-passkey-legacy-rpid="{{.}}"{{end}} data-rst-passkey-cancelled="{{T $L "rastrillo.ui.signin_passkey_cancelled"}}" data-rst-passkey-failed="{{T $L "rastrillo.ui.signin_passkey_failed"}}" data-rst-passkey-unavailable="{{T $L "rastrillo.ui.signin_passkey_unavailable"}}"{{end}} aria-describedby="rst-signin-passkey-msg">{{if eq $door "passkey"}}{{T $L "rastrillo.ui.signin_passkey_remembered"}}{{else}}{{T $L "rastrillo.ui.signin_passkey"}}{{end}}</button>
-<p rst-signin-passkey-msg id="rst-signin-passkey-msg" aria-live="polite"></p>
+{{end}}<div rst-signin-passkey="{{.}}"><button rst-btn="{{if eq $door "passkey"}}primary block{{else}}block{{end}}" type="button"{{if not $preview}} hidden data-rst-passkey data-rst-passkey-begin="{{$s.Passkey.BeginPath}}" data-rst-passkey-finish="{{$s.PasskeyFinish}}" data-rst-passkey-module="{{$s.Passkey.ModuleURL}}"{{with $s.Passkey.LegacyRPID}} data-rst-passkey-legacy-rpid="{{.}}"{{end}} data-rst-passkey-cancelled="{{T $L "rastrillo.ui.signin_passkey_cancelled"}}" data-rst-passkey-failed="{{T $L "rastrillo.ui.signin_passkey_failed"}}" data-rst-passkey-unavailable="{{T $L "rastrillo.ui.signin_passkey_unavailable"}}"{{end}} aria-describedby="rst-signin-passkey-msg">{{if eq $door "passkey"}}{{T $L "rastrillo.ui.signin_passkey_remembered"}}{{else}}{{T $L "rastrillo.ui.signin_passkey"}}{{end}}</button>
+{{template "signin-passkey-note" (dict "L" $L)}}
 </div>
 {{if eq . "before"}}<p rst-signin-or>{{T $L "rastrillo.ui.signin_or"}}</p>
 {{end}}{{if not $preview}}<script type="module" src="{{$s.Passkey.ScriptURL}}" data-rst-passkey-script></script>
@@ -119,15 +121,17 @@
 {{end}}{{if $s.OneWay}}{{template "signin-forget-way" (dict "L" $L "State" $s)}}<button rst-btn="ghost" type="submit"><span>{{T $L "rastrillo.ui.signin_different"}}</span>{{template "signin-glyph" (dict "L" $L "Glyph" "next")}}</button>{{else}}<button rst-btn="ghost block" type="submit">{{T $L "rastrillo.ui.signin_different"}}</button>{{end}}</form>
 {{end}}{{if and $gated (ne $door "sent") (ne $door "continue") (ne $door "confirm") (not $preview) (not $s.OneWay)}}{{$proof.Script}}{{end}}</div>
 </section>{{end}}{{end}}
-{{/* signin-head — the passkey probe, for the head block. Put it there
-     as signin-title goes in the title block. It loads
+{{/* signin-head — the passkey probe, for the head-early block. Put
+     it there as signin-title goes in the title block. It loads
      State.Passkey.ProbeURL (passkey.ProbeJS()), which shows the door,
      shipped hidden, where WebAuthn exists; without it the module shows
      the door late. It must be in <head>, where
      it holds back the first paint, so the card is first drawn with the
      door and Continue never moves under a tap when it appears
      (discussion #433); from the body the browser may draw the page
-     before the script arrives. It renders nothing where the screen has
+     before the script arrives. head-early is before the stylesheets:
+     after them it waits for them, and the frame drawn after it could
+     show the card before its door (#437). It renders nothing where the screen has
      no door. Keys: State. */}}
 {{define "signin-head"}}{{$s := .State}}{{$door := $s.Door}}{{if and $s.Passkey (not $s.Unavailable) (or (eq $door "passkey") (and (eq $door "ask") (not $s.OneWay)))}}{{with $s.Passkey.ProbeURL}}<script src="{{.}}"></script>
 {{end}}{{end}}{{end}}
@@ -155,8 +159,9 @@
 {{else if eq $door "passkey"}}{{/* Hidden as on the classic screen, and shown by signin-head's
      probe before the first paint. Where no passkey can work the script
      says so and opens the email way: there is no form beside it. Busy
-     is aria-busy, never disabled, which would drop focus. */}}<div rst-signin-passkey><button rst-btn="primary block" type="button"{{if not $preview}} hidden data-rst-passkey data-rst-passkey-begin="{{$s.Passkey.BeginPath}}" data-rst-passkey-finish="{{$s.PasskeyFinish}}" data-rst-passkey-module="{{$s.Passkey.ModuleURL}}"{{with $s.Passkey.LegacyRPID}} data-rst-passkey-legacy-rpid="{{.}}"{{end}} data-rst-passkey-cancelled="{{T $L "rastrillo.ui.signin_passkey_cancelled"}}" data-rst-passkey-failed="{{T $L "rastrillo.ui.signin_passkey_failed"}}" data-rst-passkey-unavailable="{{T $L "rastrillo.ui.signin_passkey_unavailable"}}" data-rst-passkey-fallback="{{$s.EmailHref}}"{{end}} aria-describedby="rst-signin-passkey-msg">{{template "signin-glyph" (dict "L" $L "Glyph" "key")}}<span>{{if and $s.Remembered (eq $s.Remembered.Method "passkey")}}{{T $L "rastrillo.ui.signin_passkey_remembered"}}{{else}}{{T $L "rastrillo.ui.signin_passkey"}}{{end}}</span></button>
-<p rst-signin-passkey-msg id="rst-signin-passkey-msg" aria-live="polite"></p>
+     is aria-busy, never disabled, which would drop focus. The note
+     opens above, off "Other ways to sign in". */}}<div rst-signin-passkey="before"><button rst-btn="primary block" type="button"{{if not $preview}} hidden data-rst-passkey data-rst-passkey-begin="{{$s.Passkey.BeginPath}}" data-rst-passkey-finish="{{$s.PasskeyFinish}}" data-rst-passkey-module="{{$s.Passkey.ModuleURL}}"{{with $s.Passkey.LegacyRPID}} data-rst-passkey-legacy-rpid="{{.}}"{{end}} data-rst-passkey-cancelled="{{T $L "rastrillo.ui.signin_passkey_cancelled"}}" data-rst-passkey-failed="{{T $L "rastrillo.ui.signin_passkey_failed"}}" data-rst-passkey-unavailable="{{T $L "rastrillo.ui.signin_passkey_unavailable"}}" data-rst-passkey-fallback="{{$s.EmailHref}}"{{end}} aria-describedby="rst-signin-passkey-msg">{{template "signin-glyph" (dict "L" $L "Glyph" "key")}}<span>{{if and $s.Remembered (eq $s.Remembered.Method "passkey")}}{{T $L "rastrillo.ui.signin_passkey_remembered"}}{{else}}{{T $L "rastrillo.ui.signin_passkey"}}{{end}}</span></button>
+{{template "signin-passkey-note" (dict "L" $L)}}
 </div>
 {{if not $preview}}<noscript><p>{{T $L "rastrillo.ui.signin_passkey_noscript"}}</p></noscript>
 <script type="module" src="{{$s.Passkey.ScriptURL}}" data-rst-passkey-script></script>
@@ -221,11 +226,18 @@
 {{define "signin-forget-way"}}<input type="hidden" name="way" value="email">
 {{if or .State.Reauth (eq .State.Problem "reauth")}}<input type="hidden" name="reauth" value="1">
 {{end}}{{end}}
+{{/* signin-passkey-note — part of signin. The passkey door's note,
+     after its button: the message is a polite live region, empty until
+     passkey.JS() or the probe writes to it, and they show the close
+     button with it; Escape, the close button, the next press and
+     sending a form clear it. Key: L, the localizer. */}}
+{{define "signin-passkey-note"}}{{$L := localizer $}}<div rst-signin-passkey-note><p rst-signin-passkey-msg id="rst-signin-passkey-msg" aria-live="polite"></p><button type="button" rst-signin-passkey-close hidden aria-label="{{T $L "rastrillo.ui.close"}}">{{template "signin-glyph" (dict "L" $L "Glyph" "close")}}</button></div>{{end}}
+
 {{/* signin-glyph — part of signin. It draws one of the door's
-     one-colour glyphs ("next", "back", "mail", "key", "at", "shield" or
-     "lock") in
-     currentColor, hidden from assistive technology because the text
-     beside each says what it is. Inline, so the door makes no request
+     one-colour glyphs ("next", "back", "mail", "key", "at", "shield",
+     "lock" or "close") in currentColor, hidden from assistive
+     technology because the text beside each, or its button's label,
+     says what it is. Inline, so the door makes no request
      and draws no late icon. They are Lucide's (ISC), as the shipped
      icon set is. */}}
-{{define "signin-glyph"}}<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">{{$glyph := .Glyph}}{{if eq $glyph "next"}}<path d="m9 18 6-6-6-6"/>{{else if eq $glyph "back"}}<path d="m15 18-6-6 6-6"/>{{else if eq $glyph "mail"}}<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>{{else if eq $glyph "key"}}<path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/>{{else if eq $glyph "at"}}<circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8"/>{{else if eq $glyph "shield"}}<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>{{else if eq $glyph "lock"}}<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>{{end}}</svg>{{end}}
+{{define "signin-glyph"}}<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">{{$glyph := .Glyph}}{{if eq $glyph "next"}}<path d="m9 18 6-6-6-6"/>{{else if eq $glyph "back"}}<path d="m15 18-6-6 6-6"/>{{else if eq $glyph "mail"}}<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>{{else if eq $glyph "key"}}<path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/>{{else if eq $glyph "at"}}<circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8"/>{{else if eq $glyph "shield"}}<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>{{else if eq $glyph "lock"}}<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>{{else if eq $glyph "close"}}<path d="M18 6 6 18"/><path d="m6 6 12 12"/>{{end}}</svg>{{end}}

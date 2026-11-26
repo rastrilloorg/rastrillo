@@ -641,11 +641,11 @@ header row; see
 
 `stage` is one card centred over a full-page backdrop, for a page that
 stands alone, such as the sign-in screen. Its blocks are `title`,
-`lang`, `dir`, `head`, `backdrop` and `foot`.
+`lang`, `dir`, `head-early`, `head`, `backdrop` and `foot`.
 
 A shell executes `{{template "content" .}}` for the page body and wraps
 it in chrome made of blocks with working defaults: `title`, `lang`,
-`dir` and `head` in all five; `brand`, `nav`, `account`, `profile`,
+`dir`, `head-early` and `head` in all five; `brand`, `nav`, `account`, `profile`,
 `locale`, `scheme`, `view`, `up` and `upLabel` in the three chrome
 shells; `locale` and `scheme` in `column`; and `foot` in `topbar` and
 `console`. A shell
@@ -658,6 +658,10 @@ carries `L`.
 `<head>`, for a favicon, a meta tag, an extra stylesheet or a script
 that must run before the body. Being last means an app's own CSS wins
 the ties it should against `tokens.css` and the theme.
+
+`head-early` comes before the stylesheets. Use it for scripts that must
+run before the page is styled, such as the passkey probe in
+`signin-head`. A script in `head` waits for the stylesheets.
 
 `rastrillo new --shell` writes the chosen one as
 `templates/layout.html`. It is an ordinary template from then on — no
@@ -689,10 +693,14 @@ and tab title still use `Brand.Name`. Every string comes from the base
 catalogs under `rastrillo.ui.signin_*`, in all twelve languages. The
 passkey button loads `passkey.JS()` from the `ScriptURL` you set, and
 only on a page that shows it. The button ships hidden. Put `signin-head`
-in the page's `head` block: its script, from `ProbeURL`, shows the button
-before the page is first drawn, where the browser supports passkeys.
+in the page's `head-early` block. Its script, from `ProbeURL`, shows the
+button before the page is first drawn, where the browser supports
+passkeys.
 Without it, the button appears late, once its module loads, and moves
-the form below it. See [Magic links](/docs/magic-links#use-the-shipped-screen-or-your-own).
+the form below it. If a passkey sign-in fails, the message appears in a
+note beside the button. The note takes no space, so the card does not
+move. Escape or the note's close button hides it. It also clears when
+someone tries again or sends the form. See [Magic links](/docs/magic-links#use-the-shipped-screen-or-your-own).
 
 With `auth.Config.SigninOneWay`, the card offers one way in, with
 **Other ways to sign in** below it. There the passkey button is the

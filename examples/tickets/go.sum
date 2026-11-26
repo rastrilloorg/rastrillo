@@ -6,6 +6,8 @@ amadan.net/rastrillo/fiesta v1.6.0 h1:ntdiZ/rvKd8wVxnlwkbaB8n0Fop9tIFL7bgJ3MUN3E
 amadan.net/rastrillo/fiesta v1.6.0/go.mod h1:LpO391W1dIRUxOIKklHm+bGyWXtlFyBRRPQCysb9LjY=
 amadan.net/rastrillo/fiesta v1.6.1 h1:WYgHt652+uQj6eR0Y0JLin+XrdRPGk1WPW7o0lSrc94=
 amadan.net/rastrillo/fiesta v1.6.1/go.mod h1:LpO391W1dIRUxOIKklHm+bGyWXtlFyBRRPQCysb9LjY=
+amadan.net/rastrillo/fiesta v1.8.0 h1:mlCirW/SynX3HqYFEuxXVzsdQ8dlLpBEgstRMQpBwQY=
+amadan.net/rastrillo/fiesta v1.8.0/go.mod h1:LpO391W1dIRUxOIKklHm+bGyWXtlFyBRRPQCysb9LjY=
 amadan.net/rastrillo/rastrillo/money v0.1.0 h1:MxU4oqNrW8abxRTkgZBv24OYNpFnvonajNqeLIzmmaM=
 amadan.net/rastrillo/rastrillo/money v0.1.0/go.mod h1:cmgkjBEIQh1pFSYvQk0UU6oPYS8kSDypdT9+t4Flx0U=
 cel.dev/expr v0.25.1 h1:1KrZg61W6TWSxuNZ37Xy49ps13NUovb66QLprthtwi4=
@@ -13,6 +15,8 @@ cel.dev/expr v0.25.1/go.mod h1:hrXvqGP6G6gyx8UAHSHJ5RGk//1Oj5nXQ2NI02Nrsg4=
 filippo.io/edwards25519 v1.1.1 h1:YpjwWWlNmGIDyXOn8zLzqiD+9TyIlPhGFG96P39uBpw=
 filippo.io/edwards25519 v1.1.1/go.mod h1:BxyFTGdWcka3PhytdK4V28tE5sGfRvvvRV7EaN4VDT4=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
+github.com/BurntSushi/toml v1.6.0 h1:dRaEfpa2VI55EwlIW72hMRHdWouJeRF7TPYhI+AUQjk=
+github.com/BurntSushi/toml v1.6.0/go.mod h1:ukJfTF/6rtPPRCnwkur4qwRxa8vTRFBF0uk2lLoLwho=
 github.com/antlr4-go/antlr/v4 v4.13.1 h1:SqQKkuVZ+zWkMMNkjy5FZe5mr5WURWnlpmOuzYWrPrQ=
 github.com/antlr4-go/antlr/v4 v4.13.1/go.mod h1:GKmUxMtwp6ZgGwZSva4eWPC5mS6vUAmOABFgjdkM7Nw=
 github.com/benbjohnson/clock v1.1.0/go.mod h1:J11/hYXuz8f4ySSvYwY0FKfm+ezbsZBKZxNJlLklBHA=

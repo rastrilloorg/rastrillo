@@ -622,6 +622,19 @@ body {
     position: relative;
   }
 }
+/* Under reduced motion the spinner takes the label's place too (1.8).
+   Beside the label it pushed the label along inside the button as it
+   appeared, and Paul's rule is that nothing moves after first paint.
+   The swap stood down here because a still, open ring on its own reads
+   as a stray "C", so here the ring is closed and dotted, at full ink.
+   Forced colours keep the ring beside the label: the engine repaints
+   the hidden label. */
+@media (prefers-reduced-motion: reduce) and (forced-colors: none) {
+  .rst-btn[aria-busy="true"]:not([data-idle-label]):has(> .rst-spin), [rst-btn][aria-busy="true"]:not([data-idle-label]):has(> [rst-spin]) { -webkit-text-fill-color: transparent; }
+  .rst-btn[aria-busy="true"]:not([data-idle-label]):has(> .rst-spin) > :not(.rst-spin), [rst-btn][aria-busy="true"]:not([data-idle-label]):has(> [rst-spin]) > :not([rst-spin]) { opacity: 0; }
+  .rst-btn[aria-busy="true"]:not([data-idle-label]) > .rst-spin, [rst-btn][aria-busy="true"]:not([data-idle-label]) > [rst-spin] { border: 2px dotted; inset: 0; margin: auto; opacity: 1; position: absolute; }
+  :where(.rst-btn[aria-busy="true"]:not([data-idle-label])), :where([rst-btn][aria-busy="true"]:not([data-idle-label])) { position: relative; }
+}
 
 /* ── page-header ──────────────────────────────────────────────────── */
 .rst-page-header, [rst-page-header] {
@@ -2484,9 +2497,10 @@ small.rst-field__hint, small[rst-field-hint] { display: block; font-size: var(--
    it, a hint resting on the button under it. So a stack is a flex
    column, where no margin collapses, every child's own block margins
    are zeroed, and the space before each child is read off one table
-   by what it is and what it follows (DESIGN.md, "Spacing"):
+   by what it is and what it follows (DESIGN.md, "The stack"):
 
-     after a heading (h1 to h6)               --rst-sp-2
+     after a heading (h1 to h6), unless it is
+       a heading or a section                 --rst-sp-2
      before an actions row, a button          --rst-sp-4
      a label or hint, then its input, or an
        input, then its hint                   --rst-sp-2
@@ -2495,24 +2509,43 @@ small.rst-field__hint, small[rst-field-hint] { display: block; font-size: var(--
      before h3 to h6                          --rst-sp-4
      anything else                            --rst-sp-3
 
-   Higher in the table wins. Each relation sets its own custom property
-   on the child, and the one margin rule reads them in the table's
-   order through var() fallbacks, so which rule wins is written in one
-   place rather than left to specificity. Every child resets all five
-   first, so a nested stack's child never inherits its parent's answer.
-   rst-section marks a child that opens a new section; a section that
-   holds blocks of its own is a stack too, <section rst-stack
-   rst-section>.
+   Higher in the table wins. A heading or a section after a heading
+   takes its own opening: the heading over it is what it belongs to,
+   and the audit's heading rule holds the one that follows instead.
+   Each relation sets its own custom property on the child, and the one
+   margin rule reads them in the table's order through var() fallbacks,
+   so which rule wins is written in one place rather than left to
+   specificity. Every child resets all five first, so a nested stack's
+   child never inherits its parent's answer. rst-section marks a child
+   that opens a new section; a section that holds blocks of its own is
+   a stack too, <section rst-stack rst-section>.
 
    The column's gap is the table's smallest step, --rst-sp-2, and a
-   child's block-start margin is the rest of its answer. The gap is
-   the floor: it falls only between children that are drawn, so a
-   [hidden] child, which a sibling selector cannot see past, costs the
-   block after it its relation but never leaves it touching. A hidden
-   input, a form's CSRF field, is passed over the same way, so the
-   first block after one still opens the stack flush. */
+   child's block-start margin is the rest of its answer.
+
+   Some children are passed over: not drawn, or not in the column. A
+   [hidden] child, a hidden input (a form's CSRF field, an edit form's
+   old values), a <dialog> or a popover, a script, a style or a
+   template, Fiesta's modal overlay, a visually hidden .rst-sr-only
+   child, and anything an app marks rst-stack-out, its own fixed or
+   absolute layer, take no margin and keep their own (a dialog's auto
+   margins centre it), and the block after one is spaced
+   as if it were not there: the first block after one still opens the
+   stack flush, and any other takes its own row of the table. CSS has no
+   selector for a computed position, so an app's own overlay is marked,
+   and the rhythm audit reports one that is not. A passed-over child
+   never anchors a relation (a hidden heading does not make the block
+   after it its content). A relation that reads the block before (after
+   a heading, after the page header, a field and its label or hint)
+   sees past two passed-over children in a row; with three or more
+   between, the block keeps its own row but loses the relation. A
+   field select.js or datetime.js has drawn (rst-combo, rst-dtp) is a
+   field, in a stack spelt [rst-stack], as the scripts spell it; the
+   native select select.js leaves beside it, .rst-sr-only, is passed
+   over. A .rst-sr-only control shown on keyboard focus is still
+   passed over, so it sits at the column's gap while it shows. */
 .rst-stack, [rst-stack] { display: flex; flex-direction: column; gap: var(--rst-sp-2); }
-.rst-stack > :not([hidden]), [rst-stack] > :not([hidden]) {
+.rst-stack > :not([hidden], [type="hidden"], .rst-stack-out, .rst-modal-overlay, .rst-sr-only, dialog, [popover], script, style, template), [rst-stack] > :not([hidden], [type="hidden"], [rst-stack-out], [rst-modal-overlay], .rst-sr-only, dialog, [popover], script, style, template) {
   --rst-stack-actions: initial;
   --rst-stack-heading: initial;
   --rst-stack-control: initial;
@@ -2520,40 +2553,19 @@ small.rst-field__hint, small[rst-field-hint] { display: block; font-size: var(--
   --rst-stack-sub: initial;
   margin-block: 0;
 }
-.rst-stack > :not([hidden], [type="hidden"]) + :not([hidden]), [rst-stack] > :not([hidden], [type="hidden"]) + :not([hidden]) {
+.rst-stack > :not([hidden], [type="hidden"], .rst-stack-out, .rst-modal-overlay, .rst-sr-only, dialog, [popover], script, style, template) ~ :not([hidden], [type="hidden"], .rst-stack-out, .rst-modal-overlay, .rst-sr-only, dialog, [popover], script, style, template), [rst-stack] > :not([hidden], [type="hidden"], [rst-stack-out], [rst-modal-overlay], .rst-sr-only, dialog, [popover], script, style, template) ~ :not([hidden], [type="hidden"], [rst-stack-out], [rst-modal-overlay], .rst-sr-only, dialog, [popover], script, style, template) {
   margin-block-start: calc(var(--rst-stack-heading, var(--rst-stack-actions, var(--rst-stack-control, var(--rst-stack-section, var(--rst-stack-sub, var(--rst-sp-3)))))) - var(--rst-sp-2));
 }
 /* A column stretches its children across; a button or a picture keeps
    its own width. */
 .rst-stack > button, [rst-stack] > button, .rst-stack > .rst-btn, [rst-stack] > [rst-btn], .rst-stack > img, [rst-stack] > img { align-self: flex-start; }
-.rst-stack > :not([hidden], [type="hidden"]) + h3, [rst-stack] > :not([hidden], [type="hidden"]) + h3,
-.rst-stack > :not([hidden], [type="hidden"]) + h4, [rst-stack] > :not([hidden], [type="hidden"]) + h4,
-.rst-stack > :not([hidden], [type="hidden"]) + h5, [rst-stack] > :not([hidden], [type="hidden"]) + h5,
-.rst-stack > :not([hidden], [type="hidden"]) + h6, [rst-stack] > :not([hidden], [type="hidden"]) + h6 { --rst-stack-sub: var(--rst-sp-4); }
-.rst-stack > :not([hidden], [type="hidden"]) + h1, [rst-stack] > :not([hidden], [type="hidden"]) + h1,
-.rst-stack > :not([hidden], [type="hidden"]) + h2, [rst-stack] > :not([hidden], [type="hidden"]) + h2,
-.rst-stack > :not([hidden], [type="hidden"]) + .rst-section, [rst-stack] > :not([hidden], [type="hidden"]) + [rst-section],
-.rst-stack > .rst-page-header + :not([hidden]), [rst-stack] > [rst-page-header] + :not([hidden]) { --rst-stack-section: var(--rst-sp-5); }
-.rst-stack > label + input:not([hidden]), [rst-stack] > label + input:not([hidden]),
-.rst-stack > label + select:not([hidden]), [rst-stack] > label + select:not([hidden]),
-.rst-stack > label + textarea:not([hidden]), [rst-stack] > label + textarea:not([hidden]),
-.rst-stack > .rst-field__help + input:not([hidden]), [rst-stack] > [rst-field-help] + input:not([hidden]),
-.rst-stack > .rst-field__help + select:not([hidden]), [rst-stack] > [rst-field-help] + select:not([hidden]),
-.rst-stack > .rst-field__help + textarea:not([hidden]), [rst-stack] > [rst-field-help] + textarea:not([hidden]),
-.rst-stack > input + .rst-field__help, [rst-stack] > input + [rst-field-help],
-.rst-stack > select + .rst-field__help, [rst-stack] > select + [rst-field-help],
-.rst-stack > textarea + .rst-field__help, [rst-stack] > textarea + [rst-field-help] { --rst-stack-control: var(--rst-sp-2); }
-.rst-stack > h1 + :not([hidden]), [rst-stack] > h1 + :not([hidden]),
-.rst-stack > h2 + :not([hidden]), [rst-stack] > h2 + :not([hidden]),
-.rst-stack > h3 + :not([hidden]), [rst-stack] > h3 + :not([hidden]),
-.rst-stack > h4 + :not([hidden]), [rst-stack] > h4 + :not([hidden]),
-.rst-stack > h5 + :not([hidden]), [rst-stack] > h5 + :not([hidden]),
-.rst-stack > h6 + :not([hidden]), [rst-stack] > h6 + :not([hidden]) { --rst-stack-heading: var(--rst-sp-2); }
-.rst-stack > :not([hidden], [type="hidden"]) + .rst-actions, [rst-stack] > :not([hidden], [type="hidden"]) + [rst-actions],
-.rst-stack > :not([hidden], [type="hidden"]) + .rst-form-foot, [rst-stack] > :not([hidden], [type="hidden"]) + [rst-form-foot],
-.rst-stack > :not([hidden], [type="hidden"]) + .rst-form-actions, [rst-stack] > :not([hidden], [type="hidden"]) + [rst-form-actions],
-.rst-stack > :not([hidden], [type="hidden"]) + button, [rst-stack] > :not([hidden], [type="hidden"]) + button,
-.rst-stack > :not([hidden], [type="hidden"]) + .rst-btn, [rst-stack] > :not([hidden], [type="hidden"]) + [rst-btn] { --rst-stack-actions: var(--rst-sp-4); }
+.rst-stack > :not([hidden], [type="hidden"], .rst-stack-out, .rst-modal-overlay, .rst-sr-only, dialog, [popover], script, style, template) ~ :is(h3, h4, h5, h6), [rst-stack] > :not([hidden], [type="hidden"], [rst-stack-out], [rst-modal-overlay], .rst-sr-only, dialog, [popover], script, style, template) ~ :is(h3, h4, h5, h6) { --rst-stack-sub: var(--rst-sp-4); }
+.rst-stack > :not([hidden], [type="hidden"], .rst-stack-out, .rst-modal-overlay, .rst-sr-only, dialog, [popover], script, style, template) ~ :is(h1, h2, .rst-section), [rst-stack] > :not([hidden], [type="hidden"], [rst-stack-out], [rst-modal-overlay], .rst-sr-only, dialog, [popover], script, style, template) ~ :is(h1, h2, [rst-section]),
+.rst-stack > :is(.rst-page-header:not([hidden], [type="hidden"], .rst-stack-out, .rst-modal-overlay, .rst-sr-only, dialog, [popover], script, style, template), .rst-page-header:not([hidden], [type="hidden"], .rst-stack-out, .rst-modal-overlay, .rst-sr-only, dialog, [popover], script, style, template) + :is([hidden], [type="hidden"], .rst-stack-out, .rst-modal-overlay, .rst-sr-only, dialog, [popover], script, style, template), .rst-page-header:not([hidden], [type="hidden"], .rst-stack-out, .rst-modal-overlay, .rst-sr-only, dialog, [popover], script, style, template) + :is([hidden], [type="hidden"], .rst-stack-out, .rst-modal-overlay, .rst-sr-only, dialog, [popover], script, style, template) + :is([hidden], [type="hidden"], .rst-stack-out, .rst-modal-overlay, .rst-sr-only, dialog, [popover], script, style, template)) + :not([hidden]), [rst-stack] > :is([rst-page-header]:not([hidden], [type="hidden"], [rst-stack-out], [rst-modal-overlay], .rst-sr-only, dialog, [popover], script, style, template), [rst-page-header]:not([hidden], [type="hidden"], [rst-stack-out], [rst-modal-overlay], .rst-sr-only, dialog, [popover], script, style, template) + :is([hidden], [type="hidden"], [rst-stack-out], [rst-modal-overlay], .rst-sr-only, dialog, [popover], script, style, template), [rst-page-header]:not([hidden], [type="hidden"], [rst-stack-out], [rst-modal-overlay], .rst-sr-only, dialog, [popover], script, style, template) + :is([hidden], [type="hidden"], [rst-stack-out], [rst-modal-overlay], .rst-sr-only, dialog, [popover], script, style, template) + :is([hidden], [type="hidden"], [rst-stack-out], [rst-modal-overlay], .rst-sr-only, dialog, [popover], script, style, template)) + :not([hidden]) { --rst-stack-section: var(--rst-sp-5); }
+.rst-stack > :is(:is(label, .rst-field__help):not([hidden], [type="hidden"], .rst-stack-out, .rst-modal-overlay, .rst-sr-only, dialog, [popover], script, style, template), :is(label, .rst-field__help):not([hidden], [type="hidden"], .rst-stack-out, .rst-modal-overlay, .rst-sr-only, dialog, [popover], script, style, template) + :is([hidden], [type="hidden"], .rst-stack-out, .rst-modal-overlay, .rst-sr-only, dialog, [popover], script, style, template), :is(label, .rst-field__help):not([hidden], [type="hidden"], .rst-stack-out, .rst-modal-overlay, .rst-sr-only, dialog, [popover], script, style, template) + :is([hidden], [type="hidden"], .rst-stack-out, .rst-modal-overlay, .rst-sr-only, dialog, [popover], script, style, template) + :is([hidden], [type="hidden"], .rst-stack-out, .rst-modal-overlay, .rst-sr-only, dialog, [popover], script, style, template)) + :is(input, select, textarea, .rst-combo, .rst-dtp), [rst-stack] > :is(:is(label, [rst-field-help]):not([hidden], [type="hidden"], [rst-stack-out], [rst-modal-overlay], .rst-sr-only, dialog, [popover], script, style, template), :is(label, [rst-field-help]):not([hidden], [type="hidden"], [rst-stack-out], [rst-modal-overlay], .rst-sr-only, dialog, [popover], script, style, template) + :is([hidden], [type="hidden"], [rst-stack-out], [rst-modal-overlay], .rst-sr-only, dialog, [popover], script, style, template), :is(label, [rst-field-help]):not([hidden], [type="hidden"], [rst-stack-out], [rst-modal-overlay], .rst-sr-only, dialog, [popover], script, style, template) + :is([hidden], [type="hidden"], [rst-stack-out], [rst-modal-overlay], .rst-sr-only, dialog, [popover], script, style, template) + :is([hidden], [type="hidden"], [rst-stack-out], [rst-modal-overlay], .rst-sr-only, dialog, [popover], script, style, template)) + :is(input, select, textarea, [rst-combo], [rst-dtp]),
+.rst-stack > :is(:is(input, select, textarea, .rst-combo, .rst-dtp):not([hidden], [type="hidden"], .rst-stack-out, .rst-modal-overlay, .rst-sr-only, dialog, [popover], script, style, template), :is(input, select, textarea, .rst-combo, .rst-dtp):not([hidden], [type="hidden"], .rst-stack-out, .rst-modal-overlay, .rst-sr-only, dialog, [popover], script, style, template) + :is([hidden], [type="hidden"], .rst-stack-out, .rst-modal-overlay, .rst-sr-only, dialog, [popover], script, style, template), :is(input, select, textarea, .rst-combo, .rst-dtp):not([hidden], [type="hidden"], .rst-stack-out, .rst-modal-overlay, .rst-sr-only, dialog, [popover], script, style, template) + :is([hidden], [type="hidden"], .rst-stack-out, .rst-modal-overlay, .rst-sr-only, dialog, [popover], script, style, template) + :is([hidden], [type="hidden"], .rst-stack-out, .rst-modal-overlay, .rst-sr-only, dialog, [popover], script, style, template)) + .rst-field__help, [rst-stack] > :is(:is(input, select, textarea, [rst-combo], [rst-dtp]):not([hidden], [type="hidden"], [rst-stack-out], [rst-modal-overlay], .rst-sr-only, dialog, [popover], script, style, template), :is(input, select, textarea, [rst-combo], [rst-dtp]):not([hidden], [type="hidden"], [rst-stack-out], [rst-modal-overlay], .rst-sr-only, dialog, [popover], script, style, template) + :is([hidden], [type="hidden"], [rst-stack-out], [rst-modal-overlay], .rst-sr-only, dialog, [popover], script, style, template), :is(input, select, textarea, [rst-combo], [rst-dtp]):not([hidden], [type="hidden"], [rst-stack-out], [rst-modal-overlay], .rst-sr-only, dialog, [popover], script, style, template) + :is([hidden], [type="hidden"], [rst-stack-out], [rst-modal-overlay], .rst-sr-only, dialog, [popover], script, style, template) + :is([hidden], [type="hidden"], [rst-stack-out], [rst-modal-overlay], .rst-sr-only, dialog, [popover], script, style, template)) + [rst-field-help] { --rst-stack-control: var(--rst-sp-2); }
+.rst-stack > :is(:is(h1, h2, h3, h4, h5, h6):not([hidden], [type="hidden"], .rst-stack-out, .rst-modal-overlay, .rst-sr-only, dialog, [popover], script, style, template), :is(h1, h2, h3, h4, h5, h6):not([hidden], [type="hidden"], .rst-stack-out, .rst-modal-overlay, .rst-sr-only, dialog, [popover], script, style, template) + :is([hidden], [type="hidden"], .rst-stack-out, .rst-modal-overlay, .rst-sr-only, dialog, [popover], script, style, template), :is(h1, h2, h3, h4, h5, h6):not([hidden], [type="hidden"], .rst-stack-out, .rst-modal-overlay, .rst-sr-only, dialog, [popover], script, style, template) + :is([hidden], [type="hidden"], .rst-stack-out, .rst-modal-overlay, .rst-sr-only, dialog, [popover], script, style, template) + :is([hidden], [type="hidden"], .rst-stack-out, .rst-modal-overlay, .rst-sr-only, dialog, [popover], script, style, template)) + :not(h1, h2, h3, h4, h5, h6, .rst-section), [rst-stack] > :is(:is(h1, h2, h3, h4, h5, h6):not([hidden], [type="hidden"], [rst-stack-out], [rst-modal-overlay], .rst-sr-only, dialog, [popover], script, style, template), :is(h1, h2, h3, h4, h5, h6):not([hidden], [type="hidden"], [rst-stack-out], [rst-modal-overlay], .rst-sr-only, dialog, [popover], script, style, template) + :is([hidden], [type="hidden"], [rst-stack-out], [rst-modal-overlay], .rst-sr-only, dialog, [popover], script, style, template), :is(h1, h2, h3, h4, h5, h6):not([hidden], [type="hidden"], [rst-stack-out], [rst-modal-overlay], .rst-sr-only, dialog, [popover], script, style, template) + :is([hidden], [type="hidden"], [rst-stack-out], [rst-modal-overlay], .rst-sr-only, dialog, [popover], script, style, template) + :is([hidden], [type="hidden"], [rst-stack-out], [rst-modal-overlay], .rst-sr-only, dialog, [popover], script, style, template)) + :not(h1, h2, h3, h4, h5, h6, [rst-section]) { --rst-stack-heading: var(--rst-sp-2); }
+.rst-stack > :not([hidden], [type="hidden"], .rst-stack-out, .rst-modal-overlay, .rst-sr-only, dialog, [popover], script, style, template) ~ :is(.rst-actions, .rst-form-foot, .rst-form-actions, button, .rst-btn), [rst-stack] > :not([hidden], [type="hidden"], [rst-stack-out], [rst-modal-overlay], .rst-sr-only, dialog, [popover], script, style, template) ~ :is([rst-actions], [rst-form-foot], [rst-form-actions], button, [rst-btn]) { --rst-stack-actions: var(--rst-sp-4); }
 /* The actions row: buttons, links styled as buttons, and the one-button
    forms a POST action needs, side by side and wrapping on a phone. A
    form stays a box (display: contents would make it one no driver can
@@ -3811,6 +3823,32 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
 .rst-signin__passkey:has(> .rst-btn[hidden]), [rst-signin-passkey]:has(> [rst-btn][hidden]), .rst-signin__passkey:has(> .rst-btn[hidden]) + .rst-signin__or, [rst-signin-passkey]:has(> [rst-btn][hidden]) + [rst-signin-or], .rst-signin__or:has(+ .rst-signin__passkey > .rst-btn[hidden]), [rst-signin-or]:has(+ [rst-signin-passkey] > [rst-btn][hidden]) { display: none; }
 .rst-signin__passkey-msg, [rst-signin-passkey-msg] { color: var(--rst-text-muted); margin: 0; }
 .rst-signin__passkey-msg:not(:empty), [rst-signin-passkey-msg]:not(:empty) { margin-block-start: var(--rst-sp-2); }
+/* The note (1.8): the message in a box that floats beside the door and
+   takes no line, because a line that appeared under a tap moved
+   Continue out from under the next one. Nothing on the door moves
+   after first paint. The wrapper is the note's containing block; the
+   note opens below the button, or above it on a door whose form comes
+   after the button (rst-signin-passkey="before", a returning passkey),
+   so it covers the heading and never the email field, Continue or
+   Other ways. Below the button it can cover whatever follows the pair,
+   so the default is only for a pair that ends the door. Empty, it draws nothing but stays rendered, so the live
+   region inside it is still announced when it fills. Its close button
+   is the app's to show and wire up; hidden, it takes no room. A
+   message written straight into the wrapper, as before 1.8, keeps its
+   line and draws as it did. */
+.rst-signin__passkey:has(> .rst-signin__passkey-note), [rst-signin-passkey]:has(> [rst-signin-passkey-note]) { position: relative; }
+.rst-signin__passkey-note, [rst-signin-passkey-note] { align-items: center; background: var(--rst-surface); border: 1px solid var(--rst-line-strong); border-radius: var(--rst-radius); box-shadow: var(--rst-shadow-pop); box-sizing: border-box; display: flex; gap: var(--rst-sp-2); inset-block-start: calc(100% + var(--rst-sp-2)); inset-inline: 0; padding: var(--rst-sp-2); padding-inline-start: var(--rst-sp-3); position: absolute; z-index: 30; }
+.rst-signin__passkey--before > .rst-signin__passkey-note, [rst-signin-passkey~="before"] > [rst-signin-passkey-note] { inset-block: auto calc(100% + var(--rst-sp-2)); }
+.rst-signin__passkey-note:has(> .rst-signin__passkey-msg:empty), [rst-signin-passkey-note]:has(> [rst-signin-passkey-msg]:empty) { background: none; border: 0; box-shadow: none; padding: 0; }
+/* In the note the message is not the one-way door's caption: the
+   wrapper in the selector outweighs that rule, so it reads at body size
+   from the line's start, on every door. */
+.rst-signin__passkey > .rst-signin__passkey-note > .rst-signin__passkey-msg, [rst-signin-passkey] > [rst-signin-passkey-note] > [rst-signin-passkey-msg] { color: var(--rst-text); flex: 1; font-size: inherit; margin: 0; min-inline-size: 0; text-align: start; }
+/* The close button takes the target floor, as the bulk bar's does,
+   and the root size, so its icon is 16px as in any control. */
+.rst-signin__passkey-close, [rst-signin-passkey-close] { align-items: center; background: none; block-size: var(--rst-target); border: 0; border-radius: var(--rst-radius-sm); color: var(--rst-text-muted); display: inline-flex; flex: none; font-size: 1rem; inline-size: var(--rst-target); justify-content: center; padding: 0; }
+.rst-signin__passkey-close:hover, [rst-signin-passkey-close]:hover { background: var(--rst-accent-soft); color: var(--rst-text); }
+.rst-signin__passkey-close[hidden], [rst-signin-passkey-close][hidden] { display: none; }
 /* The word sits on a hairline drawn by its own ::before and ::after,
    which carry no text, so a screen reader hears "or" in reading order
    between the two ways in and nothing else. */
@@ -3945,7 +3983,13 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
    status as a quiet label above the sentence, one or two ways out, and
    the reference last, where an operator asked to quote it will find it.
    Logical properties throughout, so an RTL locale mirrors it with no
-   second rule. */
+   second rule. Since 1.7 the page is a stack, <div rst-error rst-stack>
+   with its ways out an actions row, <p rst-error-cta rst-actions>, and
+   the stack spaces its blocks by its table: the title opens a section
+   after the status, the sentence is the title's content, and the
+   reference is anything else, so the title sits closer to its sentence
+   than to the status above it. The margins below are 1.0's, for an
+   error page that is not a stack; the stack's rules outweigh them. */
 .rst-error, [rst-error] { margin-inline: auto; max-inline-size: 28rem; padding-block: 4rem var(--rst-sp-6); padding-inline: var(--rst-sp-4); text-align: center; }
 .rst-error__status, [rst-error-status] { color: var(--rst-text-faint); font-size: var(--rst-fs-xs); font-weight: 600; letter-spacing: 0.08em; margin: 0; }
 .rst-error__title, [rst-error-title] { color: var(--rst-text); font-size: 1.375rem; font-weight: 600; letter-spacing: -0.015em; line-height: 1.25; margin-block: var(--rst-sp-2) 0; }

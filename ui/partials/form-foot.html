@@ -21,7 +21,8 @@
        CancelLabel  string           — its visible text
        Proof        *pow.Form, optional: when it needs a script, the
                     submit is rendered disabled for pow.js to enable,
-                    with the status line and a <noscript> line. Render
+                    with pow's status, out of sight, and a <noscript>
+                    line. Render
                     .Proof.Fields and .Proof.Attrs on the form and
                     .Proof.Script once on the page yourself. */}}
 {{define "form-foot"}}{{$L := localizer $}}{{$p := opt . "Proof"}}{{$gated := and $p $p.NeedsScript}}<div rst-form-foot>

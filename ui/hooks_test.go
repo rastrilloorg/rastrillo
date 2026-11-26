@@ -2,14 +2,17 @@ package ui
 
 import (
 	"html/template"
+	"io/fs"
 	"maps"
 	"slices"
 	"strings"
 	"testing"
 	"testing/fstest"
+	"time"
 
 	"amadan.net/rastrillo/rastrillo/internal/vendored"
 	"amadan.net/rastrillo/rastrillo/locales"
+	"amadan.net/rastrillo/rastrillo/pow"
 )
 
 // hookPages builds a Pages over layout, one page per entry of contents.
@@ -368,5 +371,61 @@ func TestEachFunctionWritesExactlyItsListedHooks(t *testing.T) {
 					name, got, want)
 			}
 		}
+	}
+}
+
+// pow's StatusLine writes the visually hidden live region, and a page
+// shows only the call, so without its listed hook the slice dropped
+// .rst-sr-only and the hint showed as a line on every pow form.
+func TestAPowFormKeepsItsHiddenStatus(t *testing.T) {
+	for _, body := range []string{
+		content(`{{template "form-foot" dict "Submit" "Send" ` +
+			`"Proof" .Proof}}`),
+		content(`{{.Proof.StatusLine "Reload"}}`),
+		content(`{{with .Proof}}{{.StatusLine "Reload"}}{{end}}`),
+		content(`{{template "signin" .}}`),
+	} {
+		plan := planOne(t, scriptsLayout, body, everyFile)
+		if !slices.Contains(plan.hooks, "rst-sr-only") {
+			t.Errorf("%s: hooks %v lack rst-sr-only", body, plan.hooks)
+		}
+	}
+}
+
+func TestEachMethodWritesExactlyItsListedHooks(t *testing.T) {
+	form := proofGuard(t, 12).Form(time.Now(), "s")
+	powJS, err := fs.ReadFile(pow.Assets(), "pow.js")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Script's hooks are those the pow.js it loads creates.
+	outputs := map[string][]string{
+		"Script":     createdHooks(string(powJS)),
+		"StatusLine": vendored.HooksIn([]byte(form.StatusLine("Reload"))),
+	}
+	names := slices.Sorted(maps.Keys(outputs))
+	if listed := vendored.WritingMethods(); !slices.Equal(listed, names) {
+		t.Errorf("vendored lists %v, the test reads %v", listed, names)
+	}
+	for name, got := range outputs {
+		if want := vendored.MethodHooks(name); !slices.Equal(got, want) {
+			t.Errorf("%s writes %v, but vendored.MethodHooks lists %v",
+				name, got, want)
+		}
+	}
+}
+
+// pow.js puts a spinner in a pow form's submit while the proof
+// computes, so a page that loads it keeps the spinner's rules even
+// where it opts out of busy.js, the other script that draws one.
+func TestAPowFormKeepsItsSpinner(t *testing.T) {
+	plan := planOne(t, scriptsLayout, content(`<form data-busy="false" `+
+		`method="post">{{.Proof.Fields}}</form>{{.Proof.Script}}`),
+		everyFile)
+	if slices.Contains(plan.scripts, "static/busy.js") {
+		t.Fatalf("a form opting out of busy.js loads %v", plan.scripts)
+	}
+	if !slices.Contains(plan.hooks, "rst-spin") {
+		t.Errorf("hooks %v lack rst-spin", plan.hooks)
 	}
 }

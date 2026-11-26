@@ -1,11 +1,18 @@
 // Wires protected forms to the solver.
 //
 // The submit is rendered disabled, with a <noscript> line and a status
-// line beside it, and this module enables it once the form is wired.
-// That order is the only one that fails safe: JavaScript cannot enable
-// a control inside <noscript>, and a module that is blocked, missing or
-// throws leaves the honest disabled state and the status line, rather
-// than a form that looks live and does nothing.
+// beside it, and this module enables it once the form is wired. That
+// order is the only one that fails safe: JavaScript cannot enable a
+// control inside <noscript>, and a module that is blocked, missing or
+// throws leaves the honest disabled state, rather than a form that
+// looks live and does nothing; pow-hint.js then draws the status.
+//
+// The status is a live region out of sight (rst-sr-only), never a line:
+// a line hidden here once the form was wired moved everything under it
+// (rastrillo discussion #437). While the proof computes, the submits
+// wear the busy look instead. If the worker fails, the region says its
+// words again and is drawn: the form cannot work, so moving the page is
+// the lesser harm, as when pow.js itself fails to load.
 //
 // Markup, which pow.Form renders:
 //
@@ -13,7 +20,8 @@
 //   [data-pow-counter]   the hidden input the solution is written into
 //   [data-pow-submit]    submit controls, rendered disabled; found through
 //                        form.elements, so form= controls outside count
-//   [data-pow-status]    visible until ready; shown again on failure
+//   [data-pow-status]    the live region, emptied once wired; its words
+//                        are said again, and drawn, if the worker fails
 //   [data-pow-binding]   bound forms only: the input the work is tied to
 //
 // The module does no hashing itself; the worker imports sha256.js.
@@ -77,6 +85,8 @@ function setup(form) {
     readyAt: performance.now() + (parseInt(d.powMinAge || "0", 10) || 0),
     counter: form.querySelector("[data-pow-counter]"),
     status: form.querySelector("[data-pow-status]"),
+    hint: "",
+    warming: false, // an unbound solve started before any submit
     binding: bound ? form.querySelector("[data-pow-binding]") : null,
     submits: Array.from(form.elements).filter((el) => el.matches("[data-pow-submit]")),
     worker: null,
@@ -88,9 +98,10 @@ function setup(form) {
   };
   // A form missing a piece is a wiring bug. Enabling its submit would
   // post something the server is certain to refuse; leave it disabled,
-  // with the status line showing, and say so where a developer looks.
+  // draw the status, and say so where a developer looks.
   if (!st.nonce || !st.workerURL || !st.counter || !(st.difficulty > 0) ||
       st.submits.length === 0 || (bound && !st.binding)) {
+    showStatus(st);
     console.error("pow.js: form is missing a required element or attribute", form);
     return;
   }
@@ -109,11 +120,68 @@ function setup(form) {
   // (and Enter does nothing) until this hands it back.
   const af = st.submits.find((b) => b.hasAttribute("autofocus"));
   if (af && (!document.activeElement || document.activeElement === document.body)) af.focus();
-  if (st.status) st.status.hidden = true;
+  if (st.status) {
+    st.hint = st.status.textContent;
+    st.status.textContent = "";
+  }
   form.setAttribute("data-pow-ready", "");
   // Unbound work can start now, while the visitor reads and types, so
   // most never wait at all.
-  if (!bound) solve(st, "").catch(() => {});
+  if (!bound) warm(st);
+}
+
+// warm solves an unbound form ahead of any submit, its submits busy
+// until the proof is done or has failed.
+function warm(st) {
+  st.warming = true;
+  for (const b of st.submits) drawBusy(b, true);
+  const done = () => {
+    st.warming = false;
+    for (const b of st.submits) {
+      if (!st.held || st.held.submitter !== b) drawBusy(b, false);
+    }
+  };
+  solve(st, "").then(done, done);
+}
+
+// drawBusy is busy.js's look: aria-busy, and on a <button> one
+// spinner first in it, which tokens.css puts in the label's place, so
+// the button keeps its box. The spinner carries both spellings, the
+// class and the attribute, because tokens.css places it only in a
+// button of its own spelling. Under forced colours tokens.css puts it
+// beside the label, moving the words, so there aria-busy alone marks
+// the state, and the button looks as the system draws it.
+function drawBusy(button, on) {
+  const spin = button.querySelector(":scope > [rst-spin]");
+  if (!on) {
+    button.removeAttribute("aria-busy");
+    if (spin) spin.remove();
+    return;
+  }
+  button.setAttribute("aria-busy", "true");
+  if (spin || button.tagName !== "BUTTON" || forcedColors()) return;
+  const ring = document.createElement("span");
+  ring.className = "rst-spin";
+  ring.setAttribute("rst-spin", "");
+  ring.setAttribute("aria-hidden", "true");
+  button.insertBefore(ring, button.firstChild);
+}
+
+function forcedColors() {
+  return typeof matchMedia === "function" &&
+    matchMedia("(forced-colors: active)").matches;
+}
+
+// say puts words in the live region. hold empties it, so the same
+// failure twice is still a change a screen reader announces.
+function say(st, words) {
+  if (st.status) st.status.textContent = words;
+}
+
+// The status is drawn only when the form cannot work, as pow-hint.js
+// draws it when pow.js fails to load.
+function showStatus(st) {
+  if (st.status) st.status.classList.remove("rst-sr-only");
 }
 
 // A solution belongs to one binding value, normalised exactly as
@@ -168,7 +236,8 @@ function stopWorker(st, reason) {
 function failed(st, err) {
   stopWorker(st, err);
   endHold(st);
-  if (st.status) st.status.hidden = false;
+  say(st, st.hint);
+  showStatus(st);
   st.form.dispatchEvent(new CustomEvent("pow:failed", { detail: { error: err } }));
 }
 
@@ -219,18 +288,12 @@ function hold(st, submitter) {
   const label = submitter && (submitter.getAttribute("data-busy-label") || st.form.getAttribute("data-busy-label"));
   st.held = { submitter, onLeave, idle: label && submitter.tagName === "BUTTON" ? submitter.textContent : null };
   addEventListener("beforeunload", onLeave);
+  say(st, "");
   if (submitter) {
-    submitter.setAttribute("aria-busy", "true");
     if (st.held.idle !== null) submitter.textContent = label;
     // The same spinner busy.js draws, so a held pow button and a held
     // busy.js button look alike; aria-busy alone only changes the cursor.
-    if (submitter.tagName === "BUTTON") {
-      const spin = document.createElement("span");
-      spin.setAttribute("rst-spin", "");
-      spin.setAttribute("aria-hidden", "true");
-      submitter.insertBefore(spin, submitter.firstChild);
-      st.held.spin = spin;
-    }
+    drawBusy(submitter, true);
   }
   wait(st);
 }
@@ -280,9 +343,9 @@ function endHold(st) {
   st.held = null;
   removeEventListener("beforeunload", h.onLeave);
   if (h.submitter) {
-    h.submitter.removeAttribute("aria-busy");
-    if (h.spin) h.spin.remove();
     if (h.idle !== null) h.submitter.textContent = h.idle;
+    drawBusy(h.submitter,
+      st.warming && st.submits.includes(h.submitter));
   }
 }
 
@@ -317,7 +380,7 @@ function onPageHide() {
 function onPageShow(e) {
   if (!e.persisted) return;
   for (const st of states.values()) {
-    if (!st.bound && !st.solution) solve(st, "").catch(() => {});
+    if (!st.bound && !st.solution) warm(st);
   }
 }
 

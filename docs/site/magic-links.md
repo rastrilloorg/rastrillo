@@ -109,7 +109,7 @@ func serveJS(b []byte) http.HandlerFunc {
 
 ```html
 {{define "title"}}{{$L := localizer $}}{{template "signin-title" (dict "L" $L "State" .Signin "Brand" .Brand)}}{{end}}
-{{define "head"}}{{$L := localizer $}}{{template "signin-head" (dict "L" $L "State" .Signin)}}{{end}}
+{{define "head-early"}}{{$L := localizer $}}{{template "signin-head" (dict "L" $L "State" .Signin)}}{{end}}
 {{define "content"}}{{$L := localizer $}}{{template "signin" (dict "L" $L "State" .Signin "Brand" .Brand)}}{{end}}
 ```
 
@@ -128,7 +128,7 @@ signinPages, err := ui.NewPages(ui.PagesConfig{
 
 Set `Remember` to a pointer to `false` to keep the screen and stop remembering, for a kiosk or a shared computer. It also deletes anything remembered before. The remembered cookie is a hint for the screen and nothing else: it signs nobody in, and a one-tap is checked from scratch like a typed address.
 
-If you use passkeys, serve `passkey.JS()` and `passkey.ProbeJS()` beside `webauthn.JS()`, and set their addresses on the page's `Passkey` door, as above. Put `signin-head` in the page's `head` block: its script shows the passkey button before the page is first drawn, so the form does not move under a tap. The screen loads these scripts only when it shows the door. Pass `a.RememberJar()` as `passkey.Config.Remember`: a passkey sign-in then clears an address typed earlier in the same browser, and the next visit offers the passkey first.
+If you use passkeys, serve `passkey.JS()` and `passkey.ProbeJS()` beside `webauthn.JS()`, and set their addresses on the page's `Passkey` door, as above. Put `signin-head` in the page's `head-early` block, before the stylesheets. Its script shows the passkey button before the page is first drawn, so a tap does not land on a moving form. The screen loads these scripts only when it shows the door. Pass `a.RememberJar()` as `passkey.Config.Remember`: a passkey sign-in then clears an address typed earlier in the same browser, and the next visit offers the passkey first.
 
 The `stage` shell is made for this page: one card over a generated backdrop. Redefine its `backdrop` block for a pattern or a picture of your own.
 
@@ -175,7 +175,7 @@ So the sign-in form needs JavaScript. That's deliberate: if a post without a pro
 
 A refusal redirects to `?err=check&rec=1`. The shipped screen shows "Your browser couldn't finish a security check. Try again." on the ask step with the address filled in, and `rec=1` makes `SigninState` mint a recovery challenge, one without the honeypot, so a visitor whose password manager filled the trap gets through next time. Every other error redirect from `Begin` keeps `rec=1` when the post was itself a recovery, so the trap doesn't come back after a mistyped address. And every redirect keeps `force=1` when the post had it: a visitor who chose "send a link instead" after a failed keymail approval, and was then refused, still gets their link instead of being sent back to the provider that just failed them.
 
-`SigninState(r).Proof` is the page's challenge. It's set whenever `Proof` is, with the screen on or off. The `signin` partial renders it on whichever Begin form the state shows (the fields, a disabled button the module enables, the status line, a `<noscript>` line, and the script once), and the Forget form carries none of it. A sign-in page of your own renders `.Proof` as [the pow reference](/docs/reference/pow#rendering-a-form) shows, renders the hidden `force` input when `.Force` is true, and must not be cached: call `PrepareSigninResponse`, which sets `Cache-Control: no-store`, or set the header yourself.
+`SigninState(r).Proof` is the page's challenge. It's set whenever `Proof` is, with the screen on or off. The `signin` partial renders it on whichever Begin form the state shows (the fields, a disabled button the module enables, a hidden status, a `<noscript>` line, and the scripts once), and the Forget form carries none of it. A sign-in page of your own renders `.Proof` as [the pow reference](/docs/reference/pow#rendering-a-form) shows, renders the hidden `force` input when `.Force` is true, and must not be cached: call `PrepareSigninResponse`, which sets `Cache-Control: no-store`, or set the header yourself.
 
 `Begin` logs each refusal at debug level with its reason. Right after an upgrade, `missing` is a sign-in page that was open before the deploy, and the visitor gets in on their second try.
 

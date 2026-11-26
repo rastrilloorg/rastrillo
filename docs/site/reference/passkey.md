@@ -90,7 +90,8 @@ sign-in page its `"reauth"` names. It imports `JS()` as `./signin.mjs`, so
 serve the two side by side under those names.
 
 `ProbeJS()` is a classic script, not a module. Load it in the sign-in
-page's `<head>`, as ui's `signin-head` does, from the URL you set as
+page's `<head>`, before the stylesheets, as `ui`'s `signin-head` does in
+the `head-early` block. Use the URL you set as
 `auth.PasskeyDoor.ProbeURL`. Before the page is first drawn, it shows the
 passkey button where the browser supports passkeys and enables the add
 page's button, so neither moves when its module loads. Without it, the

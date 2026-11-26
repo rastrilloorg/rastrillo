@@ -358,7 +358,8 @@ func TestTheOneWayPasskeyDoorWaitsForTheProbe(t *testing.T) {
 	data := signinData(oneWayByName()["id, a passkey"])
 	data["Preview"] = true
 	preview := render(t, "signin", data)
-	shown := regexp.MustCompile(`<div rst-signin-passkey><button[^>]*>`).
+	shown := regexp.MustCompile(
+		`<div rst-signin-passkey="before"><button[^>]*>`).
 		FindString(preview)
 	if shown == "" || strings.Contains(shown, "hidden") ||
 		strings.Contains(preview, "<script") {

@@ -419,7 +419,13 @@ func TestThePasskeyButtonWaitsForItsScript(t *testing.T) {
 	}
 	data := signinData(st)
 	data["Preview"] = true
-	if preview := render(t, "signin", data); strings.Contains(preview, " hidden") || strings.Contains(preview, "data-rst-passkey") || strings.Contains(preview, "<script") {
+	// The note's close button is hidden in every rendering until a
+	// message comes, as Fiesta's example has it.
+	preview := strings.ReplaceAll(render(t, "signin", data),
+		"rst-signin-passkey-close hidden", "")
+	if strings.Contains(preview, " hidden") ||
+		strings.Contains(preview, "data-rst-passkey") ||
+		strings.Contains(preview, "<script") {
 		t.Errorf("a Preview shows the door as the enhanced page would, loading nothing and with nothing for a script to find:\n%s", preview)
 	}
 }
@@ -479,7 +485,10 @@ func TestSigninControlsAreNamedAndIDsUnique(t *testing.T) {
 			}
 		}
 		for _, b := range buttons.FindAllStringSubmatch(out, -1) {
-			if text(b[1]) == "" {
+			// The note's close button is an icon, named by its label.
+			named := strings.Contains(b[0], ` aria-label="`+
+				defaultT("rastrillo.ui.close")+`"`)
+			if text(b[1]) == "" && !named {
 				t.Errorf("%s: a button with no text: %s", c.name, b[0])
 			}
 		}
@@ -502,6 +511,12 @@ func TestSigninClassesAreStyled(t *testing.T) {
 			// and none should: the callout partial writes it on every
 			// callout that sets no tone.
 			if name == "rst-tone~=info" {
+				continue
+			}
+			// The passkey door's slot. after is the note's own side, drawn
+			// by the bare attribute's rules, so only before has a rule;
+			// Fiesta's examples write both.
+			if name == "rst-signin-passkey~=after" {
 				continue
 			}
 			if !qualifiedOnly[name] && !tokensStyle(css, name) {
@@ -590,8 +605,16 @@ func TestTheLinkOneTapLabelIsOneRunOfText(t *testing.T) {
 
 // The passkey message is empty until the door's script writes to it,
 // and an empty paragraph directly in the door would still take one of
-// the door's gaps. The button and its message are one child of the door.
+// the door's gaps. The button and its note are one child of the door,
+// named by its slot, and the note holds the message, a polite live
+// region, and its close button, hidden until a message comes.
 func TestThePasskeyButtonAndItsMessageAreOneDoorChild(t *testing.T) {
+	wrapped := regexp.MustCompile(`<div rst-signin-passkey="(before|after)">` +
+		`<button [^>]*>[^<]*</button>\s*<div rst-signin-passkey-note>` +
+		`<p rst-signin-passkey-msg id="rst-signin-passkey-msg" ` +
+		`aria-live="polite"></p><button type="button" ` +
+		`rst-signin-passkey-close hidden aria-label="[^"]+"><svg ` +
+		`[^>]*>(?:<path [^>]*/>)+</svg></button></div>\s*</div>`)
 	for _, preview := range []bool{false, true} {
 		for _, st := range []auth.SigninState{
 			{Step: auth.StepAsk, Passkey: signinDoor},
@@ -602,7 +625,7 @@ func TestThePasskeyButtonAndItsMessageAreOneDoorChild(t *testing.T) {
 				data["Preview"] = true
 			}
 			out := render(t, "signin", data)
-			if !regexp.MustCompile(`<div rst-signin-passkey><button [^>]*>[^<]*</button>\s*<p rst-signin-passkey-msg id="rst-signin-passkey-msg" aria-live="polite"></p>\s*</div>`).MatchString(out) {
+			if !wrapped.MatchString(out) {
 				t.Errorf("door %s, preview %v: the passkey button and message are not wrapped together:\n%s", st.Door(), preview, out)
 			}
 		}
@@ -681,7 +704,9 @@ func TestTheOrDividerStandsOnlyBetweenTheFormAndAPasskeyDoor(t *testing.T) {
 			if got, want := m[0][1], html.EscapeString(defaultT("rastrillo.ui.signin_or")); got != want {
 				t.Errorf("%s, preview %v: the divider reads %q, want %q", c.name, preview, got, want)
 			}
-			or, form, pk := strings.Index(out, "<p rst-signin-or>"), strings.Index(out, `id="rst-signin-email"`), strings.Index(out, "<div rst-signin-passkey>")
+			or := strings.Index(out, "<p rst-signin-or>")
+			form := strings.Index(out, `id="rst-signin-email"`)
+			pk := strings.Index(out, "<div rst-signin-passkey=")
 			if (or < form) == (or < pk) {
 				t.Errorf("%s, preview %v: the divider is not between the email form and the passkey door:\n%s", c.name, preview, out)
 			}
@@ -696,7 +721,9 @@ func TestTheOrDividerStandsOnlyBetweenTheFormAndAPasskeyDoor(t *testing.T) {
 // wrapper's immediate neighbour: anything written between them would
 // leave the divider showing beside a hidden button.
 func TestTheOrDividerIsHiddenWithThePasskeyButton(t *testing.T) {
-	adjacent := regexp.MustCompile(`<p rst-signin-or>[^<]*</p>\s*<div rst-signin-passkey>|<div rst-signin-passkey>(?s:.*?)</div>\s*<p rst-signin-or>`)
+	adjacent := regexp.MustCompile(`<p rst-signin-or>[^<]*</p>\s*` +
+		`<div rst-signin-passkey="after">|<div rst-signin-passkey=` +
+		`"before">(?s:.*?)</div>\s*</div>\s*<p rst-signin-or>`)
 	for _, st := range []auth.SigninState{
 		{Step: auth.StepAsk, Passkey: signinDoor},
 		{Step: auth.StepReturning, Remembered: remembered("passkey", ""), Passkey: signinDoor},
@@ -771,7 +798,8 @@ func TestSigninRendersTheChallengeOnTheOneBeginForm(t *testing.T) {
 				t.Errorf("%s: Begin form lacks %s", c.name, want)
 			}
 		}
-		if strings.Count(out, `<script type="module" src="/pow/pow.js">`) != 1 {
+		powJS := `<script type="module" src="/pow/pow.js" data-pow-script>`
+		if strings.Count(out, powJS) != 1 {
 			t.Errorf("%s: pow.js is not loaded exactly once", c.name)
 		}
 		if forget := forgetFull.FindString(out); strings.Contains(forget, "pow_") {

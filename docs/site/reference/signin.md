@@ -230,7 +230,7 @@ type OptionRow struct {
 `signin` writes no HTML. It hands `Config.Render` a `View` with one of
 `Signin`, `Offer`, `Add` or `Options` set, and the status to answer
 with (0 for 200). ui's `signin-view` partial draws whichever it is, `signin-view-title`
-its title, and `signin-view-head`, in the page's `head` block, the
+its title, and `signin-view-head`, in the page's `head-early` block, the
 script that shows the passkey button before the page is first drawn.
 One render function on the stage shell serves the sign-in screen and
 every page here. `Choices` lists the

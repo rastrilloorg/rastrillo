@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"strings"
 	"time"
 
 	"amadan.net/rastrillo/rastrillo/basepath"
@@ -88,22 +89,36 @@ func (f Form) Attrs() template.HTMLAttr {
 	return template.HTMLAttr(s)
 }
 
-// Script loads the module. Render it once per page.
+// Script loads the module, after pow-hint.js, its sibling in Assets,
+// which shows the status if the module fails to load: deferred and
+// module scripts run in document order, so the hint is listening by
+// then. Render it once per page.
 func (f Form) Script() template.HTML {
 	if !f.NeedsScript() {
 		return ""
 	}
-	return template.HTML(fmt.Sprintf(`<script type="module" src="%s"></script>`, template.HTMLEscapeString(f.scriptURL)))
+	dir := f.scriptURL[:strings.LastIndex(f.scriptURL, "/")+1]
+	return template.HTML(fmt.Sprintf(
+		`<script defer src="%s"></script>`+
+			`<script type="module" src="%s" data-pow-script></script>`,
+		template.HTMLEscapeString(dir+"pow-hint.js"),
+		template.HTMLEscapeString(f.scriptURL)))
 }
 
-// StatusLine is visible from first paint and hidden by the module when
-// the form is ready, so a module that never runs (blocked, missing,
-// thrown) leaves the visitor a reason instead of a dead button. Its
-// words come from the caller because pow has no locale; they must be
-// true whether or not the module ever runs. Render it inside the form.
+// StatusLine is a live region, visually hidden by tokens.css's
+// rst-sr-only from the first paint: a line that pow.js hid once it
+// loaded moved everything under it (rastrillo discussion #437). Its
+// words are there for a screen reader from the start; pow.js empties
+// it once the form is wired, while the submit wears the busy look as
+// the proof computes. It is drawn only when the form cannot work: by
+// pow.js, saying its words again, if the worker fails, and by
+// pow-hint.js if the module fails to load. The words come
+// from the caller because pow has no locale; they must be true whether
+// or not the module ever runs. Render it inside the form.
 func (f Form) StatusLine(text string) template.HTML {
 	if !f.NeedsScript() {
 		return ""
 	}
-	return template.HTML(`<p data-pow-status>` + template.HTMLEscapeString(text) + `</p>`)
+	return template.HTML(`<p class="rst-sr-only" role="status" ` +
+		`data-pow-status>` + template.HTMLEscapeString(text) + `</p>`)
 }

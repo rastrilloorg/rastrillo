@@ -2456,7 +2456,7 @@ func TestTheShellsKeepTheirOverridableBlockNames(t *testing.T) {
 		// partial; column has a locale block too, in the footer row after
 		// its content. scheme-menu is the scheme block's default body,
 		// beside the locale block in every shell that has one.
-		"column": {"lang", "dir", "title", "live-head", "head",
+		"column": {"lang", "dir", "title", "head-early", "live-head", "head",
 			"region:notice", "content",
 			"locale", "locale-menu", "scheme", "scheme-menu"},
 		// The three shells with chrome offer one SET, so a screen moves
@@ -2475,24 +2475,25 @@ func TestTheShellsKeepTheirOverridableBlockNames(t *testing.T) {
 		// moving it into the bar, which is the rail deleted and this
 		// shell with it. Order is irrelevant to the contract anyway: a
 		// block is found by name.
-		"topbar": {"lang", "dir", "title", "live-head", "head",
+		"topbar": {"lang", "dir", "title", "head-early", "live-head", "head",
 			"view", "up", "upLabel", "upLabel", "brand", "title", "brand",
 			"nav", "profile", "profile", "scheme", "scheme-menu",
 			"locale", "locale-menu", "account",
 			"region:notice", "content", "foot"},
-		"sidebar": {"lang", "dir", "title", "live-head", "head",
+		"sidebar": {"lang", "dir", "title", "head-early", "live-head", "head",
 			"view", "up", "upLabel", "upLabel", "brand", "title", "brand",
 			"nav", "profile", "profile", "scheme", "scheme-menu",
 			"locale", "locale-menu", "account",
 			"region:notice", "content"},
-		"console": {"lang", "dir", "title", "live-head", "head",
+		"console": {"lang", "dir", "title", "head-early", "live-head", "head",
 			"view", "up", "upLabel", "upLabel", "brand", "title", "brand",
 			"profile", "profile", "scheme", "scheme-menu",
 			"locale", "locale-menu", "account", "nav",
 			"region:notice", "content", "foot"},
 		// stage has no chrome to override. backdrop is the picture
 		// behind the card, foot an optional line under it.
-		"stage": {"lang", "dir", "title", "live-head", "head", "backdrop", "region:notice", "content", "foot"},
+		"stage": {"lang", "dir", "title", "head-early", "live-head",
+			"head", "backdrop", "region:notice", "content", "foot"},
 	}
 	blockName := regexp.MustCompile(`{{block "([^"]+)"|{{template "([^"]+)"`)
 	for _, name := range LayoutNames() {

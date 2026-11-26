@@ -72,8 +72,8 @@ included, and sweeps it with `guard.Sweep(now)` from a
 CPU throttle; default 18), `MinAge: 500ms`. Render `f := g.Form(now,
 scope)`: `.Attrs` on the `<form>`, `.Fields` inside, `.Script` once per
 page, `"Proof"` to `form-foot` (disabled `data-pow-submit` button,
-status line, `<noscript>`). Namespace the scope (`myapp/contact`); it is
-sealed and compared. **Never cache a page carrying a challenge**
+visually hidden live region, `<noscript>`). Namespace the scope
+(`myapp/contact`); it is sealed and compared. **Never cache a page carrying a challenge**
 (`no-store`): every visitor gets one token. `NoProof` (token +
 honeypot) needs no JavaScript; proof of work does. In a transaction:
 `adm := g.Admit(r, pow.Want{Scope: s})` BEFORE `BeginTx` (one writer

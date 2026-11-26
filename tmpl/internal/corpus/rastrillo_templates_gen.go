@@ -43,12 +43,12 @@ func init() {
 	tmplrt.Register("0f24630096c49b29aa43337714800bfc335d6d73609f8da91cb1893841aebf9c", bind_0f24630096c49b29)
 	tmplrt.Register("0f56e438dbd01290405dd4b81620b1ebffb0ff4a0c829fcecc1a815b01573cdf", bind_0f56e438dbd01290)
 	tmplrt.Register("1073ec0d38c56faf597bf6b9a9656536883222dade5359abcb1a15605b60bb8f", bind_1073ec0d38c56faf)
-	tmplrt.Register("11e955e79770cd6dbc549f278b6c72f61ff8044d3b5f3a80b43b76fb579e477e", bind_11e955e79770cd6d)
 	tmplrt.Register("13171a839254134d00f632a28d18db413fdd7f660264baacd3bb2430efe14d93", bind_13171a839254134d)
 	tmplrt.Register("1402634a1110f7ae5c29ad284a6b5e00b888bc5387bf4c9f303669d15170e6de", bind_1402634a1110f7ae)
 	tmplrt.Register("143ed4a269d7011c195ffa816bd39149ec17f970f8a4d938d49afb084135c73f", bind_143ed4a269d7011c)
 	tmplrt.Register("15334233f2726784979cd1d4a13dc945b88be6dc14ee88f9a515a88330e4f550", bind_15334233f2726784)
 	tmplrt.Register("164795371e9a03864d4f7f9abb9803cb6d3edac6cbda573de2059a9bd58f4832", bind_164795371e9a0386)
+	tmplrt.Register("1824615ebc0f69526863cb59910ef70b0463a8d91c84b2490b1cb42c14d96deb", bind_1824615ebc0f6952)
 	tmplrt.Register("190cf040bbaec670da6b3937e5bb4c578bfe8ea41041bd924221ffe5e36f9f60", bind_190cf040bbaec670)
 	tmplrt.Register("19f626316f10979a67696427c0181dc4db3d1a51463bedda36ec2ebc28e84879", bind_19f626316f10979a)
 	tmplrt.Register("19fb1823493359b58ac646a42875020fef908ef086cfb9d68d86fdd75d01dd36", bind_19fb1823493359b5)
@@ -61,13 +61,14 @@ func init() {
 	tmplrt.Register("223fd4bc26ed0d6e557fab0aa7996a830fd8b1e2c643dce34a1a5891579cbd2a", bind_223fd4bc26ed0d6e)
 	tmplrt.Register("22ebeb9924334bc29aedc57ee54e70625673c6f6cd68916cb8291d8658b748d0", bind_22ebeb9924334bc2)
 	tmplrt.Register("22fc6152d9d0d20098ffa54ebd36090323ab3c65971bc4b4d4722d96311313ca", bind_22fc6152d9d0d200)
-	tmplrt.Register("2325717ba4367e26eb7c2fa30ce523dbc959bdfdf6502924a88472634f0f331d", bind_2325717ba4367e26)
 	tmplrt.Register("23be6e42803e6e97b10ca8b8a58f2f80ff8ab627ef37e7a57c96dd0714a29533", bind_23be6e42803e6e97)
+	tmplrt.Register("23e655118776ffdc6152ccf110aab549b851b71fe1c88d2f5aed3b1d1ad23d5c", bind_23e655118776ffdc)
 	tmplrt.Register("24f6f6b170dbb06f4f7b0c21005a609b6aa61e057f5d94ea548f79af94d63c96", bind_24f6f6b170dbb06f)
 	tmplrt.Register("24fd528bf689f84f3f42970a20a9c08c87f86c16a788eff8500571dff0762851", bind_24fd528bf689f84f)
 	tmplrt.Register("264440218b986e4782b65e4288465edbe9c6164e34365f06e9b0881da7f50f2b", bind_264440218b986e47)
 	tmplrt.Register("28896b2f1b8d7f473c7da225be34b7751227e0a0d8cd856cffc4684e1616cc64", bind_28896b2f1b8d7f47)
 	tmplrt.Register("28ff810473f586c0eb56707c111a48c2ac7b89beac5393c6d058e924ed37123d", bind_28ff810473f586c0)
+	tmplrt.Register("29310e2045d2ce1329b11a4c431db53015b26c266630b48b2fd715f7d435c2ad", bind_29310e2045d2ce13)
 	tmplrt.Register("2a7549b98b3b5edac78689ec0a93113af603eee11b1ad79da31db28cd76597e7", bind_2a7549b98b3b5eda)
 	tmplrt.Register("2d7dd0237e0b3c40fe7978f3b9f2d01c59123bc631ff6b265496725ce454132e", bind_2d7dd0237e0b3c40)
 	tmplrt.Register("2d7e25167eb47397f9d37b68985f1324aa4dcec04dc055f6e82c708a7dd363bd", bind_2d7e25167eb47397)
@@ -76,11 +77,9 @@ func init() {
 	tmplrt.Register("3125831eac1a9d19592c9e9902417179c4c428bd460c045a9a3dc4ee39906c9f", bind_3125831eac1a9d19)
 	tmplrt.Register("31cb3007823cf32ebf79a32ce73ba3f9071eab06f9592a9b4cee6d3ad6474fc9", bind_31cb3007823cf32e)
 	tmplrt.Register("323694147b245131689294b99d14bb7e71312e09871573f640ddcd431d9eaae4", bind_323694147b245131)
-	tmplrt.Register("323f2c198ae4b16cfe2956cb1c70d304b67f74f834280fb37b17724720122f44", bind_323f2c198ae4b16c)
 	tmplrt.Register("3253d392e2d886f590e7b3917c3a81ff3a69e16db87fcb64a599273168487ca6", bind_3253d392e2d886f5)
 	tmplrt.Register("3306b61f80da4095ea6bfc3b8eb304d6d125c99853d4a4b608f5ea2d83ade116", bind_3306b61f80da4095)
 	tmplrt.Register("3328140930329e9a6d4b0298f63bb7132eb95b42c0c92bb26f3377a8d76351f4", bind_3328140930329e9a)
-	tmplrt.Register("335bcd1bc854f5646194ba284a23f75aeebd5ba7fe35e9fbe8ca4b002d8beb20", bind_335bcd1bc854f564)
 	tmplrt.Register("342f5d9dc0cfc75084b56450808e18b37443abd9be8b96b884a9f51487851c87", bind_342f5d9dc0cfc750)
 	tmplrt.Register("34af662da54673dbfb113f296827af95ebf7c0055c3c8cf760fec07f0c0463e3", bind_34af662da54673db)
 	tmplrt.Register("351c6c485791cfb6456c4e3d66c0540fb8afd4677efcb67442963b1478672132", bind_351c6c485791cfb6)
@@ -95,6 +94,7 @@ func init() {
 	tmplrt.Register("404322a16f81b346729af0cfd3fcf5cca04fc68b0759ba483e50b66ef96e65d8", bind_404322a16f81b346)
 	tmplrt.Register("409aa55971c34431cc08eb9ae1fde5e06098272d34bbdc15830572d9333e79e7", bind_409aa55971c34431)
 	tmplrt.Register("424a3245bd39b269f9639056994307085c7e8bdec47a12806e8d8030bbf64ef9", bind_424a3245bd39b269)
+	tmplrt.Register("42ce822e3ebe0d0bbe49f09833e320d0f578d14b185a99cdd2523f94742e9860", bind_42ce822e3ebe0d0b)
 	tmplrt.Register("435ca28b06d12bef7e91e1261aba2ea20e399e8a75ef0dd3eed7f87ac012f517", bind_435ca28b06d12bef)
 	tmplrt.Register("435d2c06aeeb6ac0b66bf0a80fb7804c454b70653ff84c6f651a7c9fa539cb23", bind_435d2c06aeeb6ac0)
 	tmplrt.Register("45522d106375aa7b6a85ef51ed56d4de1265c0432bfbd809e76458b9772aa0d0", bind_45522d106375aa7b)
@@ -115,6 +115,8 @@ func init() {
 	tmplrt.Register("5205ef9d285e6c157787c7247e152ea75eac67bd332e0d61b76f86bce445f315", bind_5205ef9d285e6c15)
 	tmplrt.Register("544c0052ef331808a679d75cc0e2cf1d54a4d2a4ebd55802c723c14fcca45380", bind_544c0052ef331808)
 	tmplrt.Register("54b124cdd6a98cce86883730328ab491b83b08b1b55d31f0426a58e440ab07f6", bind_54b124cdd6a98cce)
+	tmplrt.Register("558d15398949781f4c8a149224816de66ebfc52bcc09c449c0682447e6404c28", bind_558d15398949781f)
+	tmplrt.Register("55f1b473fd46140e87e1b6bc49b940341aaacdca3868c3ada2ef5a4029ec86d1", bind_55f1b473fd46140e)
 	tmplrt.Register("56e2feb118f223de2952f473b04cbcc807f3ab464d5798645440eeecaa85eb59", bind_56e2feb118f223de)
 	tmplrt.Register("573e8f2e557e2b8976e53525454fb11ea9962f1b7b1a737fde4f4ea94aaabab1", bind_573e8f2e557e2b89)
 	tmplrt.Register("574acc82a070a9fadb83577384d3621a0fbc5fa5a97a64df0725ae2fd7da92f9", bind_574acc82a070a9fa)
@@ -125,17 +127,16 @@ func init() {
 	tmplrt.Register("5a90e6f0298be05dbc89a2ad8b954ef47512be38b4ea995cc766c9346567cc97", bind_5a90e6f0298be05d)
 	tmplrt.Register("5aab186448fa10ee25966fb5c72d9f38c1aa8642ee074c853f7cc8c09dc4aa2f", bind_5aab186448fa10ee)
 	tmplrt.Register("5c6d81e1365527af6193cd132eeddf92a287f4c4bdab92727a778ef14c28131d", bind_5c6d81e1365527af)
-	tmplrt.Register("5d0c10e36e1bdeff28a4e9efe2c74f6286ca564da5da172da50b588d50255aff", bind_5d0c10e36e1bdeff)
+	tmplrt.Register("5d0ee4335a65f8cafb13165293585e7d1eeacdbc07ef5258b08e68e744292716", bind_5d0ee4335a65f8ca)
 	tmplrt.Register("5de6678892e90cddc288add24ba8cf2f1dee977887e977e447c777e82a27feaa", bind_5de6678892e90cdd)
 	tmplrt.Register("5e2b2f3ce728e622a000a9026b1c4aad1eacdf506faca81d787ba3119d1bcb7f", bind_5e2b2f3ce728e622)
 	tmplrt.Register("5ede5ee1a3cb7dcaf97101d8714e04e29e410e1384557a952cae91eab313b36b", bind_5ede5ee1a3cb7dca)
 	tmplrt.Register("61ca3f9c66551709a06342e5f470ccfe002db6377ce83dac39154ee6ff799270", bind_61ca3f9c66551709)
-	tmplrt.Register("61cfe847d8b6b153d07f617d4661a398b096dceb922b5333eba103dbe4f545dd", bind_61cfe847d8b6b153)
 	tmplrt.Register("62b953745be608d36d367eaa06a835c7d754b3a2ab4bcd19aa52e75883bad498", bind_62b953745be608d3)
 	tmplrt.Register("642b47f33fb6ebb0d4600498782557059e79b90d15549c2e8352f61d8e4aefb4", bind_642b47f33fb6ebb0)
 	tmplrt.Register("644a1f3f6c5c480800b1063764396187cd5c1b516485302d161efa8aae71369d", bind_644a1f3f6c5c4808)
-	tmplrt.Register("65fafc93875ca974d6312be450b46a94eb0a5bda2947c1f9987fb78b2a972bff", bind_65fafc93875ca974)
 	tmplrt.Register("66ddd414a9fac665748c1127c4b72094b9e5a7acaa87a6483619e06b68a85089", bind_66ddd414a9fac665)
+	tmplrt.Register("69c95ff7c294b50082d4e0ba8331dd05b7038b45f586986e3612d7451b07a716", bind_69c95ff7c294b500)
 	tmplrt.Register("69e588b94527a276db8276d52e1fe3c4b419b12eb644010575de2c96a0d62e24", bind_69e588b94527a276)
 	tmplrt.Register("6b8bb6f9fd493a40db5de5b348324c22a70a64e90db847a7516adbae2f02a999", bind_6b8bb6f9fd493a40)
 	tmplrt.Register("6c1785d5d15f1b3e662d9eba0a35c2f05aa34cd34f8bfc8230d106b2229d48a5", bind_6c1785d5d15f1b3e)
@@ -143,7 +144,6 @@ func init() {
 	tmplrt.Register("6e9f4e3ec657a71a90bad68c8ec63ffb78e16af350b46f19717ac8b8c6df7698", bind_6e9f4e3ec657a71a)
 	tmplrt.Register("6f17a02e07327fefdbbe4b53d17d958bc3443eb4abd45dd4e923cafd64fc2f5d", bind_6f17a02e07327fef)
 	tmplrt.Register("6fb14d7537c17c7df4eab7418a1513d0bd8b6d5fb3e99ef320cc2e8c05225aa6", bind_6fb14d7537c17c7d)
-	tmplrt.Register("7219fcd04f71f166f19bd4d4469b89813e95207b185a403aeffccc2c1cd2d887", bind_7219fcd04f71f166)
 	tmplrt.Register("72b422679a4342f496f63c9cc999719a3336e6123b6ad1fcc1f33861e44339f4", bind_72b422679a4342f4)
 	tmplrt.Register("73030a9d262d2f0fa618c0a23384400b185b8337b9feb5216e5cb9390222d9e4", bind_73030a9d262d2f0f)
 	tmplrt.Register("73be4435ec3dff1f35071c5907093f9a41d481414958a55b1614a6b3ebfbd36d", bind_73be4435ec3dff1f)
@@ -159,21 +159,22 @@ func init() {
 	tmplrt.Register("7c6069a7ca48a6125c093fb303a12d3354781ead0768c1a08a63b39bb5fb4859", bind_7c6069a7ca48a612)
 	tmplrt.Register("7dc9c440a62d2ec19f638ca387c852dbd3b0cfe9b65af340ae99d93744662af5", bind_7dc9c440a62d2ec1)
 	tmplrt.Register("80f75a13dbe0048fed0584c1497aae25bbf1cd894335acc1592ecd6818801b44", bind_80f75a13dbe0048f)
+	tmplrt.Register("812fd0ca696fb2490a2f363f1df7e25956e4bcabfa45ea883696ad3cbc09ae49", bind_812fd0ca696fb249)
+	tmplrt.Register("81b121c512f8ec6f73a5d4d57e24f56a1f024956f7be22d5c981d4c61ad2380c", bind_81b121c512f8ec6f)
 	tmplrt.Register("820fbab31d98272d39a826f9a04439ff402ccfaf703147e889e01fc71aa65f69", bind_820fbab31d98272d)
 	tmplrt.Register("82413fa8764dd967c01df14cc544116111186db494b8fac2c4f7d785cf3d181d", bind_82413fa8764dd967)
 	tmplrt.Register("83182793320cda1e227738432a7277e1a0fc1007180565868508e897cdd9c62d", bind_83182793320cda1e)
 	tmplrt.Register("834594040203eb89489e03e67337e8cae2bac600ddd9730c151a4f27d7807899", bind_834594040203eb89)
+	tmplrt.Register("83df6c7ec5fabc5e8962d3ecb5e9859feb6f52874603a4f10a53c019649d3ae4", bind_83df6c7ec5fabc5e)
 	tmplrt.Register("85fd9788e2e77a6291d5e58ab176f8f6c7c99c95e8a8575f5147a50ab929aa4b", bind_85fd9788e2e77a62)
 	tmplrt.Register("866f808ef07e787f408a16283a280be7e47bae1d0469c569510b2900ab5f0464", bind_866f808ef07e787f)
 	tmplrt.Register("878e75ac00afa496cb8e82dcfdf0fc8fe0dd9b2767239743fdcba5f3824737f5", bind_878e75ac00afa496)
-	tmplrt.Register("8917be52b25f71f97a9647c7518f8732ee0e9a340716c06084a5ad6cb982597e", bind_8917be52b25f71f9)
 	tmplrt.Register("8b171a14236c11cca7c3b2cfa9efe47c04a4dd32365a82959fe700109a4efee8", bind_8b171a14236c11cc)
 	tmplrt.Register("8b34b5f0df245e1148cb668321dcbc4194a5d42786bdd32c8e4aa5c76d7036d5", bind_8b34b5f0df245e11)
 	tmplrt.Register("8b4b5553e44f9bad26d236b51a122eb5e9b61b71d7da3619033df6400823f9a1", bind_8b4b5553e44f9bad)
 	tmplrt.Register("8b5e743942b2cb0350464c007c7e87f9ed566c1b8732b293d1f24b7c8407e1b5", bind_8b5e743942b2cb03)
 	tmplrt.Register("8ba57afd2ca51a6b34897f3e2a742621b5e6d5cf6fcc8403ef66d758f3a2d10a", bind_8ba57afd2ca51a6b)
 	tmplrt.Register("8c615da64918643dfedd89cc36bafa21b2eb141ccb04f77ecf456c2c7922e551", bind_8c615da64918643d)
-	tmplrt.Register("8d19983ca4e013b4c29977a054f64e7dfefc3ac6b537ca877021a7e177681ce3", bind_8d19983ca4e013b4)
 	tmplrt.Register("8e630cde10a0367200c3a3d3ca5e5dcb524b071afc3eefaeaf76d46ed0063eee", bind_8e630cde10a03672)
 	tmplrt.Register("8e84db4a12da5f22b1fba8c3a29d12ad2b8f301d37ec27fd3c7b89ed7eae4419", bind_8e84db4a12da5f22)
 	tmplrt.Register("8ed5a836d1fa84dacf5f389d63207809fe17893f9371e28da9a0c3d439f9ce14", bind_8ed5a836d1fa84da)
@@ -222,16 +223,17 @@ func init() {
 	tmplrt.Register("b17e12c7898b06f2bdc448e2d0fd39c309d6cbbbd0b09367e03bfc07da266432", bind_b17e12c7898b06f2)
 	tmplrt.Register("b4906f50c2d0358f8909e030a3e44d8c6421db062e8073a99bd2124bb833cb22", bind_b4906f50c2d0358f)
 	tmplrt.Register("b52d5bf33d01e7c0221990ffaec86c0f28b955261d329321664a888396eaee67", bind_b52d5bf33d01e7c0)
-	tmplrt.Register("b63fdf7fda6000d4ee3f8e88f5fc9323d92097eea125555d8f4071a857646507", bind_b63fdf7fda6000d4)
 	tmplrt.Register("b66284b6c15b99f0d4178d4a21ead61a3cbe850f7b5d34237ff179ab867e20b4", bind_b66284b6c15b99f0)
 	tmplrt.Register("b88c57e9ee93fda51afb95793aca558858adcdb97d1750fea8c9735bd645b968", bind_b88c57e9ee93fda5)
 	tmplrt.Register("b8c1cc58d7ade3848decc6f7c84b7241f7965163c99c493fdec0390f99c83bd4", bind_b8c1cc58d7ade384)
+	tmplrt.Register("b9a03dfc8162c6488d6febfa8d562a753fb2ddf5ad717581461126766e92d8e2", bind_b9a03dfc8162c648)
 	tmplrt.Register("ba6e7d408c1cd68329968190012d175c0810c2137061020b9d7e219bec085783", bind_ba6e7d408c1cd683)
 	tmplrt.Register("bd34a641e3a9696510b34c52fb109be50fb45391ba063c82c2c76b5988ea0cfb", bind_bd34a641e3a96965)
 	tmplrt.Register("be05192d80831f5877765bc67f1fe535761c216513b8654a8f593f23d4338351", bind_be05192d80831f58)
 	tmplrt.Register("c003f4adf65848a764f1d56ecf80efe0d156bbd39c040520af7b802f1bd2cce4", bind_c003f4adf65848a7)
 	tmplrt.Register("c06ed44f1184dc1333e99ba0040776f83f05fd9a5a9c6db81073ea1e50d2965b", bind_c06ed44f1184dc13)
 	tmplrt.Register("c170cd5cd201864e02904256fb08340141e6aa3b261d264bdc358347527afc11", bind_c170cd5cd201864e)
+	tmplrt.Register("c38122c89e3ba228c2159b6dfbf22d906e850ecd1157be379ba1c04a18e0e38a", bind_c38122c89e3ba228)
 	tmplrt.Register("c38dcff9d97f9add0873dfbb9096dfe0794416384ca9b2852965a2661ef52d57", bind_c38dcff9d97f9add)
 	tmplrt.Register("c49a10e8c1047a6633d48587f641fa688e5aa6e24cae08495c18706eb4bf3f82", bind_c49a10e8c1047a66)
 	tmplrt.Register("c599389301bb9bfb5b536e4006b194f1f88b75cf91aaf8ec6cd0445de63ff13f", bind_c599389301bb9bfb)
@@ -246,7 +248,6 @@ func init() {
 	tmplrt.Register("cd64ed12f1c363e87f5ba404b8d30d4b9ed535e925734369e070763aaa298d02", bind_cd64ed12f1c363e8)
 	tmplrt.Register("cdb7188b1a6d9c59705a41bfbaf71e767376f2ff4edc2a93ce04a4b50a69533b", bind_cdb7188b1a6d9c59)
 	tmplrt.Register("cfbb685f601dbdb953c8e27c7cac7fefcb765924ce3a805b75644f310d5eaaf8", bind_cfbb685f601dbdb9)
-	tmplrt.Register("d185008f58a39fbe91aed54b0f6fe190d4cc452ba3d639abdf3906504c885c04", bind_d185008f58a39fbe)
 	tmplrt.Register("d1dbe2f11f65b81e9be547cf08a4ac5f5dc6203f16030f6dd813868c0340c72f", bind_d1dbe2f11f65b81e)
 	tmplrt.Register("d2a96ef249ebb1401d09b2c1da494e6cbca74824e2dbb467cd92e72838658023", bind_d2a96ef249ebb140)
 	tmplrt.Register("d39f35baf5195c79c92c37752ef08be5461e028e93e2e2c5ba5ad33bb3dee943", bind_d39f35baf5195c79)
@@ -255,13 +256,12 @@ func init() {
 	tmplrt.Register("d7096847caf9e0a237ed1bc8f5f809e9dd927934bda1b72323bc85411aad5629", bind_d7096847caf9e0a2)
 	tmplrt.Register("d753c637c03020800737c67ae7d7817f5bce15015e48a4c8212623ab0e36dd74", bind_d753c637c0302080)
 	tmplrt.Register("d815f33d3a90f814cf8c4020e01d3f657283854dbc8a01187b2d31cea0c2fbcd", bind_d815f33d3a90f814)
+	tmplrt.Register("d95ff462597d004892f30191a274b5795991c2a67a1d529110e0e6b94d31be7e", bind_d95ff462597d0048)
 	tmplrt.Register("d98abd9c99cd9c9e0f506506e22fbb2714fa264101d2b561cbc830bac90a4b19", bind_d98abd9c99cd9c9e)
 	tmplrt.Register("da9dba49a0194ca14f1fc73ada3c197ebcd7a6c10b65dd47a548c5b0955049f5", bind_da9dba49a0194ca1)
 	tmplrt.Register("dc310a2892314a5ba10c7080c916351304fe1c870d208942287432cd560f0e8c", bind_dc310a2892314a5b)
-	tmplrt.Register("df276e4b67e67845f27501a53078c0415f8661c38b3ba60e23745e6ea28ac94f", bind_df276e4b67e67845)
 	tmplrt.Register("dfd040481258584bf7b64102a580a8dd7f8223f4abfeb37bc9a7a2e3dc10d262", bind_dfd040481258584b)
 	tmplrt.Register("e071ec706a9a8b5188a23ba19d697dda3a196bb7b5b4275e187500dfd6d8a334", bind_e071ec706a9a8b51)
-	tmplrt.Register("e24ab0928f10f7621be5ca9c532ffbddcb6d14ec03f29d925641b2e85bddc2ac", bind_e24ab0928f10f762)
 	tmplrt.Register("e3191d7d0c5b6e81b44ac0a92e68b905b44da425a13ea8a020fe6ef41df18356", bind_e3191d7d0c5b6e81)
 	tmplrt.Register("e324aeeb413a781420ae73d97a4293b8623afd9f124651a433f6a0d3b6ebcbff", bind_e324aeeb413a7814)
 	tmplrt.Register("e38d9af5e5da0244e90ceb381fe387a8bd67cc99083e3cac5e798276232fce27", bind_e38d9af5e5da0244)
@@ -286,6 +286,7 @@ func init() {
 	tmplrt.Register("f4afc115a7c68a98cbab8bcdd0753e68048765fabaf1b6152fa34513d6ddbe78", bind_f4afc115a7c68a98)
 	tmplrt.Register("f58d177b06158e0c210c5559c0f505b16b351fe35f623c4718b143d16ec5607e", bind_f58d177b06158e0c)
 	tmplrt.Register("f5bb9d1bd17522a6da637512c38039d4a8c34f7c0240f5e5eb819ea31a21ae99", bind_f5bb9d1bd17522a6)
+	tmplrt.Register("f6906d686a5e5f275ad04d25b8ae72c6f23ca29118ee046e8ee01f1206a176fa", bind_f6906d686a5e5f27)
 	tmplrt.Register("f75a5d02f4ef92f6fee130915c2e131747cc4467032ae70153e685b6fc1f5503", bind_f75a5d02f4ef92f6)
 	tmplrt.Register("f8036b64a3cbbf6a23c1fafca9c459b37cfc2083d42a6264c2163f5514b86037", bind_f8036b64a3cbbf6a)
 	tmplrt.Register("f875ce59ecd83565163e5d061a729eda5d59b4518d0ec8b26bcd2540145d59f4", bind_f875ce59ecd83565)
@@ -1062,40 +1063,6 @@ func bind_1073ec0d38c56faf(funcs map[string]any) (tmplrt.Exec, error) {
 	}, nil
 }
 
-// bind_11e955e79770cd6d binds "signin-one-way".
-func bind_11e955e79770cd6d(funcs map[string]any) (tmplrt.Exec, error) {
-	fn := new(templateFuncs)
-	var ok bool
-	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("T", funcs["T"])
-	}
-	if fn.Tbdi_a3eca208, ok = funcs["Tbdi"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("Tbdi", funcs["Tbdi"])
-	}
-	if fn.Tf_a3eca208, ok = funcs["Tf"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("Tf", funcs["Tf"])
-	}
-	if fn.dict_72aa8d8f, ok = funcs["dict"].(func(...any) (map[string]any, error)); !ok {
-		return nil, tmplrt.BindError("dict", funcs["dict"])
-	}
-	if fn.icon_bd1e407c, ok = funcs["icon"].(func(string) template.HTML); !ok {
-		return nil, tmplrt.BindError("icon", funcs["icon"])
-	}
-	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
-		return nil, tmplrt.BindError("localizer", funcs["localizer"])
-	}
-	if fn.opt_08785a53, ok = funcs["opt"].(func(any, string) any); !ok {
-		return nil, tmplrt.BindError("opt", funcs["opt"])
-	}
-	if err := tmplrt.Holds(&facts_361848301f03b50a, &facts_567ff6bfe00d3ab4, &facts_7483fb941f63a52e, &facts_b2bc55e79055d0a5); err != nil {
-		return nil, err
-	}
-	return func(b *bytes.Buffer, data any) (err error) {
-		defer tmplrt.Recover(&err, "signin-one-way")
-		return exec_361848301f03b50a(b, tmplrt.Data(data), fn, 0)
-	}, nil
-}
-
 // bind_13171a839254134d binds "empty-state".
 func bind_13171a839254134d(map[string]any) (tmplrt.Exec, error) {
 	return func(b *bytes.Buffer, data any) (err error) {
@@ -1157,6 +1124,43 @@ func bind_164795371e9a0386(map[string]any) (tmplrt.Exec, error) {
 			}
 		}
 		return exec_3e2f6ed260077ab8(b, tmplrt.Data(data), nil, 0)
+	}, nil
+}
+
+// bind_1824615ebc0f6952 binds "signin".
+func bind_1824615ebc0f6952(funcs map[string]any) (tmplrt.Exec, error) {
+	fn := new(templateFuncs)
+	var ok bool
+	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("T", funcs["T"])
+	}
+	if fn.Tbdi_a3eca208, ok = funcs["Tbdi"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("Tbdi", funcs["Tbdi"])
+	}
+	if fn.Tf_a3eca208, ok = funcs["Tf"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("Tf", funcs["Tf"])
+	}
+	if fn.dict_72aa8d8f, ok = funcs["dict"].(func(...any) (map[string]any, error)); !ok {
+		return nil, tmplrt.BindError("dict", funcs["dict"])
+	}
+	if fn.icon_bd1e407c, ok = funcs["icon"].(func(string) template.HTML); !ok {
+		return nil, tmplrt.BindError("icon", funcs["icon"])
+	}
+	if fn.list_ae7df14d, ok = funcs["list"].(func(...any) []any); !ok {
+		return nil, tmplrt.BindError("list", funcs["list"])
+	}
+	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
+		return nil, tmplrt.BindError("localizer", funcs["localizer"])
+	}
+	if fn.opt_08785a53, ok = funcs["opt"].(func(any, string) any); !ok {
+		return nil, tmplrt.BindError("opt", funcs["opt"])
+	}
+	if err := tmplrt.Holds(&facts_567ff6bfe00d3ab4, &facts_5e1403c23c6b36f9, &facts_7483fb941f63a52e, &facts_db852b1bc4e5bdac, &facts_fa8920b3c9e67243, &facts_fb1ce5b9df238224); err != nil {
+		return nil, err
+	}
+	return func(b *bytes.Buffer, data any) (err error) {
+		defer tmplrt.Recover(&err, "signin")
+		return exec_db852b1bc4e5bdac(b, tmplrt.Data(data), fn, 0)
 	}, nil
 }
 
@@ -1388,31 +1392,6 @@ func bind_22fc6152d9d0d200(map[string]any) (tmplrt.Exec, error) {
 	}, nil
 }
 
-// bind_2325717ba4367e26 binds "content".
-func bind_2325717ba4367e26(funcs map[string]any) (tmplrt.Exec, error) {
-	fn := new(templateFuncs)
-	var ok bool
-	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("T", funcs["T"])
-	}
-	if fn.Tf_a3eca208, ok = funcs["Tf"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("Tf", funcs["Tf"])
-	}
-	if fn.dict_72aa8d8f, ok = funcs["dict"].(func(...any) (map[string]any, error)); !ok {
-		return nil, tmplrt.BindError("dict", funcs["dict"])
-	}
-	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
-		return nil, tmplrt.BindError("localizer", funcs["localizer"])
-	}
-	if err := tmplrt.Holds(&facts_a712dfb3c50f8922, &facts_f862805fca1a81e4); err != nil {
-		return nil, err
-	}
-	return func(b *bytes.Buffer, data any) (err error) {
-		defer tmplrt.Recover(&err, "content")
-		return exec_f862805fca1a81e4(b, tmplrt.Data(data), fn, 0)
-	}, nil
-}
-
 // bind_23be6e42803e6e97 binds "app".
 func bind_23be6e42803e6e97(funcs map[string]any) (tmplrt.Exec, error) {
 	fn := new(templateFuncs)
@@ -1435,6 +1414,31 @@ func bind_23be6e42803e6e97(funcs map[string]any) (tmplrt.Exec, error) {
 			}
 		}
 		return exec_c9b2dc48928641a9(b, tmplrt.Data(data), fn, 0)
+	}, nil
+}
+
+// bind_23e655118776ffdc binds "signin-secret-door".
+func bind_23e655118776ffdc(funcs map[string]any) (tmplrt.Exec, error) {
+	fn := new(templateFuncs)
+	var ok bool
+	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("T", funcs["T"])
+	}
+	if fn.dict_72aa8d8f, ok = funcs["dict"].(func(...any) (map[string]any, error)); !ok {
+		return nil, tmplrt.BindError("dict", funcs["dict"])
+	}
+	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
+		return nil, tmplrt.BindError("localizer", funcs["localizer"])
+	}
+	if fn.opt_08785a53, ok = funcs["opt"].(func(any, string) any); !ok {
+		return nil, tmplrt.BindError("opt", funcs["opt"])
+	}
+	if err := tmplrt.Holds(&facts_5e1403c23c6b36f9); err != nil {
+		return nil, err
+	}
+	return func(b *bytes.Buffer, data any) (err error) {
+		defer tmplrt.Recover(&err, "signin-secret-door")
+		return exec_5e1403c23c6b36f9(b, tmplrt.Data(data), fn, 0)
 	}, nil
 }
 
@@ -1534,6 +1538,31 @@ func bind_28ff810473f586c0(funcs map[string]any) (tmplrt.Exec, error) {
 			}
 		}
 		return exec_59f0e526da40d41e(b, tmplrt.Data(data), fn, 0)
+	}, nil
+}
+
+// bind_29310e2045d2ce13 binds "content".
+func bind_29310e2045d2ce13(funcs map[string]any) (tmplrt.Exec, error) {
+	fn := new(templateFuncs)
+	var ok bool
+	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("T", funcs["T"])
+	}
+	if fn.Tf_a3eca208, ok = funcs["Tf"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("Tf", funcs["Tf"])
+	}
+	if fn.dict_72aa8d8f, ok = funcs["dict"].(func(...any) (map[string]any, error)); !ok {
+		return nil, tmplrt.BindError("dict", funcs["dict"])
+	}
+	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
+		return nil, tmplrt.BindError("localizer", funcs["localizer"])
+	}
+	if err := tmplrt.Holds(&facts_61fb3a8afbe66b1c, &facts_f739432ec939f25f); err != nil {
+		return nil, err
+	}
+	return func(b *bytes.Buffer, data any) (err error) {
+		defer tmplrt.Recover(&err, "content")
+		return exec_f739432ec939f25f(b, tmplrt.Data(data), fn, 0)
 	}, nil
 }
 
@@ -1675,37 +1704,6 @@ func bind_323694147b245131(map[string]any) (tmplrt.Exec, error) {
 	}, nil
 }
 
-// bind_323f2c198ae4b16c binds "layout".
-func bind_323f2c198ae4b16c(funcs map[string]any) (tmplrt.Exec, error) {
-	fn := new(templateFuncs)
-	var ok bool
-	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("T", funcs["T"])
-	}
-	if fn.Tf_a3eca208, ok = funcs["Tf"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("Tf", funcs["Tf"])
-	}
-	if fn.asset_0e0a6fbe, ok = funcs["asset"].(func(string) string); !ok {
-		return nil, tmplrt.BindError("asset", funcs["asset"])
-	}
-	if fn.dict_72aa8d8f, ok = funcs["dict"].(func(...any) (map[string]any, error)); !ok {
-		return nil, tmplrt.BindError("dict", funcs["dict"])
-	}
-	if fn.icon_bd1e407c, ok = funcs["icon"].(func(string) template.HTML); !ok {
-		return nil, tmplrt.BindError("icon", funcs["icon"])
-	}
-	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
-		return nil, tmplrt.BindError("localizer", funcs["localizer"])
-	}
-	if err := tmplrt.Holds(&facts_a712dfb3c50f8922, &facts_f43d2c22bf39daa7, &facts_f862805fca1a81e4); err != nil {
-		return nil, err
-	}
-	return func(b *bytes.Buffer, data any) (err error) {
-		defer tmplrt.Recover(&err, "layout")
-		return exec_f43d2c22bf39daa7(b, tmplrt.Data(data), fn, 0)
-	}, nil
-}
-
 // bind_3253d392e2d886f5 binds "func-calls-reflected".
 func bind_3253d392e2d886f5(funcs map[string]any) (tmplrt.Exec, error) {
 	fn := new(templateFuncs)
@@ -1794,43 +1792,6 @@ func bind_3328140930329e9a(map[string]any) (tmplrt.Exec, error) {
 			}
 		}
 		return exec_3403bb5f877489f3(b, tmplrt.Data(data), nil, 0)
-	}, nil
-}
-
-// bind_335bcd1bc854f564 binds "layout".
-func bind_335bcd1bc854f564(funcs map[string]any) (tmplrt.Exec, error) {
-	fn := new(templateFuncs)
-	var ok bool
-	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("T", funcs["T"])
-	}
-	if fn.Tf_a3eca208, ok = funcs["Tf"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("Tf", funcs["Tf"])
-	}
-	if fn.asset_0e0a6fbe, ok = funcs["asset"].(func(string) string); !ok {
-		return nil, tmplrt.BindError("asset", funcs["asset"])
-	}
-	if fn.dict_72aa8d8f, ok = funcs["dict"].(func(...any) (map[string]any, error)); !ok {
-		return nil, tmplrt.BindError("dict", funcs["dict"])
-	}
-	if fn.iconAssets_e8f4e4f5, ok = funcs["iconAssets"].(func() template.HTML); !ok {
-		return nil, tmplrt.BindError("iconAssets", funcs["iconAssets"])
-	}
-	if fn.icon_bd1e407c, ok = funcs["icon"].(func(string) template.HTML); !ok {
-		return nil, tmplrt.BindError("icon", funcs["icon"])
-	}
-	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
-		return nil, tmplrt.BindError("localizer", funcs["localizer"])
-	}
-	if fn.path_c02006f6, ok = funcs["path"].(func(any, string) string); !ok {
-		return nil, tmplrt.BindError("path", funcs["path"])
-	}
-	if err := tmplrt.Holds(&facts_606dc54973cc1911, &facts_83f48c879de37375, &facts_a712dfb3c50f8922, &facts_f7d9a038afc9082e, &facts_fed7be9f579c4244); err != nil {
-		return nil, err
-	}
-	return func(b *bytes.Buffer, data any) (err error) {
-		defer tmplrt.Recover(&err, "layout")
-		return exec_f7d9a038afc9082e(b, tmplrt.Data(data), fn, 0)
 	}, nil
 }
 
@@ -2149,6 +2110,46 @@ func bind_424a3245bd39b269(funcs map[string]any) (tmplrt.Exec, error) {
 	return func(b *bytes.Buffer, data any) (err error) {
 		defer tmplrt.Recover(&err, "form-foot")
 		return exec_d1285cef9f043c97(b, tmplrt.Data(data), fn, 0)
+	}, nil
+}
+
+// bind_42ce822e3ebe0d0b binds "signin-view".
+func bind_42ce822e3ebe0d0b(funcs map[string]any) (tmplrt.Exec, error) {
+	fn := new(templateFuncs)
+	var ok bool
+	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("T", funcs["T"])
+	}
+	if fn.Tbdi_a3eca208, ok = funcs["Tbdi"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("Tbdi", funcs["Tbdi"])
+	}
+	if fn.Tf_a3eca208, ok = funcs["Tf"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("Tf", funcs["Tf"])
+	}
+	if fn.dict_72aa8d8f, ok = funcs["dict"].(func(...any) (map[string]any, error)); !ok {
+		return nil, tmplrt.BindError("dict", funcs["dict"])
+	}
+	if fn.displayValue_a3eca208, ok = funcs["displayValue"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("displayValue", funcs["displayValue"])
+	}
+	if fn.icon_bd1e407c, ok = funcs["icon"].(func(string) template.HTML); !ok {
+		return nil, tmplrt.BindError("icon", funcs["icon"])
+	}
+	if fn.list_ae7df14d, ok = funcs["list"].(func(...any) []any); !ok {
+		return nil, tmplrt.BindError("list", funcs["list"])
+	}
+	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
+		return nil, tmplrt.BindError("localizer", funcs["localizer"])
+	}
+	if fn.opt_08785a53, ok = funcs["opt"].(func(any, string) any); !ok {
+		return nil, tmplrt.BindError("opt", funcs["opt"])
+	}
+	if err := tmplrt.Holds(&facts_567ff6bfe00d3ab4, &facts_5e1403c23c6b36f9, &facts_7483fb941f63a52e, &facts_88bfb5d7d8a8748b, &facts_898e25eb0002fb8e, &facts_da77c547a7a0b718, &facts_db852b1bc4e5bdac, &facts_e89abce5a0a52ff3, &facts_ecbbac25392c5d58, &facts_fa8920b3c9e67243, &facts_fb1ce5b9df238224); err != nil {
+		return nil, err
+	}
+	return func(b *bytes.Buffer, data any) (err error) {
+		defer tmplrt.Recover(&err, "signin-view")
+		return exec_e89abce5a0a52ff3(b, tmplrt.Data(data), fn, 0)
 	}, nil
 }
 
@@ -2539,6 +2540,56 @@ func bind_54b124cdd6a98cce(map[string]any) (tmplrt.Exec, error) {
 	}, nil
 }
 
+// bind_558d15398949781f binds "signin-passkey-note".
+func bind_558d15398949781f(funcs map[string]any) (tmplrt.Exec, error) {
+	fn := new(templateFuncs)
+	var ok bool
+	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("T", funcs["T"])
+	}
+	if fn.dict_72aa8d8f, ok = funcs["dict"].(func(...any) (map[string]any, error)); !ok {
+		return nil, tmplrt.BindError("dict", funcs["dict"])
+	}
+	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
+		return nil, tmplrt.BindError("localizer", funcs["localizer"])
+	}
+	if err := tmplrt.Holds(&facts_fb1ce5b9df238224); err != nil {
+		return nil, err
+	}
+	return func(b *bytes.Buffer, data any) (err error) {
+		defer tmplrt.Recover(&err, "signin-passkey-note")
+		return exec_fb1ce5b9df238224(b, tmplrt.Data(data), fn, 0)
+	}, nil
+}
+
+// bind_55f1b473fd46140e binds "signin-options".
+func bind_55f1b473fd46140e(funcs map[string]any) (tmplrt.Exec, error) {
+	fn := new(templateFuncs)
+	var ok bool
+	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("T", funcs["T"])
+	}
+	if fn.Tf_a3eca208, ok = funcs["Tf"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("Tf", funcs["Tf"])
+	}
+	if fn.dict_72aa8d8f, ok = funcs["dict"].(func(...any) (map[string]any, error)); !ok {
+		return nil, tmplrt.BindError("dict", funcs["dict"])
+	}
+	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
+		return nil, tmplrt.BindError("localizer", funcs["localizer"])
+	}
+	if fn.opt_08785a53, ok = funcs["opt"].(func(any, string) any); !ok {
+		return nil, tmplrt.BindError("opt", funcs["opt"])
+	}
+	if err := tmplrt.Holds(&facts_88bfb5d7d8a8748b); err != nil {
+		return nil, err
+	}
+	return func(b *bytes.Buffer, data any) (err error) {
+		defer tmplrt.Recover(&err, "signin-options")
+		return exec_88bfb5d7d8a8748b(b, tmplrt.Data(data), fn, 0)
+	}, nil
+}
+
 // bind_56e2feb118f223de binds "scheme-menu".
 func bind_56e2feb118f223de(funcs map[string]any) (tmplrt.Exec, error) {
 	fn := new(templateFuncs)
@@ -2740,8 +2791,8 @@ func bind_5c6d81e1365527af(funcs map[string]any) (tmplrt.Exec, error) {
 	}, nil
 }
 
-// bind_5d0c10e36e1bdeff binds "signin-add".
-func bind_5d0c10e36e1bdeff(funcs map[string]any) (tmplrt.Exec, error) {
+// bind_5d0ee4335a65f8ca binds "signin-offer".
+func bind_5d0ee4335a65f8ca(funcs map[string]any) (tmplrt.Exec, error) {
 	fn := new(templateFuncs)
 	var ok bool
 	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
@@ -2750,18 +2801,21 @@ func bind_5d0c10e36e1bdeff(funcs map[string]any) (tmplrt.Exec, error) {
 	if fn.dict_72aa8d8f, ok = funcs["dict"].(func(...any) (map[string]any, error)); !ok {
 		return nil, tmplrt.BindError("dict", funcs["dict"])
 	}
+	if fn.displayValue_a3eca208, ok = funcs["displayValue"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("displayValue", funcs["displayValue"])
+	}
 	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
 		return nil, tmplrt.BindError("localizer", funcs["localizer"])
 	}
 	if fn.opt_08785a53, ok = funcs["opt"].(func(any, string) any); !ok {
 		return nil, tmplrt.BindError("opt", funcs["opt"])
 	}
-	if err := tmplrt.Holds(&facts_49ee9c1234370442); err != nil {
+	if err := tmplrt.Holds(&facts_898e25eb0002fb8e, &facts_ecbbac25392c5d58); err != nil {
 		return nil, err
 	}
 	return func(b *bytes.Buffer, data any) (err error) {
-		defer tmplrt.Recover(&err, "signin-add")
-		return exec_49ee9c1234370442(b, tmplrt.Data(data), fn, 0)
+		defer tmplrt.Recover(&err, "signin-offer")
+		return exec_ecbbac25392c5d58(b, tmplrt.Data(data), fn, 0)
 	}, nil
 }
 
@@ -2802,14 +2856,6 @@ func bind_61ca3f9c66551709(map[string]any) (tmplrt.Exec, error) {
 	}, nil
 }
 
-// bind_61cfe847d8b6b153 binds "signin.html".
-func bind_61cfe847d8b6b153(map[string]any) (tmplrt.Exec, error) {
-	return func(b *bytes.Buffer, data any) (err error) {
-		defer tmplrt.Recover(&err, "signin.html")
-		return exec_b58320bac7ab98f2(b, tmplrt.Data(data), nil, 0)
-	}, nil
-}
-
 // bind_62b953745be608d3 binds "dir".
 func bind_62b953745be608d3(map[string]any) (tmplrt.Exec, error) {
 	return func(b *bytes.Buffer, data any) (err error) {
@@ -2831,28 +2877,6 @@ func bind_644a1f3f6c5c4808(map[string]any) (tmplrt.Exec, error) {
 	return func(b *bytes.Buffer, data any) (err error) {
 		defer tmplrt.Recover(&err, "field-check")
 		return exec_d6cd5d2f1a106459(b, tmplrt.Data(data), nil, 0)
-	}, nil
-}
-
-// bind_65fafc93875ca974 binds "error-page".
-func bind_65fafc93875ca974(funcs map[string]any) (tmplrt.Exec, error) {
-	fn := new(templateFuncs)
-	var ok bool
-	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("T", funcs["T"])
-	}
-	if fn.Tf_a3eca208, ok = funcs["Tf"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("Tf", funcs["Tf"])
-	}
-	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
-		return nil, tmplrt.BindError("localizer", funcs["localizer"])
-	}
-	if err := tmplrt.Holds(&facts_a712dfb3c50f8922); err != nil {
-		return nil, err
-	}
-	return func(b *bytes.Buffer, data any) (err error) {
-		defer tmplrt.Recover(&err, "error-page")
-		return exec_a712dfb3c50f8922(b, tmplrt.Data(data), fn, 0)
 	}, nil
 }
 
@@ -2908,6 +2932,40 @@ func bind_66ddd414a9fac665(funcs map[string]any) (tmplrt.Exec, error) {
 			}
 		}
 		return exec_a69ba9b5f5e79bde(b, tmplrt.Data(data), fn, 0)
+	}, nil
+}
+
+// bind_69c95ff7c294b500 binds "signin-one-way".
+func bind_69c95ff7c294b500(funcs map[string]any) (tmplrt.Exec, error) {
+	fn := new(templateFuncs)
+	var ok bool
+	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("T", funcs["T"])
+	}
+	if fn.Tbdi_a3eca208, ok = funcs["Tbdi"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("Tbdi", funcs["Tbdi"])
+	}
+	if fn.Tf_a3eca208, ok = funcs["Tf"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("Tf", funcs["Tf"])
+	}
+	if fn.dict_72aa8d8f, ok = funcs["dict"].(func(...any) (map[string]any, error)); !ok {
+		return nil, tmplrt.BindError("dict", funcs["dict"])
+	}
+	if fn.icon_bd1e407c, ok = funcs["icon"].(func(string) template.HTML); !ok {
+		return nil, tmplrt.BindError("icon", funcs["icon"])
+	}
+	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
+		return nil, tmplrt.BindError("localizer", funcs["localizer"])
+	}
+	if fn.opt_08785a53, ok = funcs["opt"].(func(any, string) any); !ok {
+		return nil, tmplrt.BindError("opt", funcs["opt"])
+	}
+	if err := tmplrt.Holds(&facts_567ff6bfe00d3ab4, &facts_5e1403c23c6b36f9, &facts_7483fb941f63a52e, &facts_fa8920b3c9e67243, &facts_fb1ce5b9df238224); err != nil {
+		return nil, err
+	}
+	return func(b *bytes.Buffer, data any) (err error) {
+		defer tmplrt.Recover(&err, "signin-one-way")
+		return exec_fa8920b3c9e67243(b, tmplrt.Data(data), fn, 0)
 	}, nil
 }
 
@@ -3087,14 +3145,6 @@ func bind_6fb14d7537c17c7d(funcs map[string]any) (tmplrt.Exec, error) {
 	return func(b *bytes.Buffer, data any) (err error) {
 		defer tmplrt.Recover(&err, "layout")
 		return exec_d3d1419e8586a97f(b, tmplrt.Data(data), fn, 0)
-	}, nil
-}
-
-// bind_7219fcd04f71f166 binds "signin-glyph".
-func bind_7219fcd04f71f166(map[string]any) (tmplrt.Exec, error) {
-	return func(b *bytes.Buffer, data any) (err error) {
-		defer tmplrt.Recover(&err, "signin-glyph")
-		return exec_a4a2687cde36400d(b, tmplrt.Data(data), nil, 0)
 	}, nil
 }
 
@@ -3404,6 +3454,51 @@ func bind_80f75a13dbe0048f(funcs map[string]any) (tmplrt.Exec, error) {
 	}, nil
 }
 
+// bind_812fd0ca696fb249 binds "layout".
+func bind_812fd0ca696fb249(funcs map[string]any) (tmplrt.Exec, error) {
+	fn := new(templateFuncs)
+	var ok bool
+	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("T", funcs["T"])
+	}
+	if fn.Tf_a3eca208, ok = funcs["Tf"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("Tf", funcs["Tf"])
+	}
+	if fn.asset_0e0a6fbe, ok = funcs["asset"].(func(string) string); !ok {
+		return nil, tmplrt.BindError("asset", funcs["asset"])
+	}
+	if fn.dict_72aa8d8f, ok = funcs["dict"].(func(...any) (map[string]any, error)); !ok {
+		return nil, tmplrt.BindError("dict", funcs["dict"])
+	}
+	if fn.iconAssets_e8f4e4f5, ok = funcs["iconAssets"].(func() template.HTML); !ok {
+		return nil, tmplrt.BindError("iconAssets", funcs["iconAssets"])
+	}
+	if fn.icon_bd1e407c, ok = funcs["icon"].(func(string) template.HTML); !ok {
+		return nil, tmplrt.BindError("icon", funcs["icon"])
+	}
+	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
+		return nil, tmplrt.BindError("localizer", funcs["localizer"])
+	}
+	if fn.path_c02006f6, ok = funcs["path"].(func(any, string) string); !ok {
+		return nil, tmplrt.BindError("path", funcs["path"])
+	}
+	if err := tmplrt.Holds(&facts_35a55351b7a36a63, &facts_606dc54973cc1911, &facts_61fb3a8afbe66b1c, &facts_66067bdc8b702737, &facts_83f48c879de37375); err != nil {
+		return nil, err
+	}
+	return func(b *bytes.Buffer, data any) (err error) {
+		defer tmplrt.Recover(&err, "layout")
+		return exec_66067bdc8b702737(b, tmplrt.Data(data), fn, 0)
+	}, nil
+}
+
+// bind_81b121c512f8ec6f binds "signin.html".
+func bind_81b121c512f8ec6f(map[string]any) (tmplrt.Exec, error) {
+	return func(b *bytes.Buffer, data any) (err error) {
+		defer tmplrt.Recover(&err, "signin.html")
+		return exec_942b459573ebb06e(b, tmplrt.Data(data), nil, 0)
+	}, nil
+}
+
 // bind_820fbab31d98272d binds "list-bar".
 func bind_820fbab31d98272d(funcs map[string]any) (tmplrt.Exec, error) {
 	fn := new(templateFuncs)
@@ -3488,6 +3583,14 @@ func bind_834594040203eb89(map[string]any) (tmplrt.Exec, error) {
 			}
 		}
 		return exec_b696e3a233e70993(b, tmplrt.Data(data), nil, 0)
+	}, nil
+}
+
+// bind_83df6c7ec5fabc5e binds "signin-glyph".
+func bind_83df6c7ec5fabc5e(map[string]any) (tmplrt.Exec, error) {
+	return func(b *bytes.Buffer, data any) (err error) {
+		defer tmplrt.Recover(&err, "signin-glyph")
+		return exec_1b24f25e597ad443(b, tmplrt.Data(data), nil, 0)
 	}, nil
 }
 
@@ -3578,34 +3681,6 @@ func bind_878e75ac00afa496(funcs map[string]any) (tmplrt.Exec, error) {
 	}, nil
 }
 
-// bind_8917be52b25f71f9 binds "content".
-func bind_8917be52b25f71f9(funcs map[string]any) (tmplrt.Exec, error) {
-	fn := new(templateFuncs)
-	var ok bool
-	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("T", funcs["T"])
-	}
-	if fn.Tf_a3eca208, ok = funcs["Tf"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("Tf", funcs["Tf"])
-	}
-	if fn.dict_72aa8d8f, ok = funcs["dict"].(func(...any) (map[string]any, error)); !ok {
-		return nil, tmplrt.BindError("dict", funcs["dict"])
-	}
-	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
-		return nil, tmplrt.BindError("localizer", funcs["localizer"])
-	}
-	if fn.path_c02006f6, ok = funcs["path"].(func(any, string) string); !ok {
-		return nil, tmplrt.BindError("path", funcs["path"])
-	}
-	if err := tmplrt.Holds(&facts_a712dfb3c50f8922, &facts_fed7be9f579c4244); err != nil {
-		return nil, err
-	}
-	return func(b *bytes.Buffer, data any) (err error) {
-		defer tmplrt.Recover(&err, "content")
-		return exec_fed7be9f579c4244(b, tmplrt.Data(data), fn, 0)
-	}, nil
-}
-
 // bind_8b171a14236c11cc binds "len".
 func bind_8b171a14236c11cc(map[string]any) (tmplrt.Exec, error) {
 	typed0 := tmplrt.Holds(&facts_fceb0d082a050963_139d544b) == nil
@@ -3691,46 +3766,6 @@ func bind_8c615da64918643d(funcs map[string]any) (tmplrt.Exec, error) {
 	return func(b *bytes.Buffer, data any) (err error) {
 		defer tmplrt.Recover(&err, "detail-list")
 		return exec_a62e82e00b67ab12(b, tmplrt.Data(data), fn, 0)
-	}, nil
-}
-
-// bind_8d19983ca4e013b4 binds "signin-view".
-func bind_8d19983ca4e013b4(funcs map[string]any) (tmplrt.Exec, error) {
-	fn := new(templateFuncs)
-	var ok bool
-	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("T", funcs["T"])
-	}
-	if fn.Tbdi_a3eca208, ok = funcs["Tbdi"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("Tbdi", funcs["Tbdi"])
-	}
-	if fn.Tf_a3eca208, ok = funcs["Tf"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("Tf", funcs["Tf"])
-	}
-	if fn.dict_72aa8d8f, ok = funcs["dict"].(func(...any) (map[string]any, error)); !ok {
-		return nil, tmplrt.BindError("dict", funcs["dict"])
-	}
-	if fn.displayValue_a3eca208, ok = funcs["displayValue"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("displayValue", funcs["displayValue"])
-	}
-	if fn.icon_bd1e407c, ok = funcs["icon"].(func(string) template.HTML); !ok {
-		return nil, tmplrt.BindError("icon", funcs["icon"])
-	}
-	if fn.list_ae7df14d, ok = funcs["list"].(func(...any) []any); !ok {
-		return nil, tmplrt.BindError("list", funcs["list"])
-	}
-	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
-		return nil, tmplrt.BindError("localizer", funcs["localizer"])
-	}
-	if fn.opt_08785a53, ok = funcs["opt"].(func(any, string) any); !ok {
-		return nil, tmplrt.BindError("opt", funcs["opt"])
-	}
-	if err := tmplrt.Holds(&facts_0e56b4bd0498fbe3, &facts_361848301f03b50a, &facts_449ed5524bf36ba4, &facts_49ee9c1234370442, &facts_567ff6bfe00d3ab4, &facts_5d9a366f9b1bb666, &facts_7483fb941f63a52e, &facts_898e25eb0002fb8e, &facts_b2bc55e79055d0a5, &facts_b82219fba3d04b88); err != nil {
-		return nil, err
-	}
-	return func(b *bytes.Buffer, data any) (err error) {
-		defer tmplrt.Recover(&err, "signin-view")
-		return exec_449ed5524bf36ba4(b, tmplrt.Data(data), fn, 0)
 	}, nil
 }
 
@@ -4830,34 +4865,6 @@ func bind_b52d5bf33d01e7c0(map[string]any) (tmplrt.Exec, error) {
 	}, nil
 }
 
-// bind_b63fdf7fda6000d4 binds "signin-offer".
-func bind_b63fdf7fda6000d4(funcs map[string]any) (tmplrt.Exec, error) {
-	fn := new(templateFuncs)
-	var ok bool
-	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("T", funcs["T"])
-	}
-	if fn.dict_72aa8d8f, ok = funcs["dict"].(func(...any) (map[string]any, error)); !ok {
-		return nil, tmplrt.BindError("dict", funcs["dict"])
-	}
-	if fn.displayValue_a3eca208, ok = funcs["displayValue"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("displayValue", funcs["displayValue"])
-	}
-	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
-		return nil, tmplrt.BindError("localizer", funcs["localizer"])
-	}
-	if fn.opt_08785a53, ok = funcs["opt"].(func(any, string) any); !ok {
-		return nil, tmplrt.BindError("opt", funcs["opt"])
-	}
-	if err := tmplrt.Holds(&facts_5d9a366f9b1bb666, &facts_898e25eb0002fb8e); err != nil {
-		return nil, err
-	}
-	return func(b *bytes.Buffer, data any) (err error) {
-		defer tmplrt.Recover(&err, "signin-offer")
-		return exec_5d9a366f9b1bb666(b, tmplrt.Data(data), fn, 0)
-	}, nil
-}
-
 // bind_b66284b6c15b99f0 binds "meter".
 func bind_b66284b6c15b99f0(funcs map[string]any) (tmplrt.Exec, error) {
 	fn := new(templateFuncs)
@@ -4902,6 +4909,28 @@ func bind_b8c1cc58d7ade384(map[string]any) (tmplrt.Exec, error) {
 	return func(b *bytes.Buffer, data any) (err error) {
 		defer tmplrt.Recover(&err, "missingkey-print-error")
 		return exec_7070053be2d809cd(b, tmplrt.Data(data), nil, 0)
+	}, nil
+}
+
+// bind_b9a03dfc8162c648 binds "error-page".
+func bind_b9a03dfc8162c648(funcs map[string]any) (tmplrt.Exec, error) {
+	fn := new(templateFuncs)
+	var ok bool
+	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("T", funcs["T"])
+	}
+	if fn.Tf_a3eca208, ok = funcs["Tf"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("Tf", funcs["Tf"])
+	}
+	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
+		return nil, tmplrt.BindError("localizer", funcs["localizer"])
+	}
+	if err := tmplrt.Holds(&facts_61fb3a8afbe66b1c); err != nil {
+		return nil, err
+	}
+	return func(b *bytes.Buffer, data any) (err error) {
+		defer tmplrt.Recover(&err, "error-page")
+		return exec_61fb3a8afbe66b1c(b, tmplrt.Data(data), fn, 0)
 	}, nil
 }
 
@@ -5020,6 +5049,31 @@ func bind_c170cd5cd201864e(map[string]any) (tmplrt.Exec, error) {
 			}
 		}
 		return exec_fbf576f9605d54c0(b, tmplrt.Data(data), nil, 0)
+	}, nil
+}
+
+// bind_c38122c89e3ba228 binds "signin-add".
+func bind_c38122c89e3ba228(funcs map[string]any) (tmplrt.Exec, error) {
+	fn := new(templateFuncs)
+	var ok bool
+	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("T", funcs["T"])
+	}
+	if fn.dict_72aa8d8f, ok = funcs["dict"].(func(...any) (map[string]any, error)); !ok {
+		return nil, tmplrt.BindError("dict", funcs["dict"])
+	}
+	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
+		return nil, tmplrt.BindError("localizer", funcs["localizer"])
+	}
+	if fn.opt_08785a53, ok = funcs["opt"].(func(any, string) any); !ok {
+		return nil, tmplrt.BindError("opt", funcs["opt"])
+	}
+	if err := tmplrt.Holds(&facts_da77c547a7a0b718); err != nil {
+		return nil, err
+	}
+	return func(b *bytes.Buffer, data any) (err error) {
+		defer tmplrt.Recover(&err, "signin-add")
+		return exec_da77c547a7a0b718(b, tmplrt.Data(data), fn, 0)
 	}, nil
 }
 
@@ -5305,43 +5359,6 @@ func bind_cfbb685f601dbdb9(map[string]any) (tmplrt.Exec, error) {
 	}, nil
 }
 
-// bind_d185008f58a39fbe binds "signin".
-func bind_d185008f58a39fbe(funcs map[string]any) (tmplrt.Exec, error) {
-	fn := new(templateFuncs)
-	var ok bool
-	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("T", funcs["T"])
-	}
-	if fn.Tbdi_a3eca208, ok = funcs["Tbdi"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("Tbdi", funcs["Tbdi"])
-	}
-	if fn.Tf_a3eca208, ok = funcs["Tf"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("Tf", funcs["Tf"])
-	}
-	if fn.dict_72aa8d8f, ok = funcs["dict"].(func(...any) (map[string]any, error)); !ok {
-		return nil, tmplrt.BindError("dict", funcs["dict"])
-	}
-	if fn.icon_bd1e407c, ok = funcs["icon"].(func(string) template.HTML); !ok {
-		return nil, tmplrt.BindError("icon", funcs["icon"])
-	}
-	if fn.list_ae7df14d, ok = funcs["list"].(func(...any) []any); !ok {
-		return nil, tmplrt.BindError("list", funcs["list"])
-	}
-	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
-		return nil, tmplrt.BindError("localizer", funcs["localizer"])
-	}
-	if fn.opt_08785a53, ok = funcs["opt"].(func(any, string) any); !ok {
-		return nil, tmplrt.BindError("opt", funcs["opt"])
-	}
-	if err := tmplrt.Holds(&facts_361848301f03b50a, &facts_567ff6bfe00d3ab4, &facts_7483fb941f63a52e, &facts_b2bc55e79055d0a5, &facts_b82219fba3d04b88); err != nil {
-		return nil, err
-	}
-	return func(b *bytes.Buffer, data any) (err error) {
-		defer tmplrt.Recover(&err, "signin")
-		return exec_b82219fba3d04b88(b, tmplrt.Data(data), fn, 0)
-	}, nil
-}
-
 // bind_d1dbe2f11f65b81e binds "field-text.html".
 func bind_d1dbe2f11f65b81e(map[string]any) (tmplrt.Exec, error) {
 	return func(b *bytes.Buffer, data any) (err error) {
@@ -5499,6 +5516,34 @@ func bind_d815f33d3a90f814(map[string]any) (tmplrt.Exec, error) {
 	}, nil
 }
 
+// bind_d95ff462597d0048 binds "content".
+func bind_d95ff462597d0048(funcs map[string]any) (tmplrt.Exec, error) {
+	fn := new(templateFuncs)
+	var ok bool
+	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("T", funcs["T"])
+	}
+	if fn.Tf_a3eca208, ok = funcs["Tf"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("Tf", funcs["Tf"])
+	}
+	if fn.dict_72aa8d8f, ok = funcs["dict"].(func(...any) (map[string]any, error)); !ok {
+		return nil, tmplrt.BindError("dict", funcs["dict"])
+	}
+	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
+		return nil, tmplrt.BindError("localizer", funcs["localizer"])
+	}
+	if fn.path_c02006f6, ok = funcs["path"].(func(any, string) string); !ok {
+		return nil, tmplrt.BindError("path", funcs["path"])
+	}
+	if err := tmplrt.Holds(&facts_35a55351b7a36a63, &facts_61fb3a8afbe66b1c); err != nil {
+		return nil, err
+	}
+	return func(b *bytes.Buffer, data any) (err error) {
+		defer tmplrt.Recover(&err, "content")
+		return exec_35a55351b7a36a63(b, tmplrt.Data(data), fn, 0)
+	}, nil
+}
+
 // bind_d98abd9c99cd9c9e binds "func-stage-before-failure-1-reflected".
 func bind_d98abd9c99cd9c9e(funcs map[string]any) (tmplrt.Exec, error) {
 	fn := new(templateFuncs)
@@ -5631,34 +5676,6 @@ func bind_dc310a2892314a5b(funcs map[string]any) (tmplrt.Exec, error) {
 	}, nil
 }
 
-// bind_df276e4b67e67845 binds "signin-options".
-func bind_df276e4b67e67845(funcs map[string]any) (tmplrt.Exec, error) {
-	fn := new(templateFuncs)
-	var ok bool
-	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("T", funcs["T"])
-	}
-	if fn.Tf_a3eca208, ok = funcs["Tf"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("Tf", funcs["Tf"])
-	}
-	if fn.dict_72aa8d8f, ok = funcs["dict"].(func(...any) (map[string]any, error)); !ok {
-		return nil, tmplrt.BindError("dict", funcs["dict"])
-	}
-	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
-		return nil, tmplrt.BindError("localizer", funcs["localizer"])
-	}
-	if fn.opt_08785a53, ok = funcs["opt"].(func(any, string) any); !ok {
-		return nil, tmplrt.BindError("opt", funcs["opt"])
-	}
-	if err := tmplrt.Holds(&facts_0e56b4bd0498fbe3); err != nil {
-		return nil, err
-	}
-	return func(b *bytes.Buffer, data any) (err error) {
-		defer tmplrt.Recover(&err, "signin-options")
-		return exec_0e56b4bd0498fbe3(b, tmplrt.Data(data), fn, 0)
-	}, nil
-}
-
 // bind_dfd040481258584b binds "index".
 func bind_dfd040481258584b(funcs map[string]any) (tmplrt.Exec, error) {
 	fn := new(templateFuncs)
@@ -5692,31 +5709,6 @@ func bind_e071ec706a9a8b51(map[string]any) (tmplrt.Exec, error) {
 	return func(b *bytes.Buffer, data any) (err error) {
 		defer tmplrt.Recover(&err, "field-money.html")
 		return exec_fbb2ae177143aba6(b, tmplrt.Data(data), nil, 0)
-	}, nil
-}
-
-// bind_e24ab0928f10f762 binds "signin-secret-door".
-func bind_e24ab0928f10f762(funcs map[string]any) (tmplrt.Exec, error) {
-	fn := new(templateFuncs)
-	var ok bool
-	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
-		return nil, tmplrt.BindError("T", funcs["T"])
-	}
-	if fn.dict_72aa8d8f, ok = funcs["dict"].(func(...any) (map[string]any, error)); !ok {
-		return nil, tmplrt.BindError("dict", funcs["dict"])
-	}
-	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
-		return nil, tmplrt.BindError("localizer", funcs["localizer"])
-	}
-	if fn.opt_08785a53, ok = funcs["opt"].(func(any, string) any); !ok {
-		return nil, tmplrt.BindError("opt", funcs["opt"])
-	}
-	if err := tmplrt.Holds(&facts_b2bc55e79055d0a5); err != nil {
-		return nil, err
-	}
-	return func(b *bytes.Buffer, data any) (err error) {
-		defer tmplrt.Recover(&err, "signin-secret-door")
-		return exec_b2bc55e79055d0a5(b, tmplrt.Data(data), fn, 0)
 	}, nil
 }
 
@@ -6172,6 +6164,37 @@ func bind_f5bb9d1bd17522a6(map[string]any) (tmplrt.Exec, error) {
 	return func(b *bytes.Buffer, data any) (err error) {
 		defer tmplrt.Recover(&err, "foot")
 		return exec_c5b1f5c8e919986a(b, tmplrt.Data(data), nil, 0)
+	}, nil
+}
+
+// bind_f6906d686a5e5f27 binds "layout".
+func bind_f6906d686a5e5f27(funcs map[string]any) (tmplrt.Exec, error) {
+	fn := new(templateFuncs)
+	var ok bool
+	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("T", funcs["T"])
+	}
+	if fn.Tf_a3eca208, ok = funcs["Tf"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("Tf", funcs["Tf"])
+	}
+	if fn.asset_0e0a6fbe, ok = funcs["asset"].(func(string) string); !ok {
+		return nil, tmplrt.BindError("asset", funcs["asset"])
+	}
+	if fn.dict_72aa8d8f, ok = funcs["dict"].(func(...any) (map[string]any, error)); !ok {
+		return nil, tmplrt.BindError("dict", funcs["dict"])
+	}
+	if fn.icon_bd1e407c, ok = funcs["icon"].(func(string) template.HTML); !ok {
+		return nil, tmplrt.BindError("icon", funcs["icon"])
+	}
+	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
+		return nil, tmplrt.BindError("localizer", funcs["localizer"])
+	}
+	if err := tmplrt.Holds(&facts_61fb3a8afbe66b1c, &facts_eda34502b080cc0b, &facts_f739432ec939f25f); err != nil {
+		return nil, err
+	}
+	return func(b *bytes.Buffer, data any) (err error) {
+		defer tmplrt.Recover(&err, "layout")
+		return exec_eda34502b080cc0b(b, tmplrt.Data(data), fn, 0)
 	}, nil
 }
 
@@ -7720,286 +7743,6 @@ func exec_0bdf902c442bd56c(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs
 	return nil
 }
 
-// exec_0e56b4bd0498fbe3 renders "signin-options".
-func exec_0e56b4bd0498fbe3(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
-	root := dot
-	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
-	x1 := v1
-	_ = x1
-	v2, err := tmplrt.Field(dot, "Options")
-	if err != nil {
-		return tmplrt.ExecError("signin-options", ".Options", err)
-	}
-	v3 := tmplrt.Unwrap(v2)
-	x2 := v3
-	_ = x2
-	b.WriteString("<section rst-signin aria-labelledby=\"rst-signin-heading\">\n")
-	v4 := fn.opt_08785a53(tmplrt.Arg(dot), "HideBrand")
-	v5 := reflect.ValueOf(v4)
-	v6 := tmplrt.Not(v5)
-	if v6 {
-		if depth == tmplrt.MaxExecDepth {
-			return tmplrt.ExecError("signin-options", "{{template \"signin-brand\" (dict \"L\" $L \"Brand\" .Brand)}}", tmplrt.DepthError())
-		}
-		v7, err := tmplrt.Field(dot, "Brand")
-		if err != nil {
-			return tmplrt.ExecError("signin-options", ".Brand", err)
-		}
-		v8, err := fn.dict_72aa8d8f("L", x1, "Brand", tmplrt.Arg(v7))
-		if err != nil {
-			return tmplrt.ExecError("signin-options", "dict \"L\" $L \"Brand\" .Brand", tmplrt.CallError("dict", err))
-		}
-		if err := exec_79cb8cc0dd268570(b, reflect.ValueOf(v8), fn, depth+1); err != nil {
-			return err
-		}
-	}
-	b.WriteString("<div rst-signin-door=\"one-way\">\n<h1 id=\"rst-signin-heading\">")
-	v9, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_options_heading")
-	if err != nil {
-		return tmplrt.ExecError("signin-options", "T $L \"rastrillo.ui.signin_options_heading\"", tmplrt.CallError("T", err))
-	}
-	v10 := reflect.ValueOf(v9)
-	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v10)))
-	b.WriteString("</h1>\n")
-	v11, err := tmplrt.Field(x2, "Removed")
-	if err != nil {
-		return tmplrt.ExecError("signin-options", "$o.Removed", err)
-	}
-	v12 := tmplrt.Unwrap(v11)
-	if tmplrt.Truth(v12) {
-		b.WriteString("<p role=\"status\">")
-		v13, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_options_removed")
-		if err != nil {
-			return tmplrt.ExecError("signin-options", "T $L \"rastrillo.ui.signin_options_removed\"", tmplrt.CallError("T", err))
-		}
-		v14 := reflect.ValueOf(v13)
-		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v14)))
-		b.WriteString("</p>\n")
-	}
-	b.WriteString("<div rst-signin-ways>\n<div rst-btn=\"block\">")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("signin-options", "{{template \"signin-glyph\" (dict \"L\" $L \"Glyph\" \"mail\")}}", tmplrt.DepthError())
-	}
-	v15, err := fn.dict_72aa8d8f("L", x1, "Glyph", "mail")
-	if err != nil {
-		return tmplrt.ExecError("signin-options", "dict \"L\" $L \"Glyph\" \"mail\"", tmplrt.CallError("dict", err))
-	}
-	if err := exec_a4a2687cde36400d(b, reflect.ValueOf(v15), fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("<span><span>")
-	v16, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_options_email")
-	if err != nil {
-		return tmplrt.ExecError("signin-options", "T $L \"rastrillo.ui.signin_options_email\"", tmplrt.CallError("T", err))
-	}
-	v17 := reflect.ValueOf(v16)
-	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v17)))
-	b.WriteString("</span>")
-	v18, err := tmplrt.Field(x2, "Address")
-	if err != nil {
-		return tmplrt.ExecError("signin-options", "$o.Address", err)
-	}
-	v19 := tmplrt.Unwrap(v18)
-	if tmplrt.Truth(v19) {
-		dot := v19
-		_ = dot
-		b.WriteString("<bdi>")
-		v20, err := fn.Tf_a3eca208(x1, "rastrillo.ui.signin_options_email_detail", "address", tmplrt.Arg(dot))
-		if err != nil {
-			return tmplrt.ExecError("signin-options", "Tf $L \"rastrillo.ui.signin_options_email_detail\" \"address\" .", tmplrt.CallError("Tf", err))
-		}
-		v21 := reflect.ValueOf(v20)
-		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v21)))
-		b.WriteString("</bdi>")
-	}
-	b.WriteString("</span></div>\n")
-	v22, err := tmplrt.Field(x2, "Ways")
-	if err != nil {
-		return tmplrt.ExecError("signin-options", "$o.Ways", err)
-	}
-	v23 := tmplrt.Unwrap(v22)
-	if err := tmplrt.Range(v23, func(_, dot reflect.Value) error {
-		x3 := reflect.ValueOf("lock")
-		_ = x3
-		v24, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_way_passphrase")
-		if err != nil {
-			return tmplrt.ExecError("signin-options", "T $L \"rastrillo.ui.signin_way_passphrase\"", tmplrt.CallError("T", err))
-		}
-		v25 := reflect.ValueOf(v24)
-		x4 := v25
-		_ = x4
-		v26, err := tmplrt.Field(dot, "Way")
-		if err != nil {
-			return tmplrt.ExecError("signin-options", ".Way.Name", err)
-		}
-		v27, err := tmplrt.Field(v26, "Name")
-		if err != nil {
-			return tmplrt.ExecError("signin-options", ".Way.Name", err)
-		}
-		v28, err := tmplrt.Eq(v27, reflect.ValueOf("passkey"))
-		if err != nil {
-			return tmplrt.ExecError("signin-options", "eq .Way.Name \"passkey\"", tmplrt.CallError("eq", err))
-		}
-		if v28 {
-			x3 = reflect.ValueOf("key")
-			v30, err := tmplrt.Field(dot, "Label")
-			if err != nil {
-				return tmplrt.ExecError("signin-options", ".Label", err)
-			}
-			v29 := tmplrt.ValueArg(v30)
-			if !tmplrt.Truth(v29) {
-				v31, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_offer_passkey")
-				if err != nil {
-					return tmplrt.ExecError("signin-options", "T $L \"rastrillo.ui.signin_offer_passkey\"", tmplrt.CallError("T", err))
-				}
-				v32 := reflect.ValueOf(v31)
-				v29 = tmplrt.ValueArg(v32)
-			}
-			v33 := tmplrt.Unwrap(v29)
-			x4 = v33
-		} else {
-			v34, err := tmplrt.Field(dot, "Way")
-			if err != nil {
-				return tmplrt.ExecError("signin-options", ".Way.Name", err)
-			}
-			v35, err := tmplrt.Field(v34, "Name")
-			if err != nil {
-				return tmplrt.ExecError("signin-options", ".Way.Name", err)
-			}
-			v36, err := tmplrt.Eq(v35, reflect.ValueOf("authenticator"))
-			if err != nil {
-				return tmplrt.ExecError("signin-options", "eq .Way.Name \"authenticator\"", tmplrt.CallError("eq", err))
-			}
-			if v36 {
-				x3 = reflect.ValueOf("shield")
-				v37, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_way_authenticator")
-				if err != nil {
-					return tmplrt.ExecError("signin-options", "T $L \"rastrillo.ui.signin_way_authenticator\"", tmplrt.CallError("T", err))
-				}
-				v38 := reflect.ValueOf(v37)
-				x4 = v38
-			}
-		}
-		v39, err := tmplrt.Field(dot, "Have")
-		if err != nil {
-			return tmplrt.ExecError("signin-options", ".Have", err)
-		}
-		v40 := tmplrt.Unwrap(v39)
-		if tmplrt.Truth(v40) {
-			b.WriteString("<form method=\"post\" action=\"")
-			v41, err := tmplrt.Field(x2, "RemovePath")
-			if err != nil {
-				return tmplrt.ExecError("signin-options", "$o.RemovePath", err)
-			}
-			v42 := tmplrt.Unwrap(v41)
-			tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v42))))
-			b.WriteString("\"><input type=\"hidden\" name=\"way\" value=\"")
-			v43, err := tmplrt.Field(dot, "Way")
-			if err != nil {
-				return tmplrt.ExecError("signin-options", ".Way.Name", err)
-			}
-			v44, err := tmplrt.Field(v43, "Name")
-			if err != nil {
-				return tmplrt.ExecError("signin-options", ".Way.Name", err)
-			}
-			v45 := tmplrt.Unwrap(v44)
-			b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v45)))
-			b.WriteString("\">\n")
-			v46, err := tmplrt.Field(dot, "ID")
-			if err != nil {
-				return tmplrt.ExecError("signin-options", ".ID", err)
-			}
-			v47 := tmplrt.Unwrap(v46)
-			if tmplrt.Truth(v47) {
-				dot := v47
-				_ = dot
-				b.WriteString("<input type=\"hidden\" name=\"id\" value=\"")
-				v48 := tmplrt.Unwrap(dot)
-				b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v48)))
-				b.WriteString("\">\n")
-			}
-			b.WriteString("<button rst-btn=\"block\" type=\"submit\">")
-			if depth == tmplrt.MaxExecDepth {
-				return tmplrt.ExecError("signin-options", "{{template \"signin-glyph\" (dict \"L\" $L \"Glyph\" $glyph)}}", tmplrt.DepthError())
-			}
-			v49, err := fn.dict_72aa8d8f("L", x1, "Glyph", tmplrt.Arg(x3))
-			if err != nil {
-				return tmplrt.ExecError("signin-options", "dict \"L\" $L \"Glyph\" $glyph", tmplrt.CallError("dict", err))
-			}
-			if err := exec_a4a2687cde36400d(b, reflect.ValueOf(v49), fn, depth+1); err != nil {
-				return err
-			}
-			b.WriteString("<span><span>")
-			v50 := tmplrt.Unwrap(x4)
-			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v50)))
-			b.WriteString("</span><bdi>")
-			v51, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_options_remove")
-			if err != nil {
-				return tmplrt.ExecError("signin-options", "T $L \"rastrillo.ui.signin_options_remove\"", tmplrt.CallError("T", err))
-			}
-			v52 := reflect.ValueOf(v51)
-			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v52)))
-			b.WriteString("</bdi></span></button></form>\n")
-		} else {
-			b.WriteString("<a rst-btn=\"block\" href=\"")
-			v53, err := tmplrt.Field(dot, "AddPath")
-			if err != nil {
-				return tmplrt.ExecError("signin-options", ".AddPath", err)
-			}
-			v54 := tmplrt.Unwrap(v53)
-			tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v54))))
-			b.WriteString("\">")
-			if depth == tmplrt.MaxExecDepth {
-				return tmplrt.ExecError("signin-options", "{{template \"signin-glyph\" (dict \"L\" $L \"Glyph\" $glyph)}}", tmplrt.DepthError())
-			}
-			v55, err := fn.dict_72aa8d8f("L", x1, "Glyph", tmplrt.Arg(x3))
-			if err != nil {
-				return tmplrt.ExecError("signin-options", "dict \"L\" $L \"Glyph\" $glyph", tmplrt.CallError("dict", err))
-			}
-			if err := exec_a4a2687cde36400d(b, reflect.ValueOf(v55), fn, depth+1); err != nil {
-				return err
-			}
-			b.WriteString("<span><span>")
-			v56 := tmplrt.Unwrap(x4)
-			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v56)))
-			b.WriteString("</span><bdi>")
-			v57, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_options_add")
-			if err != nil {
-				return tmplrt.ExecError("signin-options", "T $L \"rastrillo.ui.signin_options_add\"", tmplrt.CallError("T", err))
-			}
-			v58 := reflect.ValueOf(v57)
-			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v58)))
-			b.WriteString("</bdi></span>")
-			if depth == tmplrt.MaxExecDepth {
-				return tmplrt.ExecError("signin-options", "{{template \"signin-glyph\" (dict \"L\" $L \"Glyph\" \"next\")}}", tmplrt.DepthError())
-			}
-			v59, err := fn.dict_72aa8d8f("L", x1, "Glyph", "next")
-			if err != nil {
-				return tmplrt.ExecError("signin-options", "dict \"L\" $L \"Glyph\" \"next\"", tmplrt.CallError("dict", err))
-			}
-			if err := exec_a4a2687cde36400d(b, reflect.ValueOf(v59), fn, depth+1); err != nil {
-				return err
-			}
-			b.WriteString("</a>\n")
-		}
-		return nil
-	}); err != nil {
-		return tmplrt.ExecError("signin-options", "$o.Ways", err)
-	}
-	b.WriteString("</div>\n</div>\n</section>")
-	return nil
-}
-
-// facts_0e56b4bd0498fbe3 is what exec_0e56b4bd0498fbe3 assumes of the types it reads.
-var facts_0e56b4bd0498fbe3 = tmplrt.Facts{
-	Funcs: map[string]reflect.Type{
-		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
-	},
-	Facts: []tmplrt.Fact{
-		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
-	},
-}
-
 // exec_0e8f557ba2a38dcd renders "scheme-menu.html".
 func exec_0e8f557ba2a38dcd(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
 	b.WriteString("\n\n")
@@ -8953,6 +8696,83 @@ var facts_16e1fced799fbbc7_19dba148 = tmplrt.Facts{
 		{Path: []string{".Fn"}, Type: "func(string) string"},
 		{Path: []string{".Title"}, Type: "string"},
 	},
+}
+
+// exec_1b24f25e597ad443 renders "signin-glyph".
+func exec_1b24f25e597ad443(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
+	b.WriteString("<svg class=\"icon\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\">")
+	v1, err := tmplrt.Field(dot, "Glyph")
+	if err != nil {
+		return tmplrt.ExecError("signin-glyph", ".Glyph", err)
+	}
+	v2 := tmplrt.Unwrap(v1)
+	x1 := v2
+	_ = x1
+	v3, err := tmplrt.Eq(x1, reflect.ValueOf("next"))
+	if err != nil {
+		return tmplrt.ExecError("signin-glyph", "eq $glyph \"next\"", tmplrt.CallError("eq", err))
+	}
+	if v3 {
+		b.WriteString("<path d=\"m9 18 6-6-6-6\"/>")
+	} else {
+		v4, err := tmplrt.Eq(x1, reflect.ValueOf("back"))
+		if err != nil {
+			return tmplrt.ExecError("signin-glyph", "eq $glyph \"back\"", tmplrt.CallError("eq", err))
+		}
+		if v4 {
+			b.WriteString("<path d=\"m15 18-6-6 6-6\"/>")
+		} else {
+			v5, err := tmplrt.Eq(x1, reflect.ValueOf("mail"))
+			if err != nil {
+				return tmplrt.ExecError("signin-glyph", "eq $glyph \"mail\"", tmplrt.CallError("eq", err))
+			}
+			if v5 {
+				b.WriteString("<rect width=\"20\" height=\"16\" x=\"2\" y=\"4\" rx=\"2\"/><path d=\"m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7\"/>")
+			} else {
+				v6, err := tmplrt.Eq(x1, reflect.ValueOf("key"))
+				if err != nil {
+					return tmplrt.ExecError("signin-glyph", "eq $glyph \"key\"", tmplrt.CallError("eq", err))
+				}
+				if v6 {
+					b.WriteString("<path d=\"M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z\"/><circle cx=\"16.5\" cy=\"7.5\" r=\".5\" fill=\"currentColor\"/>")
+				} else {
+					v7, err := tmplrt.Eq(x1, reflect.ValueOf("at"))
+					if err != nil {
+						return tmplrt.ExecError("signin-glyph", "eq $glyph \"at\"", tmplrt.CallError("eq", err))
+					}
+					if v7 {
+						b.WriteString("<circle cx=\"12\" cy=\"12\" r=\"4\"/><path d=\"M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8\"/>")
+					} else {
+						v8, err := tmplrt.Eq(x1, reflect.ValueOf("shield"))
+						if err != nil {
+							return tmplrt.ExecError("signin-glyph", "eq $glyph \"shield\"", tmplrt.CallError("eq", err))
+						}
+						if v8 {
+							b.WriteString("<path d=\"M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z\"/>")
+						} else {
+							v9, err := tmplrt.Eq(x1, reflect.ValueOf("lock"))
+							if err != nil {
+								return tmplrt.ExecError("signin-glyph", "eq $glyph \"lock\"", tmplrt.CallError("eq", err))
+							}
+							if v9 {
+								b.WriteString("<rect width=\"18\" height=\"11\" x=\"3\" y=\"11\" rx=\"2\" ry=\"2\"/><path d=\"M7 11V7a5 5 0 0 1 10 0v4\"/>")
+							} else {
+								v10, err := tmplrt.Eq(x1, reflect.ValueOf("close"))
+								if err != nil {
+									return tmplrt.ExecError("signin-glyph", "eq $glyph \"close\"", tmplrt.CallError("eq", err))
+								}
+								if v10 {
+									b.WriteString("<path d=\"M18 6 6 18\"/><path d=\"m6 6 12 12\"/>")
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	b.WriteString("</svg>")
+	return nil
 }
 
 // exec_1e8b2397eaf3720b renders "attr".
@@ -11789,6 +11609,44 @@ var facts_3426a2b9a6675e8a_a3bb1ea2 = tmplrt.Facts{
 	},
 }
 
+// exec_35a55351b7a36a63 renders "content".
+func exec_35a55351b7a36a63(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
+	root := dot
+	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
+	x1 := v1
+	_ = x1
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("content", "{{template \"error-page\" dict \"L\" $L \"Status\" .Status \"Ref\" .Ref \"HomeHref\" (path $ \"/\")}}", tmplrt.DepthError())
+	}
+	v2, err := tmplrt.Field(dot, "Status")
+	if err != nil {
+		return tmplrt.ExecError("content", ".Status", err)
+	}
+	v3, err := tmplrt.Field(dot, "Ref")
+	if err != nil {
+		return tmplrt.ExecError("content", ".Ref", err)
+	}
+	v4 := fn.path_c02006f6(tmplrt.Arg(root), "/")
+	v5, err := fn.dict_72aa8d8f("L", x1, "Status", tmplrt.Arg(v2), "Ref", tmplrt.Arg(v3), "HomeHref", v4)
+	if err != nil {
+		return tmplrt.ExecError("content", "dict \"L\" $L \"Status\" .Status \"Ref\" .Ref \"HomeHref\" (path $ \"/\")", tmplrt.CallError("dict", err))
+	}
+	if err := exec_61fb3a8afbe66b1c(b, reflect.ValueOf(v5), fn, depth+1); err != nil {
+		return err
+	}
+	return nil
+}
+
+// facts_35a55351b7a36a63 is what exec_35a55351b7a36a63 assumes of the types it reads.
+var facts_35a55351b7a36a63 = tmplrt.Facts{
+	Funcs: map[string]reflect.Type{
+		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
+	},
+	Facts: []tmplrt.Fact{
+		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
+	},
+}
+
 // exec_35c32244d2e12608 renders "account".
 func exec_35c32244d2e12608(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
 	return nil
@@ -12071,1434 +11929,6 @@ func exec_35cd6f0da498c8b0(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs
 
 // facts_35cd6f0da498c8b0 is what exec_35cd6f0da498c8b0 assumes of the types it reads.
 var facts_35cd6f0da498c8b0 = tmplrt.Facts{
-	Funcs: map[string]reflect.Type{
-		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
-	},
-	Facts: []tmplrt.Fact{
-		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
-	},
-}
-
-// exec_361848301f03b50a renders "signin-one-way".
-func exec_361848301f03b50a(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
-	root := dot
-	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
-	x1 := v1
-	_ = x1
-	v2, err := tmplrt.Field(dot, "State")
-	if err != nil {
-		return tmplrt.ExecError("signin-one-way", ".State", err)
-	}
-	v3 := tmplrt.Unwrap(v2)
-	x2 := v3
-	_ = x2
-	v4, err := tmplrt.Field(dot, "Door")
-	if err != nil {
-		return tmplrt.ExecError("signin-one-way", ".Door", err)
-	}
-	v5 := tmplrt.Unwrap(v4)
-	x3 := v5
-	_ = x3
-	v6, err := tmplrt.Field(dot, "Focus")
-	if err != nil {
-		return tmplrt.ExecError("signin-one-way", ".Focus", err)
-	}
-	v7 := tmplrt.Unwrap(v6)
-	x4 := v7
-	_ = x4
-	v8, err := tmplrt.Field(dot, "Preview")
-	if err != nil {
-		return tmplrt.ExecError("signin-one-way", ".Preview", err)
-	}
-	v9 := tmplrt.Unwrap(v8)
-	x5 := v9
-	_ = x5
-	v10, err := tmplrt.Field(dot, "Proof")
-	if err != nil {
-		return tmplrt.ExecError("signin-one-way", ".Proof", err)
-	}
-	v11 := tmplrt.Unwrap(v10)
-	x6 := v11
-	_ = x6
-	v12, err := tmplrt.Field(dot, "Gated")
-	if err != nil {
-		return tmplrt.ExecError("signin-one-way", ".Gated", err)
-	}
-	v13 := tmplrt.Unwrap(v12)
-	x7 := v13
-	_ = x7
-	v14, err := tmplrt.Eq(x3, reflect.ValueOf("ways"))
-	if err != nil {
-		return tmplrt.ExecError("signin-one-way", "eq $door \"ways\"", tmplrt.CallError("eq", err))
-	}
-	if v14 {
-		b.WriteString("<h1 id=\"rst-signin-heading\">")
-		v15, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_ways")
-		if err != nil {
-			return tmplrt.ExecError("signin-one-way", "T $L \"rastrillo.ui.signin_ways\"", tmplrt.CallError("T", err))
-		}
-		v16 := reflect.ValueOf(v15)
-		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v16)))
-		b.WriteString("</h1>\n")
-	} else {
-		b.WriteString("<h1 id=\"rst-signin-heading\">")
-		v17, err := tmplrt.Field(dot, "Name")
-		if err != nil {
-			return tmplrt.ExecError("signin-one-way", ".Name", err)
-		}
-		v18, err := fn.Tf_a3eca208(x1, "rastrillo.ui.signin_heading", "name", tmplrt.Arg(v17))
-		if err != nil {
-			return tmplrt.ExecError("signin-one-way", "Tf $L \"rastrillo.ui.signin_heading\" \"name\" .Name", tmplrt.CallError("Tf", err))
-		}
-		v19 := reflect.ValueOf(v18)
-		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v19)))
-		b.WriteString("</h1>\n")
-	}
-	v21, err := tmplrt.Field(x2, "Problem")
-	if err != nil {
-		return tmplrt.ExecError("signin-one-way", "$s.Problem", err)
-	}
-	v20 := tmplrt.ValueArg(v21)
-	if tmplrt.Truth(v20) {
-		v22, err := tmplrt.Field(x2, "Problem")
-		if err != nil {
-			return tmplrt.ExecError("signin-one-way", "$s.Problem", err)
-		}
-		v23, err := tmplrt.Ne(v22, reflect.ValueOf("address"))
-		if err != nil {
-			return tmplrt.ExecError("signin-one-way", "ne $s.Problem \"address\"", tmplrt.CallError("ne", err))
-		}
-		v20 = tmplrt.ValueArg(reflect.ValueOf(v23))
-	}
-	v24 := tmplrt.Unwrap(v20)
-	if tmplrt.Truth(v24) {
-		x8 := reflect.ValueOf("negative")
-		_ = x8
-		v25, err := tmplrt.Field(x2, "Problem")
-		if err != nil {
-			return tmplrt.ExecError("signin-one-way", "$s.Problem", err)
-		}
-		v26, err := tmplrt.Eq(v25, reflect.ValueOf("reauth"))
-		if err != nil {
-			return tmplrt.ExecError("signin-one-way", "eq $s.Problem \"reauth\"", tmplrt.CallError("eq", err))
-		}
-		if v26 {
-			x8 = reflect.ValueOf("info")
-		}
-		if depth == tmplrt.MaxExecDepth {
-			return tmplrt.ExecError("signin-one-way", "{{template \"callout\" (dict \"L\" $L \"ID\" \"rst-signin-problem\" \"Tone\" $tone \"Body\" (T $L (printf \"rastrillo.ui.signin_problem_%s\" $s.Problem)) \"Focus\" (and (eq $focus \"callout\") (ne $s.Problem \"reauth\")))}}", tmplrt.DepthError())
-		}
-		v27, err := tmplrt.Field(x2, "Problem")
-		if err != nil {
-			return tmplrt.ExecError("signin-one-way", "$s.Problem", err)
-		}
-		v28 := tmplrt.Printf("rastrillo.ui.signin_problem_%s", tmplrt.Arg(v27))
-		v29, err := fn.T_a3eca208(x1, v28)
-		if err != nil {
-			return tmplrt.ExecError("signin-one-way", "T $L (printf \"rastrillo.ui.signin_problem_%s\" $s.Problem)", tmplrt.CallError("T", err))
-		}
-		v30 := reflect.ValueOf(v29)
-		v32, err := tmplrt.Eq(x4, reflect.ValueOf("callout"))
-		if err != nil {
-			return tmplrt.ExecError("signin-one-way", "eq $focus \"callout\"", tmplrt.CallError("eq", err))
-		}
-		v31 := tmplrt.ValueArg(reflect.ValueOf(v32))
-		if tmplrt.Truth(v31) {
-			v33, err := tmplrt.Field(x2, "Problem")
-			if err != nil {
-				return tmplrt.ExecError("signin-one-way", "$s.Problem", err)
-			}
-			v34, err := tmplrt.Ne(v33, reflect.ValueOf("reauth"))
-			if err != nil {
-				return tmplrt.ExecError("signin-one-way", "ne $s.Problem \"reauth\"", tmplrt.CallError("ne", err))
-			}
-			v31 = tmplrt.ValueArg(reflect.ValueOf(v34))
-		}
-		v35 := tmplrt.Unwrap(v31)
-		v36, err := fn.dict_72aa8d8f("L", x1, "ID", "rst-signin-problem", "Tone", tmplrt.Arg(x8), "Body", tmplrt.Arg(v30), "Focus", tmplrt.Arg(v35))
-		if err != nil {
-			return tmplrt.ExecError("signin-one-way", "dict \"L\" $L \"ID\" \"rst-signin-problem\" \"Tone\" $tone \"Body\" (T $L (printf \"rastrillo.ui.signin_problem_%s\" $s.Problem)) \"Focus\" (and (eq $focus \"callout\") (ne $s.Problem \"reauth\"))", tmplrt.CallError("dict", err))
-		}
-		if err := exec_567ff6bfe00d3ab4(b, reflect.ValueOf(v36), fn, depth+1); err != nil {
-			return err
-		}
-		b.WriteString("\n")
-	}
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("signin-one-way", "{{template \"signin-app-problem\" (dict \"L\" $L \"State\" $s \"Focus\" $focus)}}", tmplrt.DepthError())
-	}
-	v37, err := fn.dict_72aa8d8f("L", x1, "State", tmplrt.Arg(x2), "Focus", tmplrt.Arg(x4))
-	if err != nil {
-		return tmplrt.ExecError("signin-one-way", "dict \"L\" $L \"State\" $s \"Focus\" $focus", tmplrt.CallError("dict", err))
-	}
-	if err := exec_7483fb941f63a52e(b, reflect.ValueOf(v37), fn, depth+1); err != nil {
-		return err
-	}
-	v38, err := tmplrt.Eq(x3, reflect.ValueOf("ways"))
-	if err != nil {
-		return tmplrt.ExecError("signin-one-way", "eq $door \"ways\"", tmplrt.CallError("eq", err))
-	}
-	if v38 {
-		b.WriteString("<div rst-signin-ways>\n")
-		v39, err := tmplrt.Field(x2, "Ways")
-		if err != nil {
-			return tmplrt.ExecError("signin-one-way", "$s.Ways", err)
-		}
-		v40 := tmplrt.Unwrap(v39)
-		if err := tmplrt.Range(v40, func(_, dot reflect.Value) error {
-			b.WriteString("<a rst-btn=\"block\" href=\"")
-			v41, err := tmplrt.Field(dot, "Href")
-			if err != nil {
-				return tmplrt.ExecError("signin-one-way", ".Href", err)
-			}
-			v42 := tmplrt.Unwrap(v41)
-			tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v42))))
-			b.WriteString("\">")
-			v43, err := tmplrt.Field(dot, "Way")
-			if err != nil {
-				return tmplrt.ExecError("signin-one-way", ".Way", err)
-			}
-			v44, err := tmplrt.Eq(v43, reflect.ValueOf("email"))
-			if err != nil {
-				return tmplrt.ExecError("signin-one-way", "eq .Way \"email\"", tmplrt.CallError("eq", err))
-			}
-			if v44 {
-				if depth == tmplrt.MaxExecDepth {
-					return tmplrt.ExecError("signin-one-way", "{{template \"signin-glyph\" (dict \"L\" $L \"Glyph\" \"mail\")}}", tmplrt.DepthError())
-				}
-				v45, err := fn.dict_72aa8d8f("L", x1, "Glyph", "mail")
-				if err != nil {
-					return tmplrt.ExecError("signin-one-way", "dict \"L\" $L \"Glyph\" \"mail\"", tmplrt.CallError("dict", err))
-				}
-				if err := exec_a4a2687cde36400d(b, reflect.ValueOf(v45), fn, depth+1); err != nil {
-					return err
-				}
-				b.WriteString("<span>")
-				v46, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_way_email")
-				if err != nil {
-					return tmplrt.ExecError("signin-one-way", "T $L \"rastrillo.ui.signin_way_email\"", tmplrt.CallError("T", err))
-				}
-				v47 := reflect.ValueOf(v46)
-				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v47)))
-				v48, err := tmplrt.Field(dot, "Detail")
-				if err != nil {
-					return tmplrt.ExecError("signin-one-way", ".Detail", err)
-				}
-				v49 := tmplrt.Unwrap(v48)
-				if tmplrt.Truth(v49) {
-					dot := v49
-					_ = dot
-					b.WriteString(" <bdi>")
-					v50 := tmplrt.Unwrap(dot)
-					b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v50)))
-					b.WriteString("</bdi>")
-				}
-				b.WriteString("</span>")
-			} else {
-				v51, err := tmplrt.Field(dot, "Way")
-				if err != nil {
-					return tmplrt.ExecError("signin-one-way", ".Way", err)
-				}
-				v52, err := tmplrt.Eq(v51, reflect.ValueOf("passkey"))
-				if err != nil {
-					return tmplrt.ExecError("signin-one-way", "eq .Way \"passkey\"", tmplrt.CallError("eq", err))
-				}
-				if v52 {
-					if depth == tmplrt.MaxExecDepth {
-						return tmplrt.ExecError("signin-one-way", "{{template \"signin-glyph\" (dict \"L\" $L \"Glyph\" \"key\")}}", tmplrt.DepthError())
-					}
-					v53, err := fn.dict_72aa8d8f("L", x1, "Glyph", "key")
-					if err != nil {
-						return tmplrt.ExecError("signin-one-way", "dict \"L\" $L \"Glyph\" \"key\"", tmplrt.CallError("dict", err))
-					}
-					if err := exec_a4a2687cde36400d(b, reflect.ValueOf(v53), fn, depth+1); err != nil {
-						return err
-					}
-					b.WriteString("<span>")
-					v54, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_passkey")
-					if err != nil {
-						return tmplrt.ExecError("signin-one-way", "T $L \"rastrillo.ui.signin_passkey\"", tmplrt.CallError("T", err))
-					}
-					v55 := reflect.ValueOf(v54)
-					b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v55)))
-					b.WriteString("</span>")
-				} else {
-					v56, err := tmplrt.Field(dot, "Way")
-					if err != nil {
-						return tmplrt.ExecError("signin-one-way", ".Way", err)
-					}
-					v57, err := tmplrt.Eq(v56, reflect.ValueOf("authenticator"))
-					if err != nil {
-						return tmplrt.ExecError("signin-one-way", "eq .Way \"authenticator\"", tmplrt.CallError("eq", err))
-					}
-					if v57 {
-						if depth == tmplrt.MaxExecDepth {
-							return tmplrt.ExecError("signin-one-way", "{{template \"signin-glyph\" (dict \"L\" $L \"Glyph\" \"shield\")}}", tmplrt.DepthError())
-						}
-						v58, err := fn.dict_72aa8d8f("L", x1, "Glyph", "shield")
-						if err != nil {
-							return tmplrt.ExecError("signin-one-way", "dict \"L\" $L \"Glyph\" \"shield\"", tmplrt.CallError("dict", err))
-						}
-						if err := exec_a4a2687cde36400d(b, reflect.ValueOf(v58), fn, depth+1); err != nil {
-							return err
-						}
-						b.WriteString("<span>")
-						v59, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_way_authenticator")
-						if err != nil {
-							return tmplrt.ExecError("signin-one-way", "T $L \"rastrillo.ui.signin_way_authenticator\"", tmplrt.CallError("T", err))
-						}
-						v60 := reflect.ValueOf(v59)
-						b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v60)))
-						b.WriteString("</span>")
-					} else {
-						v61, err := tmplrt.Field(dot, "Way")
-						if err != nil {
-							return tmplrt.ExecError("signin-one-way", ".Way", err)
-						}
-						v62, err := tmplrt.Eq(v61, reflect.ValueOf("passphrase"))
-						if err != nil {
-							return tmplrt.ExecError("signin-one-way", "eq .Way \"passphrase\"", tmplrt.CallError("eq", err))
-						}
-						if v62 {
-							if depth == tmplrt.MaxExecDepth {
-								return tmplrt.ExecError("signin-one-way", "{{template \"signin-glyph\" (dict \"L\" $L \"Glyph\" \"lock\")}}", tmplrt.DepthError())
-							}
-							v63, err := fn.dict_72aa8d8f("L", x1, "Glyph", "lock")
-							if err != nil {
-								return tmplrt.ExecError("signin-one-way", "dict \"L\" $L \"Glyph\" \"lock\"", tmplrt.CallError("dict", err))
-							}
-							if err := exec_a4a2687cde36400d(b, reflect.ValueOf(v63), fn, depth+1); err != nil {
-								return err
-							}
-							b.WriteString("<span>")
-							v64, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_way_passphrase")
-							if err != nil {
-								return tmplrt.ExecError("signin-one-way", "T $L \"rastrillo.ui.signin_way_passphrase\"", tmplrt.CallError("T", err))
-							}
-							v65 := reflect.ValueOf(v64)
-							b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v65)))
-							b.WriteString("</span>")
-						} else {
-							v66, err := tmplrt.Field(dot, "Icon")
-							if err != nil {
-								return tmplrt.ExecError("signin-one-way", ".Icon", err)
-							}
-							v67 := tmplrt.Unwrap(v66)
-							b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v67)))
-							b.WriteString("<span>")
-							v68, err := tmplrt.Field(dot, "Label")
-							if err != nil {
-								return tmplrt.ExecError("signin-one-way", ".Label", err)
-							}
-							v69 := tmplrt.Unwrap(v68)
-							b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v69)))
-							b.WriteString("</span>")
-						}
-					}
-				}
-			}
-			if depth == tmplrt.MaxExecDepth {
-				return tmplrt.ExecError("signin-one-way", "{{template \"signin-glyph\" (dict \"L\" $L \"Glyph\" \"next\")}}", tmplrt.DepthError())
-			}
-			v70, err := fn.dict_72aa8d8f("L", x1, "Glyph", "next")
-			if err != nil {
-				return tmplrt.ExecError("signin-one-way", "dict \"L\" $L \"Glyph\" \"next\"", tmplrt.CallError("dict", err))
-			}
-			if err := exec_a4a2687cde36400d(b, reflect.ValueOf(v70), fn, depth+1); err != nil {
-				return err
-			}
-			b.WriteString("</a>\n")
-			return nil
-		}); err != nil {
-			return tmplrt.ExecError("signin-one-way", "$s.Ways", err)
-		}
-		v71, err := tmplrt.Field(x2, "Remembered")
-		if err != nil {
-			return tmplrt.ExecError("signin-one-way", "$s.Remembered", err)
-		}
-		v72 := tmplrt.Unwrap(v71)
-		if tmplrt.Truth(v72) {
-			b.WriteString("<form rst-signin-form method=\"post\" action=\"")
-			v73, err := tmplrt.Field(x2, "ForgetPath")
-			if err != nil {
-				return tmplrt.ExecError("signin-one-way", "$s.ForgetPath", err)
-			}
-			v74 := tmplrt.Unwrap(v73)
-			tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v74))))
-			b.WriteString("\">")
-			v75, err := tmplrt.Field(x2, "ReturnTo")
-			if err != nil {
-				return tmplrt.ExecError("signin-one-way", "$s.ReturnTo", err)
-			}
-			v76 := tmplrt.Unwrap(v75)
-			if tmplrt.Truth(v76) {
-				dot := v76
-				_ = dot
-				b.WriteString("<input type=\"hidden\" name=\"return_to\" value=\"")
-				v77 := tmplrt.Unwrap(dot)
-				b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v77)))
-				b.WriteString("\">\n")
-			}
-			if depth == tmplrt.MaxExecDepth {
-				return tmplrt.ExecError("signin-one-way", "{{template \"signin-forget-way\" (dict \"L\" $L \"State\" $s)}}", tmplrt.DepthError())
-			}
-			v78, err := fn.dict_72aa8d8f("L", x1, "State", tmplrt.Arg(x2))
-			if err != nil {
-				return tmplrt.ExecError("signin-one-way", "dict \"L\" $L \"State\" $s", tmplrt.CallError("dict", err))
-			}
-			if err := exec_b29f7da01ee7285f(b, reflect.ValueOf(v78), fn, depth+1); err != nil {
-				return err
-			}
-			b.WriteString("<button rst-btn=\"block\" type=\"submit\">")
-			if depth == tmplrt.MaxExecDepth {
-				return tmplrt.ExecError("signin-one-way", "{{template \"signin-glyph\" (dict \"L\" $L \"Glyph\" \"at\")}}", tmplrt.DepthError())
-			}
-			v79, err := fn.dict_72aa8d8f("L", x1, "Glyph", "at")
-			if err != nil {
-				return tmplrt.ExecError("signin-one-way", "dict \"L\" $L \"Glyph\" \"at\"", tmplrt.CallError("dict", err))
-			}
-			if err := exec_a4a2687cde36400d(b, reflect.ValueOf(v79), fn, depth+1); err != nil {
-				return err
-			}
-			b.WriteString("<span>")
-			v80, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_different")
-			if err != nil {
-				return tmplrt.ExecError("signin-one-way", "T $L \"rastrillo.ui.signin_different\"", tmplrt.CallError("T", err))
-			}
-			v81 := reflect.ValueOf(v80)
-			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v81)))
-			b.WriteString("</span>")
-			if depth == tmplrt.MaxExecDepth {
-				return tmplrt.ExecError("signin-one-way", "{{template \"signin-glyph\" (dict \"L\" $L \"Glyph\" \"next\")}}", tmplrt.DepthError())
-			}
-			v82, err := fn.dict_72aa8d8f("L", x1, "Glyph", "next")
-			if err != nil {
-				return tmplrt.ExecError("signin-one-way", "dict \"L\" $L \"Glyph\" \"next\"", tmplrt.CallError("dict", err))
-			}
-			if err := exec_a4a2687cde36400d(b, reflect.ValueOf(v82), fn, depth+1); err != nil {
-				return err
-			}
-			b.WriteString("</button></form>\n")
-		}
-		b.WriteString("</div>\n<a rst-btn=\"ghost\" href=\"")
-		v83, err := tmplrt.Field(x2, "BackHref")
-		if err != nil {
-			return tmplrt.ExecError("signin-one-way", "$s.BackHref", err)
-		}
-		v84 := tmplrt.Unwrap(v83)
-		tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v84))))
-		b.WriteString("\">")
-		if depth == tmplrt.MaxExecDepth {
-			return tmplrt.ExecError("signin-one-way", "{{template \"signin-glyph\" (dict \"L\" $L \"Glyph\" \"back\")}}", tmplrt.DepthError())
-		}
-		v85, err := fn.dict_72aa8d8f("L", x1, "Glyph", "back")
-		if err != nil {
-			return tmplrt.ExecError("signin-one-way", "dict \"L\" $L \"Glyph\" \"back\"", tmplrt.CallError("dict", err))
-		}
-		if err := exec_a4a2687cde36400d(b, reflect.ValueOf(v85), fn, depth+1); err != nil {
-			return err
-		}
-		b.WriteString("<span>")
-		v86, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_back")
-		if err != nil {
-			return tmplrt.ExecError("signin-one-way", "T $L \"rastrillo.ui.signin_back\"", tmplrt.CallError("T", err))
-		}
-		v87 := reflect.ValueOf(v86)
-		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v87)))
-		b.WriteString("</span></a>\n")
-	} else {
-		v88, err := tmplrt.Eq(x3, reflect.ValueOf("federated"))
-		if err != nil {
-			return tmplrt.ExecError("signin-one-way", "eq $door \"federated\"", tmplrt.CallError("eq", err))
-		}
-		if v88 {
-			b.WriteString("<a rst-btn=\"primary block\" href=\"")
-			v89, err := tmplrt.Field(x2, "FederatedHref")
-			if err != nil {
-				return tmplrt.ExecError("signin-one-way", "$s.FederatedHref", err)
-			}
-			v90 := tmplrt.Unwrap(v89)
-			tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v90))))
-			b.WriteString("\"")
-			v91, err := tmplrt.Eq(x4, reflect.ValueOf("onetap"))
-			if err != nil {
-				return tmplrt.ExecError("signin-one-way", "eq $focus \"onetap\"", tmplrt.CallError("eq", err))
-			}
-			if v91 {
-				b.WriteString(" autofocus")
-			}
-			b.WriteString(">")
-			v92, err := tmplrt.Field(x2, "Federated")
-			if err != nil {
-				return tmplrt.ExecError("signin-one-way", "$s.Federated.Icon", err)
-			}
-			v93, err := tmplrt.Field(v92, "Icon")
-			if err != nil {
-				return tmplrt.ExecError("signin-one-way", "$s.Federated.Icon", err)
-			}
-			v94 := tmplrt.Unwrap(v93)
-			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v94)))
-			b.WriteString("<span>")
-			v95, err := tmplrt.Field(x2, "Federated")
-			if err != nil {
-				return tmplrt.ExecError("signin-one-way", "$s.Federated.Label", err)
-			}
-			v96, err := tmplrt.Field(v95, "Label")
-			if err != nil {
-				return tmplrt.ExecError("signin-one-way", "$s.Federated.Label", err)
-			}
-			v97, err := fn.Tf_a3eca208(x1, "rastrillo.ui.signin_federated", "name", tmplrt.Arg(v96))
-			if err != nil {
-				return tmplrt.ExecError("signin-one-way", "Tf $L \"rastrillo.ui.signin_federated\" \"name\" $s.Federated.Label", tmplrt.CallError("Tf", err))
-			}
-			v98 := reflect.ValueOf(v97)
-			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v98)))
-			b.WriteString("</span></a>\n")
-		} else {
-			v99, err := tmplrt.Eq(x3, reflect.ValueOf("passkey"))
-			if err != nil {
-				return tmplrt.ExecError("signin-one-way", "eq $door \"passkey\"", tmplrt.CallError("eq", err))
-			}
-			if v99 {
-				b.WriteString("<div rst-signin-passkey><button rst-btn=\"primary block\" type=\"button\"")
-				v100 := tmplrt.Not(x5)
-				if v100 {
-					b.WriteString(" hidden data-rst-passkey data-rst-passkey-begin=\"")
-					v101, err := tmplrt.Field(x2, "Passkey")
-					if err != nil {
-						return tmplrt.ExecError("signin-one-way", "$s.Passkey.BeginPath", err)
-					}
-					v102, err := tmplrt.Field(v101, "BeginPath")
-					if err != nil {
-						return tmplrt.ExecError("signin-one-way", "$s.Passkey.BeginPath", err)
-					}
-					v103 := tmplrt.Unwrap(v102)
-					b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v103)))
-					b.WriteString("\" data-rst-passkey-finish=\"")
-					v104, err := tmplrt.Field(x2, "PasskeyFinish")
-					if err != nil {
-						return tmplrt.ExecError("signin-one-way", "$s.PasskeyFinish", err)
-					}
-					v105 := tmplrt.Unwrap(v104)
-					b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v105)))
-					b.WriteString("\" data-rst-passkey-module=\"")
-					v106, err := tmplrt.Field(x2, "Passkey")
-					if err != nil {
-						return tmplrt.ExecError("signin-one-way", "$s.Passkey.ModuleURL", err)
-					}
-					v107, err := tmplrt.Field(v106, "ModuleURL")
-					if err != nil {
-						return tmplrt.ExecError("signin-one-way", "$s.Passkey.ModuleURL", err)
-					}
-					v108 := tmplrt.Unwrap(v107)
-					b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v108)))
-					b.WriteString("\"")
-					v109, err := tmplrt.Field(x2, "Passkey")
-					if err != nil {
-						return tmplrt.ExecError("signin-one-way", "$s.Passkey.LegacyRPID", err)
-					}
-					v110, err := tmplrt.Field(v109, "LegacyRPID")
-					if err != nil {
-						return tmplrt.ExecError("signin-one-way", "$s.Passkey.LegacyRPID", err)
-					}
-					v111 := tmplrt.Unwrap(v110)
-					if tmplrt.Truth(v111) {
-						dot := v111
-						_ = dot
-						b.WriteString(" data-rst-passkey-legacy-rpid=\"")
-						v112 := tmplrt.Unwrap(dot)
-						b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v112)))
-						b.WriteString("\"")
-					}
-					b.WriteString(" data-rst-passkey-cancelled=\"")
-					v113, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_passkey_cancelled")
-					if err != nil {
-						return tmplrt.ExecError("signin-one-way", "T $L \"rastrillo.ui.signin_passkey_cancelled\"", tmplrt.CallError("T", err))
-					}
-					v114 := reflect.ValueOf(v113)
-					b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v114)))
-					b.WriteString("\" data-rst-passkey-failed=\"")
-					v115, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_passkey_failed")
-					if err != nil {
-						return tmplrt.ExecError("signin-one-way", "T $L \"rastrillo.ui.signin_passkey_failed\"", tmplrt.CallError("T", err))
-					}
-					v116 := reflect.ValueOf(v115)
-					b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v116)))
-					b.WriteString("\" data-rst-passkey-unavailable=\"")
-					v117, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_passkey_unavailable")
-					if err != nil {
-						return tmplrt.ExecError("signin-one-way", "T $L \"rastrillo.ui.signin_passkey_unavailable\"", tmplrt.CallError("T", err))
-					}
-					v118 := reflect.ValueOf(v117)
-					b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v118)))
-					b.WriteString("\" data-rst-passkey-fallback=\"")
-					v119, err := tmplrt.Field(x2, "EmailHref")
-					if err != nil {
-						return tmplrt.ExecError("signin-one-way", "$s.EmailHref", err)
-					}
-					v120 := tmplrt.Unwrap(v119)
-					b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v120)))
-					b.WriteString("\"")
-				}
-				b.WriteString(" aria-describedby=\"rst-signin-passkey-msg\">")
-				if depth == tmplrt.MaxExecDepth {
-					return tmplrt.ExecError("signin-one-way", "{{template \"signin-glyph\" (dict \"L\" $L \"Glyph\" \"key\")}}", tmplrt.DepthError())
-				}
-				v121, err := fn.dict_72aa8d8f("L", x1, "Glyph", "key")
-				if err != nil {
-					return tmplrt.ExecError("signin-one-way", "dict \"L\" $L \"Glyph\" \"key\"", tmplrt.CallError("dict", err))
-				}
-				if err := exec_a4a2687cde36400d(b, reflect.ValueOf(v121), fn, depth+1); err != nil {
-					return err
-				}
-				b.WriteString("<span>")
-				v123, err := tmplrt.Field(x2, "Remembered")
-				if err != nil {
-					return tmplrt.ExecError("signin-one-way", "$s.Remembered", err)
-				}
-				v122 := tmplrt.ValueArg(v123)
-				if tmplrt.Truth(v122) {
-					v124, err := tmplrt.Field(x2, "Remembered")
-					if err != nil {
-						return tmplrt.ExecError("signin-one-way", "$s.Remembered.Method", err)
-					}
-					v125, err := tmplrt.Field(v124, "Method")
-					if err != nil {
-						return tmplrt.ExecError("signin-one-way", "$s.Remembered.Method", err)
-					}
-					v126, err := tmplrt.Eq(v125, reflect.ValueOf("passkey"))
-					if err != nil {
-						return tmplrt.ExecError("signin-one-way", "eq $s.Remembered.Method \"passkey\"", tmplrt.CallError("eq", err))
-					}
-					v122 = tmplrt.ValueArg(reflect.ValueOf(v126))
-				}
-				v127 := tmplrt.Unwrap(v122)
-				if tmplrt.Truth(v127) {
-					v128, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_passkey_remembered")
-					if err != nil {
-						return tmplrt.ExecError("signin-one-way", "T $L \"rastrillo.ui.signin_passkey_remembered\"", tmplrt.CallError("T", err))
-					}
-					v129 := reflect.ValueOf(v128)
-					b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v129)))
-				} else {
-					v130, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_passkey")
-					if err != nil {
-						return tmplrt.ExecError("signin-one-way", "T $L \"rastrillo.ui.signin_passkey\"", tmplrt.CallError("T", err))
-					}
-					v131 := reflect.ValueOf(v130)
-					b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v131)))
-				}
-				b.WriteString("</span></button>\n<p rst-signin-passkey-msg id=\"rst-signin-passkey-msg\" aria-live=\"polite\"></p>\n</div>\n")
-				v132 := tmplrt.Not(x5)
-				if v132 {
-					b.WriteString("<noscript><p>")
-					v133, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_passkey_noscript")
-					if err != nil {
-						return tmplrt.ExecError("signin-one-way", "T $L \"rastrillo.ui.signin_passkey_noscript\"", tmplrt.CallError("T", err))
-					}
-					v134 := reflect.ValueOf(v133)
-					b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v134)))
-					b.WriteString("</p></noscript>\n<script type=\"module\" src=\"")
-					v135, err := tmplrt.Field(x2, "Passkey")
-					if err != nil {
-						return tmplrt.ExecError("signin-one-way", "$s.Passkey.ScriptURL", err)
-					}
-					v136, err := tmplrt.Field(v135, "ScriptURL")
-					if err != nil {
-						return tmplrt.ExecError("signin-one-way", "$s.Passkey.ScriptURL", err)
-					}
-					v137 := tmplrt.Unwrap(v136)
-					tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v137))))
-					b.WriteString("\" data-rst-passkey-script></script>\n")
-				}
-			} else {
-				v138, err := tmplrt.Eq(x3, reflect.ValueOf("authenticator"))
-				if err != nil {
-					return tmplrt.ExecError("signin-one-way", "eq $door \"authenticator\"", tmplrt.CallError("eq", err))
-				}
-				if v138 {
-					if depth == tmplrt.MaxExecDepth {
-						return tmplrt.ExecError("signin-one-way", "{{template \"signin-secret-door\" (dict \"L\" $L \"State\" $s \"Door\" $s.Authenticator \"Focus\" $focus \"Proof\" $proof \"Gated\" $gated \"ID\" \"rst-signin-code\" \"Name\" \"code\" \"Type\" \"text\" \"Inputmode\" \"numeric\" \"Autocomplete\" \"one-time-code\" \"Label\" (T $L \"rastrillo.ui.signin_code\"))}}", tmplrt.DepthError())
-					}
-					v139, err := tmplrt.Field(x2, "Authenticator")
-					if err != nil {
-						return tmplrt.ExecError("signin-one-way", "$s.Authenticator", err)
-					}
-					v140, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_code")
-					if err != nil {
-						return tmplrt.ExecError("signin-one-way", "T $L \"rastrillo.ui.signin_code\"", tmplrt.CallError("T", err))
-					}
-					v141 := reflect.ValueOf(v140)
-					v142, err := fn.dict_72aa8d8f("L", x1, "State", tmplrt.Arg(x2), "Door", tmplrt.Arg(v139), "Focus", tmplrt.Arg(x4), "Proof", tmplrt.Arg(x6), "Gated", tmplrt.Arg(x7), "ID", "rst-signin-code", "Name", "code", "Type", "text", "Inputmode", "numeric", "Autocomplete", "one-time-code", "Label", tmplrt.Arg(v141))
-					if err != nil {
-						return tmplrt.ExecError("signin-one-way", "dict \"L\" $L \"State\" $s \"Door\" $s.Authenticator \"Focus\" $focus \"Proof\" $proof \"Gated\" $gated \"ID\" \"rst-signin-code\" \"Name\" \"code\" \"Type\" \"text\" \"Inputmode\" \"numeric\" \"Autocomplete\" \"one-time-code\" \"Label\" (T $L \"rastrillo.ui.signin_code\")", tmplrt.CallError("dict", err))
-					}
-					if err := exec_b2bc55e79055d0a5(b, reflect.ValueOf(v142), fn, depth+1); err != nil {
-						return err
-					}
-				} else {
-					v143, err := tmplrt.Eq(x3, reflect.ValueOf("passphrase"))
-					if err != nil {
-						return tmplrt.ExecError("signin-one-way", "eq $door \"passphrase\"", tmplrt.CallError("eq", err))
-					}
-					if v143 {
-						if depth == tmplrt.MaxExecDepth {
-							return tmplrt.ExecError("signin-one-way", "{{template \"signin-secret-door\" (dict \"L\" $L \"State\" $s \"Door\" $s.Passphrase \"Focus\" $focus \"Proof\" $proof \"Gated\" $gated \"ID\" \"rst-signin-passphrase\" \"Name\" \"passphrase\" \"Type\" \"password\" \"Autocomplete\" \"current-password\" \"Label\" (T $L \"rastrillo.ui.signin_passphrase\"))}}", tmplrt.DepthError())
-						}
-						v144, err := tmplrt.Field(x2, "Passphrase")
-						if err != nil {
-							return tmplrt.ExecError("signin-one-way", "$s.Passphrase", err)
-						}
-						v145, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_passphrase")
-						if err != nil {
-							return tmplrt.ExecError("signin-one-way", "T $L \"rastrillo.ui.signin_passphrase\"", tmplrt.CallError("T", err))
-						}
-						v146 := reflect.ValueOf(v145)
-						v147, err := fn.dict_72aa8d8f("L", x1, "State", tmplrt.Arg(x2), "Door", tmplrt.Arg(v144), "Focus", tmplrt.Arg(x4), "Proof", tmplrt.Arg(x6), "Gated", tmplrt.Arg(x7), "ID", "rst-signin-passphrase", "Name", "passphrase", "Type", "password", "Autocomplete", "current-password", "Label", tmplrt.Arg(v146))
-						if err != nil {
-							return tmplrt.ExecError("signin-one-way", "dict \"L\" $L \"State\" $s \"Door\" $s.Passphrase \"Focus\" $focus \"Proof\" $proof \"Gated\" $gated \"ID\" \"rst-signin-passphrase\" \"Name\" \"passphrase\" \"Type\" \"password\" \"Autocomplete\" \"current-password\" \"Label\" (T $L \"rastrillo.ui.signin_passphrase\")", tmplrt.CallError("dict", err))
-						}
-						if err := exec_b2bc55e79055d0a5(b, reflect.ValueOf(v147), fn, depth+1); err != nil {
-							return err
-						}
-					} else {
-						v148, err := tmplrt.Eq(x3, reflect.ValueOf("keymail"))
-						if err != nil {
-							return tmplrt.ExecError("signin-one-way", "eq $door \"keymail\"", tmplrt.CallError("eq", err))
-						}
-						if v148 {
-							b.WriteString("<form rst-signin-form method=\"post\" action=\"")
-							v149, err := tmplrt.Field(x2, "BeginPath")
-							if err != nil {
-								return tmplrt.ExecError("signin-one-way", "$s.BeginPath", err)
-							}
-							v150 := tmplrt.Unwrap(v149)
-							tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v150))))
-							b.WriteString("\"")
-							v151 := tmplrt.Unwrap(x6)
-							if tmplrt.Truth(v151) {
-								dot := v151
-								_ = dot
-								b.WriteString(" ")
-								v152, err := tmplrt.Field(dot, "Attrs")
-								if err != nil {
-									return tmplrt.ExecError("signin-one-way", ".Attrs", err)
-								}
-								v153 := tmplrt.Unwrap(v152)
-								b.WriteString(tmplrt.HTMLNameFilter(tmplrt.Arg(v153)))
-							}
-							b.WriteString(">")
-							v154 := tmplrt.Unwrap(x6)
-							if tmplrt.Truth(v154) {
-								dot := v154
-								_ = dot
-								v155, err := tmplrt.Field(dot, "Fields")
-								if err != nil {
-									return tmplrt.ExecError("signin-one-way", ".Fields", err)
-								}
-								v156 := tmplrt.Unwrap(v155)
-								b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v156)))
-							}
-							b.WriteString("\n")
-							v157, err := tmplrt.Field(x2, "ReturnTo")
-							if err != nil {
-								return tmplrt.ExecError("signin-one-way", "$s.ReturnTo", err)
-							}
-							v158 := tmplrt.Unwrap(v157)
-							if tmplrt.Truth(v158) {
-								dot := v158
-								_ = dot
-								b.WriteString("<input type=\"hidden\" name=\"return_to\" value=\"")
-								v159 := tmplrt.Unwrap(dot)
-								b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v159)))
-								b.WriteString("\">\n")
-							}
-							v161, err := tmplrt.Field(x2, "Reauth")
-							if err != nil {
-								return tmplrt.ExecError("signin-one-way", "$s.Reauth", err)
-							}
-							v160 := tmplrt.ValueArg(v161)
-							if !tmplrt.Truth(v160) {
-								v162, err := tmplrt.Field(x2, "Problem")
-								if err != nil {
-									return tmplrt.ExecError("signin-one-way", "$s.Problem", err)
-								}
-								v163, err := tmplrt.Eq(v162, reflect.ValueOf("reauth"))
-								if err != nil {
-									return tmplrt.ExecError("signin-one-way", "eq $s.Problem \"reauth\"", tmplrt.CallError("eq", err))
-								}
-								v160 = tmplrt.ValueArg(reflect.ValueOf(v163))
-							}
-							v164 := tmplrt.Unwrap(v160)
-							if tmplrt.Truth(v164) {
-								b.WriteString("<input type=\"hidden\" name=\"reauth\" value=\"1\">\n")
-							}
-							b.WriteString("<input type=\"hidden\" name=\"address\" value=\"")
-							v165, err := tmplrt.Field(x2, "Remembered")
-							if err != nil {
-								return tmplrt.ExecError("signin-one-way", "$s.Remembered.Address", err)
-							}
-							v166, err := tmplrt.Field(v165, "Address")
-							if err != nil {
-								return tmplrt.ExecError("signin-one-way", "$s.Remembered.Address", err)
-							}
-							v167 := tmplrt.Unwrap(v166)
-							b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v167)))
-							b.WriteString("\">\n<input type=\"hidden\" name=\"expect\" value=\"keymail\">\n<button rst-btn=\"primary block\" type=\"submit\"")
-							v168, err := tmplrt.Eq(x4, reflect.ValueOf("onetap"))
-							if err != nil {
-								return tmplrt.ExecError("signin-one-way", "eq $focus \"onetap\"", tmplrt.CallError("eq", err))
-							}
-							if v168 {
-								b.WriteString(" autofocus")
-							}
-							v169 := tmplrt.Unwrap(x7)
-							if tmplrt.Truth(v169) {
-								b.WriteString(" disabled data-pow-submit")
-							}
-							b.WriteString(">")
-							if depth == tmplrt.MaxExecDepth {
-								return tmplrt.ExecError("signin-one-way", "{{template \"signin-glyph\" (dict \"L\" $L \"Glyph\" \"mail\")}}", tmplrt.DepthError())
-							}
-							v170, err := fn.dict_72aa8d8f("L", x1, "Glyph", "mail")
-							if err != nil {
-								return tmplrt.ExecError("signin-one-way", "dict \"L\" $L \"Glyph\" \"mail\"", tmplrt.CallError("dict", err))
-							}
-							if err := exec_a4a2687cde36400d(b, reflect.ValueOf(v170), fn, depth+1); err != nil {
-								return err
-							}
-							b.WriteString("<span>")
-							v171, err := tmplrt.Field(x2, "Remembered")
-							if err != nil {
-								return tmplrt.ExecError("signin-one-way", "$s.Remembered.Address", err)
-							}
-							v172, err := tmplrt.Field(v171, "Address")
-							if err != nil {
-								return tmplrt.ExecError("signin-one-way", "$s.Remembered.Address", err)
-							}
-							v173, err := fn.Tbdi_a3eca208(x1, "rastrillo.ui.signin_continue_as", "address", tmplrt.Arg(v172))
-							if err != nil {
-								return tmplrt.ExecError("signin-one-way", "Tbdi $L \"rastrillo.ui.signin_continue_as\" \"address\" $s.Remembered.Address", tmplrt.CallError("Tbdi", err))
-							}
-							v174 := reflect.ValueOf(v173)
-							b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v174)))
-							b.WriteString("</span></button>\n")
-							v175 := tmplrt.Unwrap(x7)
-							if tmplrt.Truth(v175) {
-								var v176 reflect.Value
-								if x6.IsValid() {
-									v177, err := tmplrt.MethodOf(x6, "StatusLine")
-									if err != nil {
-										return tmplrt.ExecError("signin-one-way", "$proof.StatusLine", err)
-									}
-									v179, err := fn.T_a3eca208(x1, "rastrillo.ui.pow_status")
-									if err != nil {
-										return tmplrt.ExecError("signin-one-way", "T $L \"rastrillo.ui.pow_status\"", tmplrt.CallError("T", err))
-									}
-									v180 := reflect.ValueOf(v179)
-									v178, err := v177.Call(tmplrt.Val(v180))
-									if err != nil {
-										return tmplrt.ExecError("signin-one-way", "$proof.StatusLine", err)
-									}
-									v176 = v178
-								}
-								v181 := tmplrt.Unwrap(v176)
-								b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v181)))
-								b.WriteString("<noscript><p>")
-								v182, err := fn.T_a3eca208(x1, "rastrillo.ui.pow_noscript")
-								if err != nil {
-									return tmplrt.ExecError("signin-one-way", "T $L \"rastrillo.ui.pow_noscript\"", tmplrt.CallError("T", err))
-								}
-								v183 := reflect.ValueOf(v182)
-								b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v183)))
-								b.WriteString("</p></noscript>\n")
-							}
-							b.WriteString("</form>\n")
-						} else {
-							v184, err := tmplrt.Eq(x3, reflect.ValueOf("link"))
-							if err != nil {
-								return tmplrt.ExecError("signin-one-way", "eq $door \"link\"", tmplrt.CallError("eq", err))
-							}
-							if v184 {
-								b.WriteString("<form rst-signin-form method=\"post\" action=\"")
-								v185, err := tmplrt.Field(x2, "BeginPath")
-								if err != nil {
-									return tmplrt.ExecError("signin-one-way", "$s.BeginPath", err)
-								}
-								v186 := tmplrt.Unwrap(v185)
-								tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v186))))
-								b.WriteString("\"")
-								v187 := tmplrt.Unwrap(x6)
-								if tmplrt.Truth(v187) {
-									dot := v187
-									_ = dot
-									b.WriteString(" ")
-									v188, err := tmplrt.Field(dot, "Attrs")
-									if err != nil {
-										return tmplrt.ExecError("signin-one-way", ".Attrs", err)
-									}
-									v189 := tmplrt.Unwrap(v188)
-									b.WriteString(tmplrt.HTMLNameFilter(tmplrt.Arg(v189)))
-								}
-								b.WriteString(">")
-								v190 := tmplrt.Unwrap(x6)
-								if tmplrt.Truth(v190) {
-									dot := v190
-									_ = dot
-									v191, err := tmplrt.Field(dot, "Fields")
-									if err != nil {
-										return tmplrt.ExecError("signin-one-way", ".Fields", err)
-									}
-									v192 := tmplrt.Unwrap(v191)
-									b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v192)))
-								}
-								b.WriteString("\n")
-								v193, err := tmplrt.Field(x2, "ReturnTo")
-								if err != nil {
-									return tmplrt.ExecError("signin-one-way", "$s.ReturnTo", err)
-								}
-								v194 := tmplrt.Unwrap(v193)
-								if tmplrt.Truth(v194) {
-									dot := v194
-									_ = dot
-									b.WriteString("<input type=\"hidden\" name=\"return_to\" value=\"")
-									v195 := tmplrt.Unwrap(dot)
-									b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v195)))
-									b.WriteString("\">\n")
-								}
-								v197, err := tmplrt.Field(x2, "Reauth")
-								if err != nil {
-									return tmplrt.ExecError("signin-one-way", "$s.Reauth", err)
-								}
-								v196 := tmplrt.ValueArg(v197)
-								if !tmplrt.Truth(v196) {
-									v198, err := tmplrt.Field(x2, "Problem")
-									if err != nil {
-										return tmplrt.ExecError("signin-one-way", "$s.Problem", err)
-									}
-									v199, err := tmplrt.Eq(v198, reflect.ValueOf("reauth"))
-									if err != nil {
-										return tmplrt.ExecError("signin-one-way", "eq $s.Problem \"reauth\"", tmplrt.CallError("eq", err))
-									}
-									v196 = tmplrt.ValueArg(reflect.ValueOf(v199))
-								}
-								v200 := tmplrt.Unwrap(v196)
-								if tmplrt.Truth(v200) {
-									b.WriteString("<input type=\"hidden\" name=\"reauth\" value=\"1\">\n")
-								}
-								b.WriteString("<input type=\"hidden\" name=\"address\" value=\"")
-								v201, err := tmplrt.Field(x2, "Remembered")
-								if err != nil {
-									return tmplrt.ExecError("signin-one-way", "$s.Remembered.Address", err)
-								}
-								v202, err := tmplrt.Field(v201, "Address")
-								if err != nil {
-									return tmplrt.ExecError("signin-one-way", "$s.Remembered.Address", err)
-								}
-								v203 := tmplrt.Unwrap(v202)
-								b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v203)))
-								b.WriteString("\">\n<button rst-btn=\"primary block\" type=\"submit\"")
-								v204, err := tmplrt.Eq(x4, reflect.ValueOf("onetap"))
-								if err != nil {
-									return tmplrt.ExecError("signin-one-way", "eq $focus \"onetap\"", tmplrt.CallError("eq", err))
-								}
-								if v204 {
-									b.WriteString(" autofocus")
-								}
-								v205 := tmplrt.Unwrap(x7)
-								if tmplrt.Truth(v205) {
-									b.WriteString(" disabled data-pow-submit")
-								}
-								b.WriteString(">")
-								if depth == tmplrt.MaxExecDepth {
-									return tmplrt.ExecError("signin-one-way", "{{template \"signin-glyph\" (dict \"L\" $L \"Glyph\" \"mail\")}}", tmplrt.DepthError())
-								}
-								v206, err := fn.dict_72aa8d8f("L", x1, "Glyph", "mail")
-								if err != nil {
-									return tmplrt.ExecError("signin-one-way", "dict \"L\" $L \"Glyph\" \"mail\"", tmplrt.CallError("dict", err))
-								}
-								if err := exec_a4a2687cde36400d(b, reflect.ValueOf(v206), fn, depth+1); err != nil {
-									return err
-								}
-								b.WriteString("<span>")
-								v207, err := tmplrt.Field(x2, "Remembered")
-								if err != nil {
-									return tmplrt.ExecError("signin-one-way", "$s.Remembered.Address", err)
-								}
-								v208, err := tmplrt.Field(v207, "Address")
-								if err != nil {
-									return tmplrt.ExecError("signin-one-way", "$s.Remembered.Address", err)
-								}
-								v209, err := fn.Tbdi_a3eca208(x1, "rastrillo.ui.signin_continue_as", "address", tmplrt.Arg(v208))
-								if err != nil {
-									return tmplrt.ExecError("signin-one-way", "Tbdi $L \"rastrillo.ui.signin_continue_as\" \"address\" $s.Remembered.Address", tmplrt.CallError("Tbdi", err))
-								}
-								v210 := reflect.ValueOf(v209)
-								b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v210)))
-								b.WriteString("</span></button>\n")
-								v211 := tmplrt.Unwrap(x7)
-								if tmplrt.Truth(v211) {
-									var v212 reflect.Value
-									if x6.IsValid() {
-										v213, err := tmplrt.MethodOf(x6, "StatusLine")
-										if err != nil {
-											return tmplrt.ExecError("signin-one-way", "$proof.StatusLine", err)
-										}
-										v215, err := fn.T_a3eca208(x1, "rastrillo.ui.pow_status")
-										if err != nil {
-											return tmplrt.ExecError("signin-one-way", "T $L \"rastrillo.ui.pow_status\"", tmplrt.CallError("T", err))
-										}
-										v216 := reflect.ValueOf(v215)
-										v214, err := v213.Call(tmplrt.Val(v216))
-										if err != nil {
-											return tmplrt.ExecError("signin-one-way", "$proof.StatusLine", err)
-										}
-										v212 = v214
-									}
-									v217 := tmplrt.Unwrap(v212)
-									b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v217)))
-									b.WriteString("<noscript><p>")
-									v218, err := fn.T_a3eca208(x1, "rastrillo.ui.pow_noscript")
-									if err != nil {
-										return tmplrt.ExecError("signin-one-way", "T $L \"rastrillo.ui.pow_noscript\"", tmplrt.CallError("T", err))
-									}
-									v219 := reflect.ValueOf(v218)
-									b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v219)))
-									b.WriteString("</p></noscript>\n")
-								}
-								b.WriteString("</form>\n")
-							} else {
-								v221, err := tmplrt.Field(x2, "ConditionalUI")
-								if err != nil {
-									return tmplrt.ExecError("signin-one-way", "$s.ConditionalUI", err)
-								}
-								v220 := tmplrt.ValueArg(v221)
-								if tmplrt.Truth(v220) {
-									v222 := tmplrt.Not(x5)
-									v220 = tmplrt.ValueArg(reflect.ValueOf(v222))
-								}
-								v223 := tmplrt.Unwrap(v220)
-								x10 := v223
-								_ = x10
-								x11 := reflect.ValueOf("")
-								_ = x11
-								v224, err := tmplrt.Field(x2, "Problem")
-								if err != nil {
-									return tmplrt.ExecError("signin-one-way", "$s.Problem", err)
-								}
-								v225, err := tmplrt.Eq(v224, reflect.ValueOf("address"))
-								if err != nil {
-									return tmplrt.ExecError("signin-one-way", "eq $s.Problem \"address\"", tmplrt.CallError("eq", err))
-								}
-								if v225 {
-									v226, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_problem_address")
-									if err != nil {
-										return tmplrt.ExecError("signin-one-way", "T $L \"rastrillo.ui.signin_problem_address\"", tmplrt.CallError("T", err))
-									}
-									v227 := reflect.ValueOf(v226)
-									x11 = v227
-								}
-								b.WriteString("<form rst-signin-form method=\"post\" action=\"")
-								v228, err := tmplrt.Field(x2, "BeginPath")
-								if err != nil {
-									return tmplrt.ExecError("signin-one-way", "$s.BeginPath", err)
-								}
-								v229 := tmplrt.Unwrap(v228)
-								tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v229))))
-								b.WriteString("\"")
-								v230 := tmplrt.Unwrap(x6)
-								if tmplrt.Truth(v230) {
-									dot := v230
-									_ = dot
-									b.WriteString(" ")
-									v231, err := tmplrt.Field(dot, "Attrs")
-									if err != nil {
-										return tmplrt.ExecError("signin-one-way", ".Attrs", err)
-									}
-									v232 := tmplrt.Unwrap(v231)
-									b.WriteString(tmplrt.HTMLNameFilter(tmplrt.Arg(v232)))
-								}
-								v233 := tmplrt.Unwrap(x10)
-								if tmplrt.Truth(v233) {
-									b.WriteString(" data-rst-passkey-conditional data-rst-passkey-begin=\"")
-									v234, err := tmplrt.Field(x2, "Passkey")
-									if err != nil {
-										return tmplrt.ExecError("signin-one-way", "$s.Passkey.BeginPath", err)
-									}
-									v235, err := tmplrt.Field(v234, "BeginPath")
-									if err != nil {
-										return tmplrt.ExecError("signin-one-way", "$s.Passkey.BeginPath", err)
-									}
-									v236 := tmplrt.Unwrap(v235)
-									b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v236)))
-									b.WriteString("\" data-rst-passkey-finish=\"")
-									v237, err := tmplrt.Field(x2, "PasskeyFinish")
-									if err != nil {
-										return tmplrt.ExecError("signin-one-way", "$s.PasskeyFinish", err)
-									}
-									v238 := tmplrt.Unwrap(v237)
-									b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v238)))
-									b.WriteString("\" data-rst-passkey-module=\"")
-									v239, err := tmplrt.Field(x2, "Passkey")
-									if err != nil {
-										return tmplrt.ExecError("signin-one-way", "$s.Passkey.ModuleURL", err)
-									}
-									v240, err := tmplrt.Field(v239, "ModuleURL")
-									if err != nil {
-										return tmplrt.ExecError("signin-one-way", "$s.Passkey.ModuleURL", err)
-									}
-									v241 := tmplrt.Unwrap(v240)
-									b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v241)))
-									b.WriteString("\"")
-								}
-								b.WriteString(">")
-								v242 := tmplrt.Unwrap(x6)
-								if tmplrt.Truth(v242) {
-									dot := v242
-									_ = dot
-									v243, err := tmplrt.Field(dot, "Fields")
-									if err != nil {
-										return tmplrt.ExecError("signin-one-way", ".Fields", err)
-									}
-									v244 := tmplrt.Unwrap(v243)
-									b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v244)))
-								}
-								b.WriteString("\n")
-								v245, err := tmplrt.Field(x2, "ReturnTo")
-								if err != nil {
-									return tmplrt.ExecError("signin-one-way", "$s.ReturnTo", err)
-								}
-								v246 := tmplrt.Unwrap(v245)
-								if tmplrt.Truth(v246) {
-									dot := v246
-									_ = dot
-									b.WriteString("<input type=\"hidden\" name=\"return_to\" value=\"")
-									v247 := tmplrt.Unwrap(dot)
-									b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v247)))
-									b.WriteString("\">\n")
-								}
-								v249, err := tmplrt.Field(x2, "Reauth")
-								if err != nil {
-									return tmplrt.ExecError("signin-one-way", "$s.Reauth", err)
-								}
-								v248 := tmplrt.ValueArg(v249)
-								if !tmplrt.Truth(v248) {
-									v250, err := tmplrt.Field(x2, "Problem")
-									if err != nil {
-										return tmplrt.ExecError("signin-one-way", "$s.Problem", err)
-									}
-									v251, err := tmplrt.Eq(v250, reflect.ValueOf("reauth"))
-									if err != nil {
-										return tmplrt.ExecError("signin-one-way", "eq $s.Problem \"reauth\"", tmplrt.CallError("eq", err))
-									}
-									v248 = tmplrt.ValueArg(reflect.ValueOf(v251))
-								}
-								v252 := tmplrt.Unwrap(v248)
-								if tmplrt.Truth(v252) {
-									b.WriteString("<input type=\"hidden\" name=\"reauth\" value=\"1\">\n")
-								}
-								if depth == tmplrt.MaxExecDepth {
-									return tmplrt.ExecError("signin-one-way", "{{template \"field\" (dict \"L\" $L \"ID\" \"rst-signin-email\" \"Name\" \"address\" \"Label\" (T $L \"rastrillo.ui.signin_email\") \"Type\" \"email\" \"Autocomplete\" (or (and $s.ConditionalUI \"username webauthn\") \"email\") \"Required\" true \"Value\" $s.Address \"Autofocus\" (eq $focus \"field\") \"Error\" $fieldErr \"QuietError\" true)}}", tmplrt.DepthError())
-								}
-								v253, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_email")
-								if err != nil {
-									return tmplrt.ExecError("signin-one-way", "T $L \"rastrillo.ui.signin_email\"", tmplrt.CallError("T", err))
-								}
-								v254 := reflect.ValueOf(v253)
-								v257, err := tmplrt.Field(x2, "ConditionalUI")
-								if err != nil {
-									return tmplrt.ExecError("signin-one-way", "$s.ConditionalUI", err)
-								}
-								v256 := tmplrt.ValueArg(v257)
-								if tmplrt.Truth(v256) {
-									v256 = tmplrt.ValueArg(reflect.ValueOf("username webauthn"))
-								}
-								v258 := tmplrt.Unwrap(v256)
-								v255 := tmplrt.ValueArg(v258)
-								if !tmplrt.Truth(v255) {
-									v255 = tmplrt.ValueArg(reflect.ValueOf("email"))
-								}
-								v259 := tmplrt.Unwrap(v255)
-								v260, err := tmplrt.Field(x2, "Address")
-								if err != nil {
-									return tmplrt.ExecError("signin-one-way", "$s.Address", err)
-								}
-								v261, err := tmplrt.Eq(x4, reflect.ValueOf("field"))
-								if err != nil {
-									return tmplrt.ExecError("signin-one-way", "eq $focus \"field\"", tmplrt.CallError("eq", err))
-								}
-								v262, err := fn.dict_72aa8d8f("L", x1, "ID", "rst-signin-email", "Name", "address", "Label", tmplrt.Arg(v254), "Type", "email", "Autocomplete", tmplrt.Arg(v259), "Required", true, "Value", tmplrt.Arg(v260), "Autofocus", v261, "Error", tmplrt.Arg(x11), "QuietError", true)
-								if err != nil {
-									return tmplrt.ExecError("signin-one-way", "dict \"L\" $L \"ID\" \"rst-signin-email\" \"Name\" \"address\" \"Label\" (T $L \"rastrillo.ui.signin_email\") \"Type\" \"email\" \"Autocomplete\" (or (and $s.ConditionalUI \"username webauthn\") \"email\") \"Required\" true \"Value\" $s.Address \"Autofocus\" (eq $focus \"field\") \"Error\" $fieldErr \"QuietError\" true", tmplrt.CallError("dict", err))
-								}
-								if err := exec_86a6d72433195e11(b, reflect.ValueOf(v262), fn, depth+1); err != nil {
-									return err
-								}
-								b.WriteString("\n")
-								v264, err := tmplrt.Field(x2, "Force")
-								if err != nil {
-									return tmplrt.ExecError("signin-one-way", "$s.Force", err)
-								}
-								v263 := tmplrt.ValueArg(v264)
-								if !tmplrt.Truth(v263) {
-									v265, err := tmplrt.Field(x2, "Problem")
-									if err != nil {
-										return tmplrt.ExecError("signin-one-way", "$s.Problem", err)
-									}
-									v266, err := tmplrt.Eq(v265, reflect.ValueOf("keymail"))
-									if err != nil {
-										return tmplrt.ExecError("signin-one-way", "eq $s.Problem \"keymail\"", tmplrt.CallError("eq", err))
-									}
-									v263 = tmplrt.ValueArg(reflect.ValueOf(v266))
-								}
-								v267 := tmplrt.Unwrap(v263)
-								if tmplrt.Truth(v267) {
-									b.WriteString("<input type=\"hidden\" name=\"force\" value=\"1\">\n")
-								}
-								b.WriteString("<button rst-btn=\"primary block\" type=\"submit\"")
-								v268 := tmplrt.Unwrap(x7)
-								if tmplrt.Truth(v268) {
-									b.WriteString(" disabled data-pow-submit")
-								}
-								b.WriteString(">")
-								v269, err := tmplrt.Field(x2, "Problem")
-								if err != nil {
-									return tmplrt.ExecError("signin-one-way", "$s.Problem", err)
-								}
-								v270, err := tmplrt.Eq(v269, reflect.ValueOf("keymail"))
-								if err != nil {
-									return tmplrt.ExecError("signin-one-way", "eq $s.Problem \"keymail\"", tmplrt.CallError("eq", err))
-								}
-								if v270 {
-									v271, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_send_link_instead")
-									if err != nil {
-										return tmplrt.ExecError("signin-one-way", "T $L \"rastrillo.ui.signin_send_link_instead\"", tmplrt.CallError("T", err))
-									}
-									v272 := reflect.ValueOf(v271)
-									b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v272)))
-								} else {
-									v273, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_submit")
-									if err != nil {
-										return tmplrt.ExecError("signin-one-way", "T $L \"rastrillo.ui.signin_submit\"", tmplrt.CallError("T", err))
-									}
-									v274 := reflect.ValueOf(v273)
-									b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v274)))
-								}
-								b.WriteString("</button>\n")
-								v275 := tmplrt.Unwrap(x7)
-								if tmplrt.Truth(v275) {
-									var v276 reflect.Value
-									if x6.IsValid() {
-										v277, err := tmplrt.MethodOf(x6, "StatusLine")
-										if err != nil {
-											return tmplrt.ExecError("signin-one-way", "$proof.StatusLine", err)
-										}
-										v279, err := fn.T_a3eca208(x1, "rastrillo.ui.pow_status")
-										if err != nil {
-											return tmplrt.ExecError("signin-one-way", "T $L \"rastrillo.ui.pow_status\"", tmplrt.CallError("T", err))
-										}
-										v280 := reflect.ValueOf(v279)
-										v278, err := v277.Call(tmplrt.Val(v280))
-										if err != nil {
-											return tmplrt.ExecError("signin-one-way", "$proof.StatusLine", err)
-										}
-										v276 = v278
-									}
-									v281 := tmplrt.Unwrap(v276)
-									b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v281)))
-									b.WriteString("<noscript><p>")
-									v282, err := fn.T_a3eca208(x1, "rastrillo.ui.pow_noscript")
-									if err != nil {
-										return tmplrt.ExecError("signin-one-way", "T $L \"rastrillo.ui.pow_noscript\"", tmplrt.CallError("T", err))
-									}
-									v283 := reflect.ValueOf(v282)
-									b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v283)))
-									b.WriteString("</p></noscript>\n")
-								}
-								b.WriteString("</form>\n")
-								v284 := tmplrt.Unwrap(x10)
-								if tmplrt.Truth(v284) {
-									b.WriteString("<script type=\"module\" src=\"")
-									v285, err := tmplrt.Field(x2, "Passkey")
-									if err != nil {
-										return tmplrt.ExecError("signin-one-way", "$s.Passkey.ScriptURL", err)
-									}
-									v286, err := tmplrt.Field(v285, "ScriptURL")
-									if err != nil {
-										return tmplrt.ExecError("signin-one-way", "$s.Passkey.ScriptURL", err)
-									}
-									v287 := tmplrt.Unwrap(v286)
-									tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v287))))
-									b.WriteString("\"></script>\n")
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-	v288, err := tmplrt.Ne(x3, reflect.ValueOf("ways"))
-	if err != nil {
-		return tmplrt.ExecError("signin-one-way", "ne $door \"ways\"", tmplrt.CallError("ne", err))
-	}
-	if v288 {
-		v289, err := tmplrt.Field(x2, "Ways")
-		if err != nil {
-			return tmplrt.ExecError("signin-one-way", "$s.Ways", err)
-		}
-		v290 := tmplrt.Unwrap(v289)
-		if tmplrt.Truth(v290) {
-			b.WriteString("<a rst-btn=\"ghost\" href=\"")
-			v291, err := tmplrt.Field(x2, "WaysHref")
-			if err != nil {
-				return tmplrt.ExecError("signin-one-way", "$s.WaysHref", err)
-			}
-			v292 := tmplrt.Unwrap(v291)
-			tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v292))))
-			b.WriteString("\"><span>")
-			v293, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_ways")
-			if err != nil {
-				return tmplrt.ExecError("signin-one-way", "T $L \"rastrillo.ui.signin_ways\"", tmplrt.CallError("T", err))
-			}
-			v294 := reflect.ValueOf(v293)
-			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v294)))
-			b.WriteString("</span>")
-			if depth == tmplrt.MaxExecDepth {
-				return tmplrt.ExecError("signin-one-way", "{{template \"signin-glyph\" (dict \"L\" $L \"Glyph\" \"next\")}}", tmplrt.DepthError())
-			}
-			v295, err := fn.dict_72aa8d8f("L", x1, "Glyph", "next")
-			if err != nil {
-				return tmplrt.ExecError("signin-one-way", "dict \"L\" $L \"Glyph\" \"next\"", tmplrt.CallError("dict", err))
-			}
-			if err := exec_a4a2687cde36400d(b, reflect.ValueOf(v295), fn, depth+1); err != nil {
-				return err
-			}
-			b.WriteString("</a>\n")
-		} else {
-			v297, err := tmplrt.Eq(x3, reflect.ValueOf("keymail"))
-			if err != nil {
-				return tmplrt.ExecError("signin-one-way", "eq $door \"keymail\"", tmplrt.CallError("eq", err))
-			}
-			v296 := tmplrt.ValueArg(reflect.ValueOf(v297))
-			if !tmplrt.Truth(v296) {
-				v298, err := tmplrt.Eq(x3, reflect.ValueOf("link"))
-				if err != nil {
-					return tmplrt.ExecError("signin-one-way", "eq $door \"link\"", tmplrt.CallError("eq", err))
-				}
-				v296 = tmplrt.ValueArg(reflect.ValueOf(v298))
-			}
-			v299 := tmplrt.Unwrap(v296)
-			if tmplrt.Truth(v299) {
-				b.WriteString("<form rst-signin-form method=\"post\" action=\"")
-				v300, err := tmplrt.Field(x2, "ForgetPath")
-				if err != nil {
-					return tmplrt.ExecError("signin-one-way", "$s.ForgetPath", err)
-				}
-				v301 := tmplrt.Unwrap(v300)
-				tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v301))))
-				b.WriteString("\">")
-				v302, err := tmplrt.Field(x2, "ReturnTo")
-				if err != nil {
-					return tmplrt.ExecError("signin-one-way", "$s.ReturnTo", err)
-				}
-				v303 := tmplrt.Unwrap(v302)
-				if tmplrt.Truth(v303) {
-					dot := v303
-					_ = dot
-					b.WriteString("<input type=\"hidden\" name=\"return_to\" value=\"")
-					v304 := tmplrt.Unwrap(dot)
-					b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v304)))
-					b.WriteString("\">\n")
-				}
-				if depth == tmplrt.MaxExecDepth {
-					return tmplrt.ExecError("signin-one-way", "{{template \"signin-forget-way\" (dict \"L\" $L \"State\" $s)}}", tmplrt.DepthError())
-				}
-				v305, err := fn.dict_72aa8d8f("L", x1, "State", tmplrt.Arg(x2))
-				if err != nil {
-					return tmplrt.ExecError("signin-one-way", "dict \"L\" $L \"State\" $s", tmplrt.CallError("dict", err))
-				}
-				if err := exec_b29f7da01ee7285f(b, reflect.ValueOf(v305), fn, depth+1); err != nil {
-					return err
-				}
-				b.WriteString("<button rst-btn=\"ghost\" type=\"submit\"><span>")
-				v306, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_different")
-				if err != nil {
-					return tmplrt.ExecError("signin-one-way", "T $L \"rastrillo.ui.signin_different\"", tmplrt.CallError("T", err))
-				}
-				v307 := reflect.ValueOf(v306)
-				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v307)))
-				b.WriteString("</span>")
-				if depth == tmplrt.MaxExecDepth {
-					return tmplrt.ExecError("signin-one-way", "{{template \"signin-glyph\" (dict \"L\" $L \"Glyph\" \"next\")}}", tmplrt.DepthError())
-				}
-				v308, err := fn.dict_72aa8d8f("L", x1, "Glyph", "next")
-				if err != nil {
-					return tmplrt.ExecError("signin-one-way", "dict \"L\" $L \"Glyph\" \"next\"", tmplrt.CallError("dict", err))
-				}
-				if err := exec_a4a2687cde36400d(b, reflect.ValueOf(v308), fn, depth+1); err != nil {
-					return err
-				}
-				b.WriteString("</button></form>\n")
-			}
-		}
-	}
-	v309 := tmplrt.ValueArg(x7)
-	if tmplrt.Truth(v309) {
-		v311, err := tmplrt.Eq(x3, reflect.ValueOf("ask"))
-		if err != nil {
-			return tmplrt.ExecError("signin-one-way", "eq $door \"ask\"", tmplrt.CallError("eq", err))
-		}
-		v310 := tmplrt.ValueArg(reflect.ValueOf(v311))
-		if !tmplrt.Truth(v310) {
-			v312, err := tmplrt.Eq(x3, reflect.ValueOf("keymail"))
-			if err != nil {
-				return tmplrt.ExecError("signin-one-way", "eq $door \"keymail\"", tmplrt.CallError("eq", err))
-			}
-			v310 = tmplrt.ValueArg(reflect.ValueOf(v312))
-			if !tmplrt.Truth(v310) {
-				v313, err := tmplrt.Eq(x3, reflect.ValueOf("link"))
-				if err != nil {
-					return tmplrt.ExecError("signin-one-way", "eq $door \"link\"", tmplrt.CallError("eq", err))
-				}
-				v310 = tmplrt.ValueArg(reflect.ValueOf(v313))
-				if !tmplrt.Truth(v310) {
-					v314, err := tmplrt.Eq(x3, reflect.ValueOf("authenticator"))
-					if err != nil {
-						return tmplrt.ExecError("signin-one-way", "eq $door \"authenticator\"", tmplrt.CallError("eq", err))
-					}
-					v310 = tmplrt.ValueArg(reflect.ValueOf(v314))
-					if !tmplrt.Truth(v310) {
-						v315, err := tmplrt.Eq(x3, reflect.ValueOf("passphrase"))
-						if err != nil {
-							return tmplrt.ExecError("signin-one-way", "eq $door \"passphrase\"", tmplrt.CallError("eq", err))
-						}
-						v310 = tmplrt.ValueArg(reflect.ValueOf(v315))
-					}
-				}
-			}
-		}
-		v316 := tmplrt.Unwrap(v310)
-		v309 = tmplrt.ValueArg(v316)
-		if tmplrt.Truth(v309) {
-			v317 := tmplrt.Not(x5)
-			v309 = tmplrt.ValueArg(reflect.ValueOf(v317))
-		}
-	}
-	v318 := tmplrt.Unwrap(v309)
-	if tmplrt.Truth(v318) {
-		v319, err := tmplrt.Field(x6, "Script")
-		if err != nil {
-			return tmplrt.ExecError("signin-one-way", "$proof.Script", err)
-		}
-		v320 := tmplrt.Unwrap(v319)
-		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v320)))
-	}
-	return nil
-}
-
-// facts_361848301f03b50a is what exec_361848301f03b50a assumes of the types it reads.
-var facts_361848301f03b50a = tmplrt.Facts{
 	Funcs: map[string]reflect.Type{
 		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
 	},
@@ -14861,143 +13291,6 @@ var facts_447e2520135ef685_e1f5342c = tmplrt.Facts{
 	},
 }
 
-// exec_449ed5524bf36ba4 renders "signin-view".
-func exec_449ed5524bf36ba4(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
-	root := dot
-	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
-	x1 := v1
-	_ = x1
-	v2, err := tmplrt.Field(dot, "View")
-	if err != nil {
-		return tmplrt.ExecError("signin-view", ".View", err)
-	}
-	v3 := tmplrt.Unwrap(v2)
-	x2 := v3
-	_ = x2
-	v4 := fn.opt_08785a53(tmplrt.Arg(dot), "Preview")
-	v5 := reflect.ValueOf(v4)
-	x3 := v5
-	_ = x3
-	v6 := fn.opt_08785a53(tmplrt.Arg(dot), "HideBrand")
-	v7 := reflect.ValueOf(v6)
-	x4 := v7
-	_ = x4
-	v8, err := tmplrt.Field(x2, "Offer")
-	if err != nil {
-		return tmplrt.ExecError("signin-view", "$v.Offer", err)
-	}
-	v9 := tmplrt.Unwrap(v8)
-	if tmplrt.Truth(v9) {
-		if depth == tmplrt.MaxExecDepth {
-			return tmplrt.ExecError("signin-view", "{{template \"signin-offer\" (dict \"L\" $L \"Offer\" $v.Offer \"Brand\" .Brand \"HideBrand\" $hide)}}", tmplrt.DepthError())
-		}
-		v10, err := tmplrt.Field(x2, "Offer")
-		if err != nil {
-			return tmplrt.ExecError("signin-view", "$v.Offer", err)
-		}
-		v11, err := tmplrt.Field(dot, "Brand")
-		if err != nil {
-			return tmplrt.ExecError("signin-view", ".Brand", err)
-		}
-		v12, err := fn.dict_72aa8d8f("L", x1, "Offer", tmplrt.Arg(v10), "Brand", tmplrt.Arg(v11), "HideBrand", tmplrt.Arg(x4))
-		if err != nil {
-			return tmplrt.ExecError("signin-view", "dict \"L\" $L \"Offer\" $v.Offer \"Brand\" .Brand \"HideBrand\" $hide", tmplrt.CallError("dict", err))
-		}
-		if err := exec_5d9a366f9b1bb666(b, reflect.ValueOf(v12), fn, depth+1); err != nil {
-			return err
-		}
-	} else {
-		v13, err := tmplrt.Field(x2, "Add")
-		if err != nil {
-			return tmplrt.ExecError("signin-view", "$v.Add", err)
-		}
-		v14 := tmplrt.Unwrap(v13)
-		if tmplrt.Truth(v14) {
-			if depth == tmplrt.MaxExecDepth {
-				return tmplrt.ExecError("signin-view", "{{template \"signin-add\" (dict \"L\" $L \"Add\" $v.Add \"Brand\" .Brand \"Preview\" $preview \"HideBrand\" $hide)}}", tmplrt.DepthError())
-			}
-			v15, err := tmplrt.Field(x2, "Add")
-			if err != nil {
-				return tmplrt.ExecError("signin-view", "$v.Add", err)
-			}
-			v16, err := tmplrt.Field(dot, "Brand")
-			if err != nil {
-				return tmplrt.ExecError("signin-view", ".Brand", err)
-			}
-			v17, err := fn.dict_72aa8d8f("L", x1, "Add", tmplrt.Arg(v15), "Brand", tmplrt.Arg(v16), "Preview", tmplrt.Arg(x3), "HideBrand", tmplrt.Arg(x4))
-			if err != nil {
-				return tmplrt.ExecError("signin-view", "dict \"L\" $L \"Add\" $v.Add \"Brand\" .Brand \"Preview\" $preview \"HideBrand\" $hide", tmplrt.CallError("dict", err))
-			}
-			if err := exec_49ee9c1234370442(b, reflect.ValueOf(v17), fn, depth+1); err != nil {
-				return err
-			}
-		} else {
-			v18, err := tmplrt.Field(x2, "Options")
-			if err != nil {
-				return tmplrt.ExecError("signin-view", "$v.Options", err)
-			}
-			v19 := tmplrt.Unwrap(v18)
-			if tmplrt.Truth(v19) {
-				if depth == tmplrt.MaxExecDepth {
-					return tmplrt.ExecError("signin-view", "{{template \"signin-options\" (dict \"L\" $L \"Options\" $v.Options \"Brand\" .Brand \"HideBrand\" $hide)}}", tmplrt.DepthError())
-				}
-				v20, err := tmplrt.Field(x2, "Options")
-				if err != nil {
-					return tmplrt.ExecError("signin-view", "$v.Options", err)
-				}
-				v21, err := tmplrt.Field(dot, "Brand")
-				if err != nil {
-					return tmplrt.ExecError("signin-view", ".Brand", err)
-				}
-				v22, err := fn.dict_72aa8d8f("L", x1, "Options", tmplrt.Arg(v20), "Brand", tmplrt.Arg(v21), "HideBrand", tmplrt.Arg(x4))
-				if err != nil {
-					return tmplrt.ExecError("signin-view", "dict \"L\" $L \"Options\" $v.Options \"Brand\" .Brand \"HideBrand\" $hide", tmplrt.CallError("dict", err))
-				}
-				if err := exec_0e56b4bd0498fbe3(b, reflect.ValueOf(v22), fn, depth+1); err != nil {
-					return err
-				}
-			} else {
-				v23, err := tmplrt.Field(x2, "Signin")
-				if err != nil {
-					return tmplrt.ExecError("signin-view", "$v.Signin", err)
-				}
-				v24 := tmplrt.Unwrap(v23)
-				if tmplrt.Truth(v24) {
-					if depth == tmplrt.MaxExecDepth {
-						return tmplrt.ExecError("signin-view", "{{template \"signin\" (dict \"L\" $L \"State\" $v.Signin \"Brand\" .Brand \"Preview\" $preview \"HideBrand\" $hide)}}", tmplrt.DepthError())
-					}
-					v25, err := tmplrt.Field(x2, "Signin")
-					if err != nil {
-						return tmplrt.ExecError("signin-view", "$v.Signin", err)
-					}
-					v26, err := tmplrt.Field(dot, "Brand")
-					if err != nil {
-						return tmplrt.ExecError("signin-view", ".Brand", err)
-					}
-					v27, err := fn.dict_72aa8d8f("L", x1, "State", tmplrt.Arg(v25), "Brand", tmplrt.Arg(v26), "Preview", tmplrt.Arg(x3), "HideBrand", tmplrt.Arg(x4))
-					if err != nil {
-						return tmplrt.ExecError("signin-view", "dict \"L\" $L \"State\" $v.Signin \"Brand\" .Brand \"Preview\" $preview \"HideBrand\" $hide", tmplrt.CallError("dict", err))
-					}
-					if err := exec_b82219fba3d04b88(b, reflect.ValueOf(v27), fn, depth+1); err != nil {
-						return err
-					}
-				}
-			}
-		}
-	}
-	return nil
-}
-
-// facts_449ed5524bf36ba4 is what exec_449ed5524bf36ba4 assumes of the types it reads.
-var facts_449ed5524bf36ba4 = tmplrt.Facts{
-	Funcs: map[string]reflect.Type{
-		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
-	},
-	Facts: []tmplrt.Fact{
-		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
-	},
-}
-
 // exec_44d3d678398d1a75 renders "func-panic-in-arg-direct".
 func exec_44d3d678398d1a75(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
 	v1, err := tmplrt.Field(dot, "Title")
@@ -15774,434 +14067,6 @@ func exec_4976ad99edc8a465(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs
 
 // facts_4976ad99edc8a465 is what exec_4976ad99edc8a465 assumes of the types it reads.
 var facts_4976ad99edc8a465 = tmplrt.Facts{
-	Funcs: map[string]reflect.Type{
-		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
-	},
-	Facts: []tmplrt.Fact{
-		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
-	},
-}
-
-// exec_49ee9c1234370442 renders "signin-add".
-func exec_49ee9c1234370442(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
-	root := dot
-	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
-	x1 := v1
-	_ = x1
-	v2, err := tmplrt.Field(dot, "Add")
-	if err != nil {
-		return tmplrt.ExecError("signin-add", ".Add", err)
-	}
-	v3 := tmplrt.Unwrap(v2)
-	x2 := v3
-	_ = x2
-	v4, err := tmplrt.Field(x2, "Way")
-	if err != nil {
-		return tmplrt.ExecError("signin-add", "$a.Way.Name", err)
-	}
-	v5, err := tmplrt.Field(v4, "Name")
-	if err != nil {
-		return tmplrt.ExecError("signin-add", "$a.Way.Name", err)
-	}
-	v6 := tmplrt.Unwrap(v5)
-	x3 := v6
-	_ = x3
-	v7 := fn.opt_08785a53(tmplrt.Arg(dot), "Preview")
-	v8 := reflect.ValueOf(v7)
-	x4 := v8
-	_ = x4
-	x5 := reflect.ValueOf("")
-	_ = x5
-	v9, err := tmplrt.Field(x2, "Problem")
-	if err != nil {
-		return tmplrt.ExecError("signin-add", "$a.Problem", err)
-	}
-	v10 := tmplrt.Unwrap(v9)
-	if tmplrt.Truth(v10) {
-		dot := v10
-		_ = dot
-		v11, err := fn.T_a3eca208(x1, tmplrt.Arg(dot))
-		if err != nil {
-			return tmplrt.ExecError("signin-add", "T $L .", tmplrt.CallError("T", err))
-		}
-		v12 := reflect.ValueOf(v11)
-		x5 = v12
-	}
-	b.WriteString("<section rst-signin aria-labelledby=\"rst-signin-heading\">\n")
-	v13 := fn.opt_08785a53(tmplrt.Arg(dot), "HideBrand")
-	v14 := reflect.ValueOf(v13)
-	v15 := tmplrt.Not(v14)
-	if v15 {
-		if depth == tmplrt.MaxExecDepth {
-			return tmplrt.ExecError("signin-add", "{{template \"signin-brand\" (dict \"L\" $L \"Brand\" .Brand)}}", tmplrt.DepthError())
-		}
-		v16, err := tmplrt.Field(dot, "Brand")
-		if err != nil {
-			return tmplrt.ExecError("signin-add", ".Brand", err)
-		}
-		v17, err := fn.dict_72aa8d8f("L", x1, "Brand", tmplrt.Arg(v16))
-		if err != nil {
-			return tmplrt.ExecError("signin-add", "dict \"L\" $L \"Brand\" .Brand", tmplrt.CallError("dict", err))
-		}
-		if err := exec_79cb8cc0dd268570(b, reflect.ValueOf(v17), fn, depth+1); err != nil {
-			return err
-		}
-	}
-	b.WriteString("<div rst-signin-door=\"one-way\">\n<h1 id=\"rst-signin-heading\">")
-	v18 := tmplrt.Printf("rastrillo.ui.signin_add_%s_heading", tmplrt.Arg(x3))
-	v19, err := fn.T_a3eca208(x1, v18)
-	if err != nil {
-		return tmplrt.ExecError("signin-add", "T $L (printf \"rastrillo.ui.signin_add_%s_heading\" $way)", tmplrt.CallError("T", err))
-	}
-	v20 := reflect.ValueOf(v19)
-	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v20)))
-	b.WriteString("</h1>\n")
-	v21, err := tmplrt.Field(x2, "Done")
-	if err != nil {
-		return tmplrt.ExecError("signin-add", "$a.Done", err)
-	}
-	v22 := tmplrt.Unwrap(v21)
-	if tmplrt.Truth(v22) {
-		b.WriteString("<p>")
-		v23, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_added")
-		if err != nil {
-			return tmplrt.ExecError("signin-add", "T $L \"rastrillo.ui.signin_added\"", tmplrt.CallError("T", err))
-		}
-		v24 := reflect.ValueOf(v23)
-		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v24)))
-		b.WriteString("</p>\n<a rst-btn=\"primary block\" href=\"")
-		v25, err := tmplrt.Field(x2, "ReturnTo")
-		if err != nil {
-			return tmplrt.ExecError("signin-add", "$a.ReturnTo", err)
-		}
-		v26 := tmplrt.Unwrap(v25)
-		tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v26))))
-		b.WriteString("\" autofocus>")
-		v27, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_added_continue")
-		if err != nil {
-			return tmplrt.ExecError("signin-add", "T $L \"rastrillo.ui.signin_added_continue\"", tmplrt.CallError("T", err))
-		}
-		v28 := reflect.ValueOf(v27)
-		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v28)))
-		b.WriteString("</a>\n")
-	} else {
-		v29, err := tmplrt.Eq(x3, reflect.ValueOf("passkey"))
-		if err != nil {
-			return tmplrt.ExecError("signin-add", "eq $way \"passkey\"", tmplrt.CallError("eq", err))
-		}
-		if v29 {
-			b.WriteString("<p>")
-			v30, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_add_passkey_body")
-			if err != nil {
-				return tmplrt.ExecError("signin-add", "T $L \"rastrillo.ui.signin_add_passkey_body\"", tmplrt.CallError("T", err))
-			}
-			v31 := reflect.ValueOf(v30)
-			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v31)))
-			b.WriteString("</p>\n<div rst-signin-passkey><button rst-btn=\"primary block\" type=\"button\"")
-			v32 := tmplrt.Not(x4)
-			if v32 {
-				b.WriteString(" disabled data-rst-passkey-register data-rst-passkey-begin=\"")
-				v33, err := tmplrt.Field(x2, "Passkey")
-				if err != nil {
-					return tmplrt.ExecError("signin-add", "$a.Passkey.BeginPath", err)
-				}
-				v34, err := tmplrt.Field(v33, "BeginPath")
-				if err != nil {
-					return tmplrt.ExecError("signin-add", "$a.Passkey.BeginPath", err)
-				}
-				v35 := tmplrt.Unwrap(v34)
-				b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v35)))
-				b.WriteString("\" data-rst-passkey-finish=\"")
-				v36, err := tmplrt.Field(x2, "Passkey")
-				if err != nil {
-					return tmplrt.ExecError("signin-add", "$a.Passkey.FinishPath", err)
-				}
-				v37, err := tmplrt.Field(v36, "FinishPath")
-				if err != nil {
-					return tmplrt.ExecError("signin-add", "$a.Passkey.FinishPath", err)
-				}
-				v38 := tmplrt.Unwrap(v37)
-				b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v38)))
-				b.WriteString("\" data-rst-passkey-module=\"")
-				v39, err := tmplrt.Field(x2, "Passkey")
-				if err != nil {
-					return tmplrt.ExecError("signin-add", "$a.Passkey.ModuleURL", err)
-				}
-				v40, err := tmplrt.Field(v39, "ModuleURL")
-				if err != nil {
-					return tmplrt.ExecError("signin-add", "$a.Passkey.ModuleURL", err)
-				}
-				v41 := tmplrt.Unwrap(v40)
-				b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v41)))
-				b.WriteString("\" data-rst-passkey-user=\"")
-				v42, err := tmplrt.Field(x2, "Address")
-				if err != nil {
-					return tmplrt.ExecError("signin-add", "$a.Address", err)
-				}
-				v43 := tmplrt.Unwrap(v42)
-				b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v43)))
-				b.WriteString("\" data-rst-passkey-rp-name=\"")
-				v44, err := tmplrt.Field(dot, "Brand")
-				if err != nil {
-					return tmplrt.ExecError("signin-add", ".Brand.Name", err)
-				}
-				v45, err := tmplrt.Field(v44, "Name")
-				if err != nil {
-					return tmplrt.ExecError("signin-add", ".Brand.Name", err)
-				}
-				v46 := tmplrt.Unwrap(v45)
-				b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v46)))
-				b.WriteString("\" data-rst-passkey-failed=\"")
-				v47, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_add_passkey_failed")
-				if err != nil {
-					return tmplrt.ExecError("signin-add", "T $L \"rastrillo.ui.signin_add_passkey_failed\"", tmplrt.CallError("T", err))
-				}
-				v48 := reflect.ValueOf(v47)
-				b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v48)))
-				b.WriteString("\"")
-			}
-			b.WriteString(" aria-describedby=\"rst-signin-passkey-msg\">")
-			if depth == tmplrt.MaxExecDepth {
-				return tmplrt.ExecError("signin-add", "{{template \"signin-glyph\" (dict \"L\" $L \"Glyph\" \"key\")}}", tmplrt.DepthError())
-			}
-			v49, err := fn.dict_72aa8d8f("L", x1, "Glyph", "key")
-			if err != nil {
-				return tmplrt.ExecError("signin-add", "dict \"L\" $L \"Glyph\" \"key\"", tmplrt.CallError("dict", err))
-			}
-			if err := exec_a4a2687cde36400d(b, reflect.ValueOf(v49), fn, depth+1); err != nil {
-				return err
-			}
-			b.WriteString("<span>")
-			v50, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_add_passkey_submit")
-			if err != nil {
-				return tmplrt.ExecError("signin-add", "T $L \"rastrillo.ui.signin_add_passkey_submit\"", tmplrt.CallError("T", err))
-			}
-			v51 := reflect.ValueOf(v50)
-			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v51)))
-			b.WriteString("</span></button>\n<p rst-signin-passkey-msg id=\"rst-signin-passkey-msg\" aria-live=\"polite\"></p>\n</div>\n")
-			v52 := tmplrt.Not(x4)
-			if v52 {
-				b.WriteString("<noscript><p>")
-				v53, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_passkey_noscript")
-				if err != nil {
-					return tmplrt.ExecError("signin-add", "T $L \"rastrillo.ui.signin_passkey_noscript\"", tmplrt.CallError("T", err))
-				}
-				v54 := reflect.ValueOf(v53)
-				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v54)))
-				b.WriteString("</p></noscript>\n<script type=\"module\" src=\"")
-				v55, err := tmplrt.Field(x2, "Passkey")
-				if err != nil {
-					return tmplrt.ExecError("signin-add", "$a.Passkey.ScriptURL", err)
-				}
-				v56, err := tmplrt.Field(v55, "ScriptURL")
-				if err != nil {
-					return tmplrt.ExecError("signin-add", "$a.Passkey.ScriptURL", err)
-				}
-				v57 := tmplrt.Unwrap(v56)
-				tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v57))))
-				b.WriteString("\" data-rst-passkey-script></script>\n")
-			}
-		} else {
-			v58, err := tmplrt.Eq(x3, reflect.ValueOf("authenticator"))
-			if err != nil {
-				return tmplrt.ExecError("signin-add", "eq $way \"authenticator\"", tmplrt.CallError("eq", err))
-			}
-			if v58 {
-				b.WriteString("<p>")
-				v59, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_add_authenticator_body")
-				if err != nil {
-					return tmplrt.ExecError("signin-add", "T $L \"rastrillo.ui.signin_add_authenticator_body\"", tmplrt.CallError("T", err))
-				}
-				v60 := reflect.ValueOf(v59)
-				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v60)))
-				b.WriteString("</p>\n")
-				var v61 reflect.Value
-				if x2.IsValid() {
-					v62, err := tmplrt.MethodOf(x2, "QR")
-					if err != nil {
-						return tmplrt.ExecError("signin-add", "$a.QR", err)
-					}
-					v64, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_add_authenticator_qr")
-					if err != nil {
-						return tmplrt.ExecError("signin-add", "T $L \"rastrillo.ui.signin_add_authenticator_qr\"", tmplrt.CallError("T", err))
-					}
-					v65 := reflect.ValueOf(v64)
-					v63, err := v62.Call(tmplrt.Val(v65))
-					if err != nil {
-						return tmplrt.ExecError("signin-add", "$a.QR", err)
-					}
-					v61 = v63
-				}
-				v66 := tmplrt.Unwrap(v61)
-				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v66)))
-				b.WriteString("\n<p>")
-				v67, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_add_authenticator_key")
-				if err != nil {
-					return tmplrt.ExecError("signin-add", "T $L \"rastrillo.ui.signin_add_authenticator_key\"", tmplrt.CallError("T", err))
-				}
-				v68 := reflect.ValueOf(v67)
-				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v68)))
-				b.WriteString(" <code>")
-				v69, err := tmplrt.Field(x2, "Key")
-				if err != nil {
-					return tmplrt.ExecError("signin-add", "$a.Key", err)
-				}
-				v70 := tmplrt.Unwrap(v69)
-				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v70)))
-				b.WriteString("</code></p>\n<form rst-signin-form method=\"post\" action=\"")
-				v71, err := tmplrt.Field(x2, "Action")
-				if err != nil {
-					return tmplrt.ExecError("signin-add", "$a.Action", err)
-				}
-				v72 := tmplrt.Unwrap(v71)
-				tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v72))))
-				b.WriteString("\">")
-				v73, err := tmplrt.Field(x2, "ReturnTo")
-				if err != nil {
-					return tmplrt.ExecError("signin-add", "$a.ReturnTo", err)
-				}
-				v74 := tmplrt.Unwrap(v73)
-				if tmplrt.Truth(v74) {
-					dot := v74
-					_ = dot
-					b.WriteString("<input type=\"hidden\" name=\"return_to\" value=\"")
-					v75 := tmplrt.Unwrap(dot)
-					b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v75)))
-					b.WriteString("\">\n")
-				}
-				if depth == tmplrt.MaxExecDepth {
-					return tmplrt.ExecError("signin-add", "{{template \"field\" (dict \"L\" $L \"ID\" \"rst-signin-code\" \"Name\" \"code\" \"Label\" (T $L \"rastrillo.ui.signin_code\") \"Type\" \"text\" \"Inputmode\" \"numeric\" \"Autocomplete\" \"one-time-code\" \"Required\" true \"Autofocus\" (ne $err \"\") \"Error\" $err \"QuietError\" true)}}", tmplrt.DepthError())
-				}
-				v76, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_code")
-				if err != nil {
-					return tmplrt.ExecError("signin-add", "T $L \"rastrillo.ui.signin_code\"", tmplrt.CallError("T", err))
-				}
-				v77 := reflect.ValueOf(v76)
-				v78, err := tmplrt.Ne(x5, reflect.ValueOf(""))
-				if err != nil {
-					return tmplrt.ExecError("signin-add", "ne $err \"\"", tmplrt.CallError("ne", err))
-				}
-				v79, err := fn.dict_72aa8d8f("L", x1, "ID", "rst-signin-code", "Name", "code", "Label", tmplrt.Arg(v77), "Type", "text", "Inputmode", "numeric", "Autocomplete", "one-time-code", "Required", true, "Autofocus", v78, "Error", tmplrt.Arg(x5), "QuietError", true)
-				if err != nil {
-					return tmplrt.ExecError("signin-add", "dict \"L\" $L \"ID\" \"rst-signin-code\" \"Name\" \"code\" \"Label\" (T $L \"rastrillo.ui.signin_code\") \"Type\" \"text\" \"Inputmode\" \"numeric\" \"Autocomplete\" \"one-time-code\" \"Required\" true \"Autofocus\" (ne $err \"\") \"Error\" $err \"QuietError\" true", tmplrt.CallError("dict", err))
-				}
-				if err := exec_86a6d72433195e11(b, reflect.ValueOf(v79), fn, depth+1); err != nil {
-					return err
-				}
-				b.WriteString("\n<button rst-btn=\"primary block\" type=\"submit\">")
-				v80, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_add_authenticator_submit")
-				if err != nil {
-					return tmplrt.ExecError("signin-add", "T $L \"rastrillo.ui.signin_add_authenticator_submit\"", tmplrt.CallError("T", err))
-				}
-				v81 := reflect.ValueOf(v80)
-				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v81)))
-				b.WriteString("</button></form>\n")
-			} else {
-				b.WriteString("<p>")
-				v82, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_add_passphrase_body")
-				if err != nil {
-					return tmplrt.ExecError("signin-add", "T $L \"rastrillo.ui.signin_add_passphrase_body\"", tmplrt.CallError("T", err))
-				}
-				v83 := reflect.ValueOf(v82)
-				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v83)))
-				b.WriteString("</p>\n<form rst-signin-form method=\"post\" action=\"")
-				v84, err := tmplrt.Field(x2, "Action")
-				if err != nil {
-					return tmplrt.ExecError("signin-add", "$a.Action", err)
-				}
-				v85 := tmplrt.Unwrap(v84)
-				tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v85))))
-				b.WriteString("\">")
-				v86, err := tmplrt.Field(x2, "ReturnTo")
-				if err != nil {
-					return tmplrt.ExecError("signin-add", "$a.ReturnTo", err)
-				}
-				v87 := tmplrt.Unwrap(v86)
-				if tmplrt.Truth(v87) {
-					dot := v87
-					_ = dot
-					b.WriteString("<input type=\"hidden\" name=\"return_to\" value=\"")
-					v88 := tmplrt.Unwrap(dot)
-					b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v88)))
-					b.WriteString("\">\n")
-				}
-				v89, err := tmplrt.Field(x2, "Address")
-				if err != nil {
-					return tmplrt.ExecError("signin-add", "$a.Address", err)
-				}
-				v90 := tmplrt.Unwrap(v89)
-				if tmplrt.Truth(v90) {
-					dot := v90
-					_ = dot
-					b.WriteString("<input type=\"email\" name=\"username\" autocomplete=\"username\" value=\"")
-					v91 := tmplrt.Unwrap(dot)
-					b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v91)))
-					b.WriteString("\" hidden>\n")
-				}
-				if depth == tmplrt.MaxExecDepth {
-					return tmplrt.ExecError("signin-add", "{{template \"field\" (dict \"L\" $L \"ID\" \"rst-signin-passphrase\" \"Name\" \"passphrase\" \"Label\" (T $L \"rastrillo.ui.signin_passphrase\") \"Type\" \"password\" \"Autocomplete\" \"new-password\" \"Minlength\" \"15\" \"Required\" true \"Autofocus\" true \"Error\" $err \"QuietError\" true)}}", tmplrt.DepthError())
-				}
-				v92, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_passphrase")
-				if err != nil {
-					return tmplrt.ExecError("signin-add", "T $L \"rastrillo.ui.signin_passphrase\"", tmplrt.CallError("T", err))
-				}
-				v93 := reflect.ValueOf(v92)
-				v94, err := fn.dict_72aa8d8f("L", x1, "ID", "rst-signin-passphrase", "Name", "passphrase", "Label", tmplrt.Arg(v93), "Type", "password", "Autocomplete", "new-password", "Minlength", "15", "Required", true, "Autofocus", true, "Error", tmplrt.Arg(x5), "QuietError", true)
-				if err != nil {
-					return tmplrt.ExecError("signin-add", "dict \"L\" $L \"ID\" \"rst-signin-passphrase\" \"Name\" \"passphrase\" \"Label\" (T $L \"rastrillo.ui.signin_passphrase\") \"Type\" \"password\" \"Autocomplete\" \"new-password\" \"Minlength\" \"15\" \"Required\" true \"Autofocus\" true \"Error\" $err \"QuietError\" true", tmplrt.CallError("dict", err))
-				}
-				if err := exec_86a6d72433195e11(b, reflect.ValueOf(v94), fn, depth+1); err != nil {
-					return err
-				}
-				b.WriteString("\n<div data-rst-reveal-row")
-				v95 := tmplrt.Not(x4)
-				if v95 {
-					b.WriteString(" hidden")
-				}
-				b.WriteString("><label rst-switch><input type=\"checkbox\" data-rst-reveal aria-controls=\"rst-signin-passphrase\"><span rst-switch-track aria-hidden=\"true\"></span> ")
-				v96, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_add_passphrase_show")
-				if err != nil {
-					return tmplrt.ExecError("signin-add", "T $L \"rastrillo.ui.signin_add_passphrase_show\"", tmplrt.CallError("T", err))
-				}
-				v97 := reflect.ValueOf(v96)
-				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v97)))
-				b.WriteString("</label></div>\n<button rst-btn=\"primary block\" type=\"submit\">")
-				v98, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_add_passphrase_submit")
-				if err != nil {
-					return tmplrt.ExecError("signin-add", "T $L \"rastrillo.ui.signin_add_passphrase_submit\"", tmplrt.CallError("T", err))
-				}
-				v99 := reflect.ValueOf(v98)
-				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v99)))
-				b.WriteString("</button></form>\n")
-				v101 := tmplrt.Not(x4)
-				v100 := tmplrt.ValueArg(reflect.ValueOf(v101))
-				if tmplrt.Truth(v100) {
-					v102, err := tmplrt.Field(x2, "RevealURL")
-					if err != nil {
-						return tmplrt.ExecError("signin-add", "$a.RevealURL", err)
-					}
-					v100 = tmplrt.ValueArg(v102)
-				}
-				v103 := tmplrt.Unwrap(v100)
-				if tmplrt.Truth(v103) {
-					b.WriteString("<script type=\"module\" src=\"")
-					v104, err := tmplrt.Field(x2, "RevealURL")
-					if err != nil {
-						return tmplrt.ExecError("signin-add", "$a.RevealURL", err)
-					}
-					v105 := tmplrt.Unwrap(v104)
-					tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v105))))
-					b.WriteString("\"></script>\n")
-				}
-			}
-		}
-	}
-	b.WriteString("</div>\n</section>")
-	return nil
-}
-
-// facts_49ee9c1234370442 is what exec_49ee9c1234370442 assumes of the types it reads.
-var facts_49ee9c1234370442 = tmplrt.Facts{
 	Funcs: map[string]reflect.Type{
 		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
 	},
@@ -18312,230 +16177,246 @@ func exec_5c62ab974ae0ebd1(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs
 	return nil
 }
 
-// exec_5d9a366f9b1bb666 renders "signin-offer".
-func exec_5d9a366f9b1bb666(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
+// exec_5e1403c23c6b36f9 renders "signin-secret-door".
+func exec_5e1403c23c6b36f9(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
 	root := dot
 	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
 	x1 := v1
 	_ = x1
-	v2, err := tmplrt.Field(dot, "Offer")
+	v2, err := tmplrt.Field(dot, "State")
 	if err != nil {
-		return tmplrt.ExecError("signin-offer", ".Offer", err)
+		return tmplrt.ExecError("signin-secret-door", ".State", err)
 	}
 	v3 := tmplrt.Unwrap(v2)
 	x2 := v3
 	_ = x2
-	b.WriteString("<section rst-signin aria-labelledby=\"rst-signin-heading\">\n")
-	v4 := fn.opt_08785a53(tmplrt.Arg(dot), "HideBrand")
-	v5 := reflect.ValueOf(v4)
-	v6 := tmplrt.Not(v5)
-	if v6 {
-		if depth == tmplrt.MaxExecDepth {
-			return tmplrt.ExecError("signin-offer", "{{template \"signin-brand\" (dict \"L\" $L \"Brand\" .Brand)}}", tmplrt.DepthError())
-		}
-		v7, err := tmplrt.Field(dot, "Brand")
-		if err != nil {
-			return tmplrt.ExecError("signin-offer", ".Brand", err)
-		}
-		v8, err := fn.dict_72aa8d8f("L", x1, "Brand", tmplrt.Arg(v7))
-		if err != nil {
-			return tmplrt.ExecError("signin-offer", "dict \"L\" $L \"Brand\" .Brand", tmplrt.CallError("dict", err))
-		}
-		if err := exec_79cb8cc0dd268570(b, reflect.ValueOf(v8), fn, depth+1); err != nil {
-			return err
-		}
-	}
-	b.WriteString("<div rst-signin-door=\"one-way\">\n<h1 id=\"rst-signin-heading\">")
-	v9, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_offer_heading")
+	v4, err := tmplrt.Field(dot, "Proof")
 	if err != nil {
-		return tmplrt.ExecError("signin-offer", "T $L \"rastrillo.ui.signin_offer_heading\"", tmplrt.CallError("T", err))
+		return tmplrt.ExecError("signin-secret-door", ".Proof", err)
 	}
-	v10 := reflect.ValueOf(v9)
-	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v10)))
-	b.WriteString("</h1>\n<p>")
-	v11, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_offer_body")
+	v5 := tmplrt.Unwrap(v4)
+	x3 := v5
+	_ = x3
+	b.WriteString("<form rst-signin-form method=\"post\" action=\"")
+	v6, err := tmplrt.Field(dot, "Door")
 	if err != nil {
-		return tmplrt.ExecError("signin-offer", "T $L \"rastrillo.ui.signin_offer_body\"", tmplrt.CallError("T", err))
+		return tmplrt.ExecError("signin-secret-door", ".Door.Path", err)
 	}
-	v12 := reflect.ValueOf(v11)
-	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v12)))
-	b.WriteString("</p>\n<div rst-signin-ways>\n")
-	v13, err := tmplrt.Field(x2, "Choices")
+	v7, err := tmplrt.Field(v6, "Path")
 	if err != nil {
-		return tmplrt.ExecError("signin-offer", "$o.Choices", err)
+		return tmplrt.ExecError("signin-secret-door", ".Door.Path", err)
 	}
-	v14 := tmplrt.Unwrap(v13)
-	if err := tmplrt.Range(v14, func(_, dot reflect.Value) error {
-		b.WriteString("<a rst-btn=\"block\" href=\"")
-		v15, err := tmplrt.Field(dot, "Href")
+	v8 := tmplrt.Unwrap(v7)
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v8))))
+	b.WriteString("\"")
+	v9 := tmplrt.Unwrap(x3)
+	if tmplrt.Truth(v9) {
+		dot := v9
+		_ = dot
+		b.WriteString(" ")
+		v10, err := tmplrt.Field(dot, "Attrs")
 		if err != nil {
-			return tmplrt.ExecError("signin-offer", ".Href", err)
+			return tmplrt.ExecError("signin-secret-door", ".Attrs", err)
 		}
-		v16 := tmplrt.Unwrap(v15)
-		tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v16))))
-		b.WriteString("\">")
-		v17, err := tmplrt.Field(dot, "Way")
-		if err != nil {
-			return tmplrt.ExecError("signin-offer", ".Way", err)
-		}
-		v18, err := tmplrt.Eq(v17, reflect.ValueOf("passkey"))
-		if err != nil {
-			return tmplrt.ExecError("signin-offer", "eq .Way \"passkey\"", tmplrt.CallError("eq", err))
-		}
-		if v18 {
-			if depth == tmplrt.MaxExecDepth {
-				return tmplrt.ExecError("signin-offer", "{{template \"signin-glyph\" (dict \"L\" $L \"Glyph\" \"key\")}}", tmplrt.DepthError())
-			}
-			v19, err := fn.dict_72aa8d8f("L", x1, "Glyph", "key")
-			if err != nil {
-				return tmplrt.ExecError("signin-offer", "dict \"L\" $L \"Glyph\" \"key\"", tmplrt.CallError("dict", err))
-			}
-			if err := exec_a4a2687cde36400d(b, reflect.ValueOf(v19), fn, depth+1); err != nil {
-				return err
-			}
-			b.WriteString("<span><span>")
-			v20, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_offer_passkey")
-			if err != nil {
-				return tmplrt.ExecError("signin-offer", "T $L \"rastrillo.ui.signin_offer_passkey\"", tmplrt.CallError("T", err))
-			}
-			v21 := reflect.ValueOf(v20)
-			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v21)))
-			b.WriteString(" ")
-			if depth == tmplrt.MaxExecDepth {
-				return tmplrt.ExecError("signin-offer", "{{template \"badge\" (dict \"L\" $L \"Label\" (T $L \"rastrillo.ui.signin_offer_recommended\") \"Tone\" \"positive\")}}", tmplrt.DepthError())
-			}
-			v22, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_offer_recommended")
-			if err != nil {
-				return tmplrt.ExecError("signin-offer", "T $L \"rastrillo.ui.signin_offer_recommended\"", tmplrt.CallError("T", err))
-			}
-			v23 := reflect.ValueOf(v22)
-			v24, err := fn.dict_72aa8d8f("L", x1, "Label", tmplrt.Arg(v23), "Tone", "positive")
-			if err != nil {
-				return tmplrt.ExecError("signin-offer", "dict \"L\" $L \"Label\" (T $L \"rastrillo.ui.signin_offer_recommended\") \"Tone\" \"positive\"", tmplrt.CallError("dict", err))
-			}
-			if err := exec_898e25eb0002fb8e(b, reflect.ValueOf(v24), fn, depth+1); err != nil {
-				return err
-			}
-			b.WriteString("</span><bdi>")
-			v25, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_offer_passkey_detail")
-			if err != nil {
-				return tmplrt.ExecError("signin-offer", "T $L \"rastrillo.ui.signin_offer_passkey_detail\"", tmplrt.CallError("T", err))
-			}
-			v26 := reflect.ValueOf(v25)
-			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v26)))
-			b.WriteString("</bdi></span>")
-		} else {
-			v27, err := tmplrt.Field(dot, "Way")
-			if err != nil {
-				return tmplrt.ExecError("signin-offer", ".Way", err)
-			}
-			v28, err := tmplrt.Eq(v27, reflect.ValueOf("authenticator"))
-			if err != nil {
-				return tmplrt.ExecError("signin-offer", "eq .Way \"authenticator\"", tmplrt.CallError("eq", err))
-			}
-			if v28 {
-				if depth == tmplrt.MaxExecDepth {
-					return tmplrt.ExecError("signin-offer", "{{template \"signin-glyph\" (dict \"L\" $L \"Glyph\" \"shield\")}}", tmplrt.DepthError())
-				}
-				v29, err := fn.dict_72aa8d8f("L", x1, "Glyph", "shield")
-				if err != nil {
-					return tmplrt.ExecError("signin-offer", "dict \"L\" $L \"Glyph\" \"shield\"", tmplrt.CallError("dict", err))
-				}
-				if err := exec_a4a2687cde36400d(b, reflect.ValueOf(v29), fn, depth+1); err != nil {
-					return err
-				}
-				b.WriteString("<span><span>")
-				v30, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_offer_authenticator")
-				if err != nil {
-					return tmplrt.ExecError("signin-offer", "T $L \"rastrillo.ui.signin_offer_authenticator\"", tmplrt.CallError("T", err))
-				}
-				v31 := reflect.ValueOf(v30)
-				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v31)))
-				b.WriteString("</span><bdi>")
-				v32, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_offer_authenticator_detail")
-				if err != nil {
-					return tmplrt.ExecError("signin-offer", "T $L \"rastrillo.ui.signin_offer_authenticator_detail\"", tmplrt.CallError("T", err))
-				}
-				v33 := reflect.ValueOf(v32)
-				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v33)))
-				b.WriteString("</bdi></span>")
-			} else {
-				if depth == tmplrt.MaxExecDepth {
-					return tmplrt.ExecError("signin-offer", "{{template \"signin-glyph\" (dict \"L\" $L \"Glyph\" \"lock\")}}", tmplrt.DepthError())
-				}
-				v34, err := fn.dict_72aa8d8f("L", x1, "Glyph", "lock")
-				if err != nil {
-					return tmplrt.ExecError("signin-offer", "dict \"L\" $L \"Glyph\" \"lock\"", tmplrt.CallError("dict", err))
-				}
-				if err := exec_a4a2687cde36400d(b, reflect.ValueOf(v34), fn, depth+1); err != nil {
-					return err
-				}
-				b.WriteString("<span><span>")
-				v35, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_offer_passphrase")
-				if err != nil {
-					return tmplrt.ExecError("signin-offer", "T $L \"rastrillo.ui.signin_offer_passphrase\"", tmplrt.CallError("T", err))
-				}
-				v36 := reflect.ValueOf(v35)
-				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v36)))
-				b.WriteString("</span><bdi>")
-				v37, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_offer_passphrase_detail")
-				if err != nil {
-					return tmplrt.ExecError("signin-offer", "T $L \"rastrillo.ui.signin_offer_passphrase_detail\"", tmplrt.CallError("T", err))
-				}
-				v38 := reflect.ValueOf(v37)
-				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v38)))
-				b.WriteString("</bdi></span>")
-			}
-		}
-		if depth == tmplrt.MaxExecDepth {
-			return tmplrt.ExecError("signin-offer", "{{template \"signin-glyph\" (dict \"L\" $L \"Glyph\" \"next\")}}", tmplrt.DepthError())
-		}
-		v39, err := fn.dict_72aa8d8f("L", x1, "Glyph", "next")
-		if err != nil {
-			return tmplrt.ExecError("signin-offer", "dict \"L\" $L \"Glyph\" \"next\"", tmplrt.CallError("dict", err))
-		}
-		if err := exec_a4a2687cde36400d(b, reflect.ValueOf(v39), fn, depth+1); err != nil {
-			return err
-		}
-		b.WriteString("</a>\n")
-		return nil
-	}); err != nil {
-		return tmplrt.ExecError("signin-offer", "$o.Choices", err)
+		v11 := tmplrt.Unwrap(v10)
+		b.WriteString(tmplrt.HTMLNameFilter(tmplrt.Arg(v11)))
 	}
-	b.WriteString("</div>\n<form rst-signin-form method=\"post\" action=\"")
-	v40, err := tmplrt.Field(x2, "LaterPath")
+	b.WriteString(">")
+	v12 := tmplrt.Unwrap(x3)
+	if tmplrt.Truth(v12) {
+		dot := v12
+		_ = dot
+		v13, err := tmplrt.Field(dot, "Fields")
+		if err != nil {
+			return tmplrt.ExecError("signin-secret-door", ".Fields", err)
+		}
+		v14 := tmplrt.Unwrap(v13)
+		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v14)))
+	}
+	b.WriteString("\n")
+	v15, err := tmplrt.Field(x2, "ReturnTo")
 	if err != nil {
-		return tmplrt.ExecError("signin-offer", "$o.LaterPath", err)
+		return tmplrt.ExecError("signin-secret-door", "$s.ReturnTo", err)
 	}
-	v41 := tmplrt.Unwrap(v40)
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v41))))
-	b.WriteString("\">")
-	v42, err := tmplrt.Field(x2, "ReturnTo")
-	if err != nil {
-		return tmplrt.ExecError("signin-offer", "$o.ReturnTo", err)
-	}
-	v43 := tmplrt.Unwrap(v42)
-	if tmplrt.Truth(v43) {
-		dot := v43
+	v16 := tmplrt.Unwrap(v15)
+	if tmplrt.Truth(v16) {
+		dot := v16
 		_ = dot
 		b.WriteString("<input type=\"hidden\" name=\"return_to\" value=\"")
-		v44 := tmplrt.Unwrap(dot)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v44)))
+		v17 := tmplrt.Unwrap(dot)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v17)))
 		b.WriteString("\">\n")
 	}
-	b.WriteString("<button rst-btn=\"ghost\" type=\"submit\"><span>")
-	v45, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_offer_later")
+	v19, err := tmplrt.Field(x2, "Reauth")
 	if err != nil {
-		return tmplrt.ExecError("signin-offer", "T $L \"rastrillo.ui.signin_offer_later\"", tmplrt.CallError("T", err))
+		return tmplrt.ExecError("signin-secret-door", "$s.Reauth", err)
 	}
-	v46 := reflect.ValueOf(v45)
-	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v46)))
-	b.WriteString("</span></button></form>\n</div>\n</section>")
+	v18 := tmplrt.ValueArg(v19)
+	if !tmplrt.Truth(v18) {
+		v20, err := tmplrt.Field(x2, "Problem")
+		if err != nil {
+			return tmplrt.ExecError("signin-secret-door", "$s.Problem", err)
+		}
+		v21, err := tmplrt.Eq(v20, reflect.ValueOf("reauth"))
+		if err != nil {
+			return tmplrt.ExecError("signin-secret-door", "eq $s.Problem \"reauth\"", tmplrt.CallError("eq", err))
+		}
+		v18 = tmplrt.ValueArg(reflect.ValueOf(v21))
+	}
+	v22 := tmplrt.Unwrap(v18)
+	if tmplrt.Truth(v22) {
+		b.WriteString("<input type=\"hidden\" name=\"reauth\" value=\"1\">\n")
+	}
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("signin-secret-door", "{{template \"field\" (dict \"L\" $L \"ID\" \"rst-signin-email\" \"Name\" \"address\" \"Label\" (T $L \"rastrillo.ui.signin_email\") \"Type\" \"email\" \"Autocomplete\" \"username\" \"Required\" true \"Value\" $s.Address \"Autofocus\" (eq .Focus \"field\"))}}", tmplrt.DepthError())
+	}
+	v23, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_email")
+	if err != nil {
+		return tmplrt.ExecError("signin-secret-door", "T $L \"rastrillo.ui.signin_email\"", tmplrt.CallError("T", err))
+	}
+	v24 := reflect.ValueOf(v23)
+	v25, err := tmplrt.Field(x2, "Address")
+	if err != nil {
+		return tmplrt.ExecError("signin-secret-door", "$s.Address", err)
+	}
+	v26, err := tmplrt.Field(dot, "Focus")
+	if err != nil {
+		return tmplrt.ExecError("signin-secret-door", ".Focus", err)
+	}
+	v27, err := tmplrt.Eq(v26, reflect.ValueOf("field"))
+	if err != nil {
+		return tmplrt.ExecError("signin-secret-door", "eq .Focus \"field\"", tmplrt.CallError("eq", err))
+	}
+	v28, err := fn.dict_72aa8d8f("L", x1, "ID", "rst-signin-email", "Name", "address", "Label", tmplrt.Arg(v24), "Type", "email", "Autocomplete", "username", "Required", true, "Value", tmplrt.Arg(v25), "Autofocus", v27)
+	if err != nil {
+		return tmplrt.ExecError("signin-secret-door", "dict \"L\" $L \"ID\" \"rst-signin-email\" \"Name\" \"address\" \"Label\" (T $L \"rastrillo.ui.signin_email\") \"Type\" \"email\" \"Autocomplete\" \"username\" \"Required\" true \"Value\" $s.Address \"Autofocus\" (eq .Focus \"field\")", tmplrt.CallError("dict", err))
+	}
+	if err := exec_86a6d72433195e11(b, reflect.ValueOf(v28), fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("signin-secret-door", "{{template \"field\" (dict \"L\" $L \"ID\" .ID \"Name\" .Name \"Label\" .Label \"Type\" .Type \"Inputmode\" (opt . \"Inputmode\") \"Autocomplete\" .Autocomplete \"Required\" true \"Autofocus\" (eq .Focus \"secret\"))}}", tmplrt.DepthError())
+	}
+	v29, err := tmplrt.Field(dot, "ID")
+	if err != nil {
+		return tmplrt.ExecError("signin-secret-door", ".ID", err)
+	}
+	v30, err := tmplrt.Field(dot, "Name")
+	if err != nil {
+		return tmplrt.ExecError("signin-secret-door", ".Name", err)
+	}
+	v31, err := tmplrt.Field(dot, "Label")
+	if err != nil {
+		return tmplrt.ExecError("signin-secret-door", ".Label", err)
+	}
+	v32, err := tmplrt.Field(dot, "Type")
+	if err != nil {
+		return tmplrt.ExecError("signin-secret-door", ".Type", err)
+	}
+	v33 := fn.opt_08785a53(tmplrt.Arg(dot), "Inputmode")
+	v34 := reflect.ValueOf(v33)
+	v35, err := tmplrt.Field(dot, "Autocomplete")
+	if err != nil {
+		return tmplrt.ExecError("signin-secret-door", ".Autocomplete", err)
+	}
+	v36, err := tmplrt.Field(dot, "Focus")
+	if err != nil {
+		return tmplrt.ExecError("signin-secret-door", ".Focus", err)
+	}
+	v37, err := tmplrt.Eq(v36, reflect.ValueOf("secret"))
+	if err != nil {
+		return tmplrt.ExecError("signin-secret-door", "eq .Focus \"secret\"", tmplrt.CallError("eq", err))
+	}
+	v38, err := fn.dict_72aa8d8f("L", x1, "ID", tmplrt.Arg(v29), "Name", tmplrt.Arg(v30), "Label", tmplrt.Arg(v31), "Type", tmplrt.Arg(v32), "Inputmode", tmplrt.Arg(v34), "Autocomplete", tmplrt.Arg(v35), "Required", true, "Autofocus", v37)
+	if err != nil {
+		return tmplrt.ExecError("signin-secret-door", "dict \"L\" $L \"ID\" .ID \"Name\" .Name \"Label\" .Label \"Type\" .Type \"Inputmode\" (opt . \"Inputmode\") \"Autocomplete\" .Autocomplete \"Required\" true \"Autofocus\" (eq .Focus \"secret\")", tmplrt.CallError("dict", err))
+	}
+	if err := exec_86a6d72433195e11(b, reflect.ValueOf(v38), fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n<button rst-btn=\"primary block\" type=\"submit\"")
+	v39, err := tmplrt.Field(dot, "Gated")
+	if err != nil {
+		return tmplrt.ExecError("signin-secret-door", ".Gated", err)
+	}
+	v40 := tmplrt.Unwrap(v39)
+	if tmplrt.Truth(v40) {
+		b.WriteString(" disabled data-pow-submit")
+	}
+	b.WriteString(">")
+	v41, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_code_submit")
+	if err != nil {
+		return tmplrt.ExecError("signin-secret-door", "T $L \"rastrillo.ui.signin_code_submit\"", tmplrt.CallError("T", err))
+	}
+	v42 := reflect.ValueOf(v41)
+	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v42)))
+	b.WriteString("</button>\n")
+	v43, err := tmplrt.Field(dot, "Gated")
+	if err != nil {
+		return tmplrt.ExecError("signin-secret-door", ".Gated", err)
+	}
+	v44 := tmplrt.Unwrap(v43)
+	if tmplrt.Truth(v44) {
+		var v45 reflect.Value
+		if x3.IsValid() {
+			v46, err := tmplrt.MethodOf(x3, "StatusLine")
+			if err != nil {
+				return tmplrt.ExecError("signin-secret-door", "$proof.StatusLine", err)
+			}
+			v48, err := fn.T_a3eca208(x1, "rastrillo.ui.pow_status")
+			if err != nil {
+				return tmplrt.ExecError("signin-secret-door", "T $L \"rastrillo.ui.pow_status\"", tmplrt.CallError("T", err))
+			}
+			v49 := reflect.ValueOf(v48)
+			v47, err := v46.Call(tmplrt.Val(v49))
+			if err != nil {
+				return tmplrt.ExecError("signin-secret-door", "$proof.StatusLine", err)
+			}
+			v45 = v47
+		}
+		v50 := tmplrt.Unwrap(v45)
+		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v50)))
+		b.WriteString("<noscript><p>")
+		v51, err := fn.T_a3eca208(x1, "rastrillo.ui.pow_noscript")
+		if err != nil {
+			return tmplrt.ExecError("signin-secret-door", "T $L \"rastrillo.ui.pow_noscript\"", tmplrt.CallError("T", err))
+		}
+		v52 := reflect.ValueOf(v51)
+		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v52)))
+		b.WriteString("</p></noscript>\n")
+	}
+	b.WriteString("</form>\n<a rst-btn=\"ghost\" href=\"")
+	v53, err := tmplrt.Field(x2, "EmailHref")
+	if err != nil {
+		return tmplrt.ExecError("signin-secret-door", "$s.EmailHref", err)
+	}
+	v54 := tmplrt.Unwrap(v53)
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v54))))
+	b.WriteString("\"><span>")
+	v55, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_email_instead")
+	if err != nil {
+		return tmplrt.ExecError("signin-secret-door", "T $L \"rastrillo.ui.signin_email_instead\"", tmplrt.CallError("T", err))
+	}
+	v56 := reflect.ValueOf(v55)
+	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v56)))
+	b.WriteString("</span>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("signin-secret-door", "{{template \"signin-glyph\" (dict \"L\" $L \"Glyph\" \"next\")}}", tmplrt.DepthError())
+	}
+	v57, err := fn.dict_72aa8d8f("L", x1, "Glyph", "next")
+	if err != nil {
+		return tmplrt.ExecError("signin-secret-door", "dict \"L\" $L \"Glyph\" \"next\"", tmplrt.CallError("dict", err))
+	}
+	if err := exec_1b24f25e597ad443(b, reflect.ValueOf(v57), fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</a>\n")
 	return nil
 }
 
-// facts_5d9a366f9b1bb666 is what exec_5d9a366f9b1bb666 assumes of the types it reads.
-var facts_5d9a366f9b1bb666 = tmplrt.Facts{
+// facts_5e1403c23c6b36f9 is what exec_5e1403c23c6b36f9 assumes of the types it reads.
+var facts_5e1403c23c6b36f9 = tmplrt.Facts{
 	Funcs: map[string]reflect.Type{
 		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
 	},
@@ -18820,6 +16701,218 @@ func exec_61dfa84b6b25c690(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs
 	}
 	b.WriteString("\n</div>")
 	return nil
+}
+
+// exec_61fb3a8afbe66b1c renders "error-page".
+func exec_61fb3a8afbe66b1c(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
+	root := dot
+	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
+	x1 := v1
+	_ = x1
+	v3, err := tmplrt.Field(dot, "Status")
+	if err != nil {
+		return tmplrt.ExecError("error-page", ".Status", err)
+	}
+	v4, err := tmplrt.Eq(v3, reflect.ValueOf(404))
+	if err != nil {
+		return tmplrt.ExecError("error-page", "eq .Status 404", tmplrt.CallError("eq", err))
+	}
+	v2 := tmplrt.ValueArg(reflect.ValueOf(v4))
+	if !tmplrt.Truth(v2) {
+		v5, err := tmplrt.Field(dot, "Status")
+		if err != nil {
+			return tmplrt.ExecError("error-page", ".Status", err)
+		}
+		v6, err := tmplrt.Eq(v5, reflect.ValueOf(403))
+		if err != nil {
+			return tmplrt.ExecError("error-page", "eq .Status 403", tmplrt.CallError("eq", err))
+		}
+		v2 = tmplrt.ValueArg(reflect.ValueOf(v6))
+		if !tmplrt.Truth(v2) {
+			v7, err := tmplrt.Field(dot, "Status")
+			if err != nil {
+				return tmplrt.ExecError("error-page", ".Status", err)
+			}
+			v8, err := tmplrt.Eq(v7, reflect.ValueOf(422))
+			if err != nil {
+				return tmplrt.ExecError("error-page", "eq .Status 422", tmplrt.CallError("eq", err))
+			}
+			v2 = tmplrt.ValueArg(reflect.ValueOf(v8))
+			if !tmplrt.Truth(v2) {
+				v9, err := tmplrt.Field(dot, "Status")
+				if err != nil {
+					return tmplrt.ExecError("error-page", ".Status", err)
+				}
+				v10, err := tmplrt.Eq(v9, reflect.ValueOf(500))
+				if err != nil {
+					return tmplrt.ExecError("error-page", "eq .Status 500", tmplrt.CallError("eq", err))
+				}
+				v2 = tmplrt.ValueArg(reflect.ValueOf(v10))
+				if !tmplrt.Truth(v2) {
+					v11, err := tmplrt.Field(dot, "Status")
+					if err != nil {
+						return tmplrt.ExecError("error-page", ".Status", err)
+					}
+					v12, err := tmplrt.Eq(v11, reflect.ValueOf(503))
+					if err != nil {
+						return tmplrt.ExecError("error-page", "eq .Status 503", tmplrt.CallError("eq", err))
+					}
+					v2 = tmplrt.ValueArg(reflect.ValueOf(v12))
+				}
+			}
+		}
+	}
+	v13 := tmplrt.Unwrap(v2)
+	x2 := v13
+	_ = x2
+	b.WriteString("<div rst-error rst-stack>\n  <p rst-error-status>")
+	v14, err := tmplrt.Field(dot, "Status")
+	if err != nil {
+		return tmplrt.ExecError("error-page", ".Status", err)
+	}
+	v15 := tmplrt.Unwrap(v14)
+	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v15)))
+	b.WriteString("</p>\n  <h1 rst-error-title>")
+	v16, err := tmplrt.Field(dot, "Title")
+	if err != nil {
+		return tmplrt.ExecError("error-page", ".Title", err)
+	}
+	v17 := tmplrt.Unwrap(v16)
+	if tmplrt.Truth(v17) {
+		v18, err := tmplrt.Field(dot, "Title")
+		if err != nil {
+			return tmplrt.ExecError("error-page", ".Title", err)
+		}
+		v19 := tmplrt.Unwrap(v18)
+		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v19)))
+	} else {
+		v20 := tmplrt.Unwrap(x2)
+		if tmplrt.Truth(v20) {
+			v21, err := tmplrt.Field(dot, "Status")
+			if err != nil {
+				return tmplrt.ExecError("error-page", ".Status", err)
+			}
+			v22 := tmplrt.Printf("rastrillo.ui.error_%d_title", tmplrt.Arg(v21))
+			v23, err := fn.T_a3eca208(x1, v22)
+			if err != nil {
+				return tmplrt.ExecError("error-page", "T $L (printf \"rastrillo.ui.error_%d_title\" .Status)", tmplrt.CallError("T", err))
+			}
+			v24 := reflect.ValueOf(v23)
+			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v24)))
+		} else {
+			v25, err := fn.T_a3eca208(x1, "rastrillo.ui.error_generic_title")
+			if err != nil {
+				return tmplrt.ExecError("error-page", "T $L \"rastrillo.ui.error_generic_title\"", tmplrt.CallError("T", err))
+			}
+			v26 := reflect.ValueOf(v25)
+			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v26)))
+		}
+	}
+	b.WriteString("</h1>\n  <p rst-error-body>")
+	v27, err := tmplrt.Field(dot, "Body")
+	if err != nil {
+		return tmplrt.ExecError("error-page", ".Body", err)
+	}
+	v28 := tmplrt.Unwrap(v27)
+	if tmplrt.Truth(v28) {
+		v29, err := tmplrt.Field(dot, "Body")
+		if err != nil {
+			return tmplrt.ExecError("error-page", ".Body", err)
+		}
+		v30 := tmplrt.Unwrap(v29)
+		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v30)))
+	} else {
+		v31 := tmplrt.Unwrap(x2)
+		if tmplrt.Truth(v31) {
+			v32, err := tmplrt.Field(dot, "Status")
+			if err != nil {
+				return tmplrt.ExecError("error-page", ".Status", err)
+			}
+			v33 := tmplrt.Printf("rastrillo.ui.error_%d_body", tmplrt.Arg(v32))
+			v34, err := fn.T_a3eca208(x1, v33)
+			if err != nil {
+				return tmplrt.ExecError("error-page", "T $L (printf \"rastrillo.ui.error_%d_body\" .Status)", tmplrt.CallError("T", err))
+			}
+			v35 := reflect.ValueOf(v34)
+			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v35)))
+		} else {
+			v36, err := fn.T_a3eca208(x1, "rastrillo.ui.error_generic_body")
+			if err != nil {
+				return tmplrt.ExecError("error-page", "T $L \"rastrillo.ui.error_generic_body\"", tmplrt.CallError("T", err))
+			}
+			v37 := reflect.ValueOf(v36)
+			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v37)))
+		}
+	}
+	b.WriteString("</p>\n  <p rst-error-cta rst-actions><a rst-btn=\"primary\" href=\"")
+	v39, err := tmplrt.Field(dot, "HomeHref")
+	if err != nil {
+		return tmplrt.ExecError("error-page", ".HomeHref", err)
+	}
+	v38 := tmplrt.ValueArg(v39)
+	if !tmplrt.Truth(v38) {
+		v38 = tmplrt.ValueArg(reflect.ValueOf("/"))
+	}
+	v40 := tmplrt.Unwrap(v38)
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v40))))
+	b.WriteString("\">")
+	v41, err := fn.T_a3eca208(x1, "rastrillo.ui.error_home")
+	if err != nil {
+		return tmplrt.ExecError("error-page", "T $L \"rastrillo.ui.error_home\"", tmplrt.CallError("T", err))
+	}
+	v42 := reflect.ValueOf(v41)
+	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v42)))
+	b.WriteString("</a>")
+	v43, err := tmplrt.Field(dot, "BackHref")
+	if err != nil {
+		return tmplrt.ExecError("error-page", ".BackHref", err)
+	}
+	v44 := tmplrt.Unwrap(v43)
+	if tmplrt.Truth(v44) {
+		dot := v44
+		_ = dot
+		b.WriteString(" <a rst-btn href=\"")
+		v45 := tmplrt.Unwrap(dot)
+		tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v45))))
+		b.WriteString("\">")
+		v46, err := fn.T_a3eca208(x1, "rastrillo.ui.error_back")
+		if err != nil {
+			return tmplrt.ExecError("error-page", "T $L \"rastrillo.ui.error_back\"", tmplrt.CallError("T", err))
+		}
+		v47 := reflect.ValueOf(v46)
+		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v47)))
+		b.WriteString("</a>")
+	}
+	b.WriteString("</p>")
+	v48, err := tmplrt.Field(dot, "Ref")
+	if err != nil {
+		return tmplrt.ExecError("error-page", ".Ref", err)
+	}
+	v49 := tmplrt.Unwrap(v48)
+	if tmplrt.Truth(v49) {
+		dot := v49
+		_ = dot
+		b.WriteString("\n  <p class=\"rst-mono\" rst-error-ref dir=\"auto\">")
+		v50, err := fn.Tf_a3eca208(x1, "rastrillo.ui.error_ref", "ref", tmplrt.Arg(dot))
+		if err != nil {
+			return tmplrt.ExecError("error-page", "Tf $L \"rastrillo.ui.error_ref\" \"ref\" .", tmplrt.CallError("Tf", err))
+		}
+		v51 := reflect.ValueOf(v50)
+		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v51)))
+		b.WriteString("</p>")
+	}
+	b.WriteString("\n</div>")
+	return nil
+}
+
+// facts_61fb3a8afbe66b1c is what exec_61fb3a8afbe66b1c assumes of the types it reads.
+var facts_61fb3a8afbe66b1c = tmplrt.Facts{
+	Funcs: map[string]reflect.Type{
+		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
+	},
+	Facts: []tmplrt.Fact{
+		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
+	},
 }
 
 // exec_623b3bd8a345694a renders "channels".
@@ -19790,6 +17883,210 @@ var facts_6600ef91f42db1e2_19dba148 = tmplrt.Facts{
 		{Path: []string{".Tags"}, Type: "map[string]string"},
 		{Path: []string{".Items"}, Type: "[]amadan.net/rastrillo/rastrillo/tmpl/internal/corpus.entry"},
 		{Path: []string{".Title"}, Type: "string"},
+	},
+}
+
+// exec_66067bdc8b702737 renders "layout".
+func exec_66067bdc8b702737(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
+	root := dot
+	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
+	x1 := v1
+	_ = x1
+	b.WriteString("<!doctype html>\n<html lang=\"")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"lang$htmltemplate_stateAttr_delimDoubleQuote\" .}}", tmplrt.DepthError())
+	}
+	v2 := tmplrt.Unwrap(dot)
+	if err := exec_abae878773236025(b, v2, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\" dir=\"")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"dir$htmltemplate_stateAttr_delimDoubleQuote\" .}}", tmplrt.DepthError())
+	}
+	v3 := tmplrt.Unwrap(dot)
+	if err := exec_30bfb3ff0d39cc14(b, v3, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<title>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"title$htmltemplate_stateRCDATA_elementTitle\" .}}", tmplrt.DepthError())
+	}
+	v4 := tmplrt.Unwrap(dot)
+	if err := exec_dd9a8f29d7f092e6(b, v4, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</title>\n<link rel=\"stylesheet\" href=\"")
+	v5 := fn.asset_0e0a6fbe("static/tokens.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v5)))
+	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
+	v6 := fn.asset_0e0a6fbe("static/theme.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v6)))
+	b.WriteString("\">\n\n<link rel=\"stylesheet\" href=\"")
+	v7 := fn.asset_0e0a6fbe("static/shell.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v7)))
+	b.WriteString("\">\n<script defer src=\"")
+	v8 := fn.asset_0e0a6fbe("static/rastrillo.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v8)))
+	b.WriteString("\"></script>\n<script defer src=\"")
+	v9 := fn.asset_0e0a6fbe("static/busy.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v9)))
+	b.WriteString("\"></script>\n\n<script defer src=\"")
+	v10 := fn.asset_0e0a6fbe("static/light.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v10)))
+	b.WriteString("\"></script>\n\n<script defer blocking=\"render\" src=\"")
+	v11 := fn.asset_0e0a6fbe("static/shell.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v11)))
+	b.WriteString("\"></script>\n")
+	v12 := fn.iconAssets_e8f4e4f5()
+	b.WriteString(tmplrt.HTMLEscaper(v12))
+	b.WriteString("\n<script defer src=\"")
+	v13 := fn.asset_0e0a6fbe("static/select.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v13)))
+	b.WriteString("\"></script>\n<script defer src=\"")
+	v14 := fn.asset_0e0a6fbe("static/calendar.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v14)))
+	b.WriteString("\"></script>\n<script defer src=\"")
+	v15 := fn.asset_0e0a6fbe("static/datetime.js")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v15)))
+	b.WriteString("\"></script>\n\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"head\" .}}", tmplrt.DepthError())
+	}
+	v16 := tmplrt.Unwrap(dot)
+	if err := exec_43ebd9331896345f(b, v16, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n</head>\n<body>\n\n<div rst-shell-sidebar=\"")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"view$htmltemplate_stateAttr_delimDoubleQuote\" .}}", tmplrt.DepthError())
+	}
+	v17 := tmplrt.Unwrap(dot)
+	if err := exec_2dc89848829575fb(b, v17, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\">\n<a rst-skip href=\"#main\">")
+	v18, err := fn.T_a3eca208(x1, "rastrillo.ui.shell_skip")
+	if err != nil {
+		return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.shell_skip\"", tmplrt.CallError("T", err))
+	}
+	v19 := reflect.ValueOf(v18)
+	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v19)))
+	b.WriteString("</a>\n\n<header rst-shell-bar><a rst-shell-up href=\"")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"up$htmltemplate_stateURL_delimDoubleQuote_attrURL\" .}}", tmplrt.DepthError())
+	}
+	v20 := tmplrt.Unwrap(dot)
+	if err := exec_31ad09fd84c8ecff(b, v20, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\" rel=\"up\" aria-label=\"")
+	v21, err := fn.T_a3eca208(x1, "rastrillo.ui.shell_up_label")
+	if err != nil {
+		return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.shell_up_label\"", tmplrt.CallError("T", err))
+	}
+	v22 := reflect.ValueOf(v21)
+	v23, err := fn.Tf_a3eca208(x1, "rastrillo.ui.shell_up", "name", tmplrt.Arg(v22))
+	if err != nil {
+		return tmplrt.ExecError("layout", "Tf $L \"rastrillo.ui.shell_up\" \"name\" (T $L \"rastrillo.ui.shell_up_label\")", tmplrt.CallError("Tf", err))
+	}
+	v24 := reflect.ValueOf(v23)
+	b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v24)))
+	b.WriteString("\">")
+	v25 := fn.icon_bd1e407c("chevron-left")
+	b.WriteString(tmplrt.HTMLEscaper(v25))
+	v26, err := fn.T_a3eca208(x1, "rastrillo.ui.shell_up_label")
+	if err != nil {
+		return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.shell_up_label\"", tmplrt.CallError("T", err))
+	}
+	v27 := reflect.ValueOf(v26)
+	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v27)))
+	b.WriteString("</a></header>\n<aside rst-shell-rail>\n\n<h1 rst-shell-title><span>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"brand\" .}}", tmplrt.DepthError())
+	}
+	v28 := tmplrt.Unwrap(dot)
+	if err := exec_83f48c879de37375(b, v28, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</span><span>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"title\" .}}", tmplrt.DepthError())
+	}
+	v29 := tmplrt.Unwrap(dot)
+	if err := exec_a0bbdd679bf279f3(b, v29, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</span></h1>\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"brand\" .}}", tmplrt.DepthError())
+	}
+	v30 := tmplrt.Unwrap(dot)
+	if err := exec_83f48c879de37375(b, v30, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n<nav rst-shell-nav>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"nav\" .}}", tmplrt.DepthError())
+	}
+	v31 := tmplrt.Unwrap(dot)
+	if err := exec_9742e4153b2cd941(b, v31, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</nav>\n\n<div rst-shell-rail-foot><details rst-dropdown rst-shell-profile name=\"rst-shell-menu\"><summary><span rst-shell-avatar>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"profile\" .}}", tmplrt.DepthError())
+	}
+	v32 := tmplrt.Unwrap(dot)
+	if err := exec_606dc54973cc1911(b, v32, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</span></summary><div rst-dropdown-menu><div rst-shell-who>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"profile\" .}}", tmplrt.DepthError())
+	}
+	v33 := tmplrt.Unwrap(dot)
+	if err := exec_606dc54973cc1911(b, v33, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</div>")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"locale\" .}}", tmplrt.DepthError())
+	}
+	v34 := tmplrt.Unwrap(dot)
+	if err := exec_705d1f1c72ed2826(b, v34, fn, depth+1); err != nil {
+		return err
+	}
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"account\" .}}", tmplrt.DepthError())
+	}
+	v35 := tmplrt.Unwrap(dot)
+	if err := exec_35c32244d2e12608(b, v35, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</div></details></div>\n</aside>\n<main rst-shell-main id=\"main\">\n<div rst-page>\n")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"content\" .}}", tmplrt.DepthError())
+	}
+	v36 := tmplrt.Unwrap(dot)
+	if err := exec_35a55351b7a36a63(b, v36, fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("\n</div>\n</main>\n</div>\n</body>\n</html>\n")
+	return nil
+}
+
+// facts_66067bdc8b702737 is what exec_66067bdc8b702737 assumes of the types it reads.
+var facts_66067bdc8b702737 = tmplrt.Facts{
+	Funcs: map[string]reflect.Type{
+		"iconAssets_e8f4e4f5": reflect.TypeFor[func() template.HTML](),
+		"icon_bd1e407c":       reflect.TypeFor[func(string) template.HTML](),
+		"localizer_634df8c4":  reflect.TypeFor[func(any) *ui.Localizer](),
+	},
+	Facts: []tmplrt.Fact{
+		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
+		{Func: "iconAssets_e8f4e4f5", Type: "html/template.HTML string"},
+		{Func: "icon_bd1e407c", Type: "html/template.HTML string"},
 	},
 }
 
@@ -24795,6 +23092,286 @@ func exec_883a45166e779d36(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs
 	return nil
 }
 
+// exec_88bfb5d7d8a8748b renders "signin-options".
+func exec_88bfb5d7d8a8748b(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
+	root := dot
+	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
+	x1 := v1
+	_ = x1
+	v2, err := tmplrt.Field(dot, "Options")
+	if err != nil {
+		return tmplrt.ExecError("signin-options", ".Options", err)
+	}
+	v3 := tmplrt.Unwrap(v2)
+	x2 := v3
+	_ = x2
+	b.WriteString("<section rst-signin aria-labelledby=\"rst-signin-heading\">\n")
+	v4 := fn.opt_08785a53(tmplrt.Arg(dot), "HideBrand")
+	v5 := reflect.ValueOf(v4)
+	v6 := tmplrt.Not(v5)
+	if v6 {
+		if depth == tmplrt.MaxExecDepth {
+			return tmplrt.ExecError("signin-options", "{{template \"signin-brand\" (dict \"L\" $L \"Brand\" .Brand)}}", tmplrt.DepthError())
+		}
+		v7, err := tmplrt.Field(dot, "Brand")
+		if err != nil {
+			return tmplrt.ExecError("signin-options", ".Brand", err)
+		}
+		v8, err := fn.dict_72aa8d8f("L", x1, "Brand", tmplrt.Arg(v7))
+		if err != nil {
+			return tmplrt.ExecError("signin-options", "dict \"L\" $L \"Brand\" .Brand", tmplrt.CallError("dict", err))
+		}
+		if err := exec_79cb8cc0dd268570(b, reflect.ValueOf(v8), fn, depth+1); err != nil {
+			return err
+		}
+	}
+	b.WriteString("<div rst-signin-door=\"one-way\">\n<h1 id=\"rst-signin-heading\">")
+	v9, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_options_heading")
+	if err != nil {
+		return tmplrt.ExecError("signin-options", "T $L \"rastrillo.ui.signin_options_heading\"", tmplrt.CallError("T", err))
+	}
+	v10 := reflect.ValueOf(v9)
+	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v10)))
+	b.WriteString("</h1>\n")
+	v11, err := tmplrt.Field(x2, "Removed")
+	if err != nil {
+		return tmplrt.ExecError("signin-options", "$o.Removed", err)
+	}
+	v12 := tmplrt.Unwrap(v11)
+	if tmplrt.Truth(v12) {
+		b.WriteString("<p role=\"status\">")
+		v13, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_options_removed")
+		if err != nil {
+			return tmplrt.ExecError("signin-options", "T $L \"rastrillo.ui.signin_options_removed\"", tmplrt.CallError("T", err))
+		}
+		v14 := reflect.ValueOf(v13)
+		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v14)))
+		b.WriteString("</p>\n")
+	}
+	b.WriteString("<div rst-signin-ways>\n<div rst-btn=\"block\">")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("signin-options", "{{template \"signin-glyph\" (dict \"L\" $L \"Glyph\" \"mail\")}}", tmplrt.DepthError())
+	}
+	v15, err := fn.dict_72aa8d8f("L", x1, "Glyph", "mail")
+	if err != nil {
+		return tmplrt.ExecError("signin-options", "dict \"L\" $L \"Glyph\" \"mail\"", tmplrt.CallError("dict", err))
+	}
+	if err := exec_1b24f25e597ad443(b, reflect.ValueOf(v15), fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("<span><span>")
+	v16, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_options_email")
+	if err != nil {
+		return tmplrt.ExecError("signin-options", "T $L \"rastrillo.ui.signin_options_email\"", tmplrt.CallError("T", err))
+	}
+	v17 := reflect.ValueOf(v16)
+	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v17)))
+	b.WriteString("</span>")
+	v18, err := tmplrt.Field(x2, "Address")
+	if err != nil {
+		return tmplrt.ExecError("signin-options", "$o.Address", err)
+	}
+	v19 := tmplrt.Unwrap(v18)
+	if tmplrt.Truth(v19) {
+		dot := v19
+		_ = dot
+		b.WriteString("<bdi>")
+		v20, err := fn.Tf_a3eca208(x1, "rastrillo.ui.signin_options_email_detail", "address", tmplrt.Arg(dot))
+		if err != nil {
+			return tmplrt.ExecError("signin-options", "Tf $L \"rastrillo.ui.signin_options_email_detail\" \"address\" .", tmplrt.CallError("Tf", err))
+		}
+		v21 := reflect.ValueOf(v20)
+		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v21)))
+		b.WriteString("</bdi>")
+	}
+	b.WriteString("</span></div>\n")
+	v22, err := tmplrt.Field(x2, "Ways")
+	if err != nil {
+		return tmplrt.ExecError("signin-options", "$o.Ways", err)
+	}
+	v23 := tmplrt.Unwrap(v22)
+	if err := tmplrt.Range(v23, func(_, dot reflect.Value) error {
+		x3 := reflect.ValueOf("lock")
+		_ = x3
+		v24, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_way_passphrase")
+		if err != nil {
+			return tmplrt.ExecError("signin-options", "T $L \"rastrillo.ui.signin_way_passphrase\"", tmplrt.CallError("T", err))
+		}
+		v25 := reflect.ValueOf(v24)
+		x4 := v25
+		_ = x4
+		v26, err := tmplrt.Field(dot, "Way")
+		if err != nil {
+			return tmplrt.ExecError("signin-options", ".Way.Name", err)
+		}
+		v27, err := tmplrt.Field(v26, "Name")
+		if err != nil {
+			return tmplrt.ExecError("signin-options", ".Way.Name", err)
+		}
+		v28, err := tmplrt.Eq(v27, reflect.ValueOf("passkey"))
+		if err != nil {
+			return tmplrt.ExecError("signin-options", "eq .Way.Name \"passkey\"", tmplrt.CallError("eq", err))
+		}
+		if v28 {
+			x3 = reflect.ValueOf("key")
+			v30, err := tmplrt.Field(dot, "Label")
+			if err != nil {
+				return tmplrt.ExecError("signin-options", ".Label", err)
+			}
+			v29 := tmplrt.ValueArg(v30)
+			if !tmplrt.Truth(v29) {
+				v31, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_offer_passkey")
+				if err != nil {
+					return tmplrt.ExecError("signin-options", "T $L \"rastrillo.ui.signin_offer_passkey\"", tmplrt.CallError("T", err))
+				}
+				v32 := reflect.ValueOf(v31)
+				v29 = tmplrt.ValueArg(v32)
+			}
+			v33 := tmplrt.Unwrap(v29)
+			x4 = v33
+		} else {
+			v34, err := tmplrt.Field(dot, "Way")
+			if err != nil {
+				return tmplrt.ExecError("signin-options", ".Way.Name", err)
+			}
+			v35, err := tmplrt.Field(v34, "Name")
+			if err != nil {
+				return tmplrt.ExecError("signin-options", ".Way.Name", err)
+			}
+			v36, err := tmplrt.Eq(v35, reflect.ValueOf("authenticator"))
+			if err != nil {
+				return tmplrt.ExecError("signin-options", "eq .Way.Name \"authenticator\"", tmplrt.CallError("eq", err))
+			}
+			if v36 {
+				x3 = reflect.ValueOf("shield")
+				v37, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_way_authenticator")
+				if err != nil {
+					return tmplrt.ExecError("signin-options", "T $L \"rastrillo.ui.signin_way_authenticator\"", tmplrt.CallError("T", err))
+				}
+				v38 := reflect.ValueOf(v37)
+				x4 = v38
+			}
+		}
+		v39, err := tmplrt.Field(dot, "Have")
+		if err != nil {
+			return tmplrt.ExecError("signin-options", ".Have", err)
+		}
+		v40 := tmplrt.Unwrap(v39)
+		if tmplrt.Truth(v40) {
+			b.WriteString("<form method=\"post\" action=\"")
+			v41, err := tmplrt.Field(x2, "RemovePath")
+			if err != nil {
+				return tmplrt.ExecError("signin-options", "$o.RemovePath", err)
+			}
+			v42 := tmplrt.Unwrap(v41)
+			tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v42))))
+			b.WriteString("\"><input type=\"hidden\" name=\"way\" value=\"")
+			v43, err := tmplrt.Field(dot, "Way")
+			if err != nil {
+				return tmplrt.ExecError("signin-options", ".Way.Name", err)
+			}
+			v44, err := tmplrt.Field(v43, "Name")
+			if err != nil {
+				return tmplrt.ExecError("signin-options", ".Way.Name", err)
+			}
+			v45 := tmplrt.Unwrap(v44)
+			b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v45)))
+			b.WriteString("\">\n")
+			v46, err := tmplrt.Field(dot, "ID")
+			if err != nil {
+				return tmplrt.ExecError("signin-options", ".ID", err)
+			}
+			v47 := tmplrt.Unwrap(v46)
+			if tmplrt.Truth(v47) {
+				dot := v47
+				_ = dot
+				b.WriteString("<input type=\"hidden\" name=\"id\" value=\"")
+				v48 := tmplrt.Unwrap(dot)
+				b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v48)))
+				b.WriteString("\">\n")
+			}
+			b.WriteString("<button rst-btn=\"block\" type=\"submit\">")
+			if depth == tmplrt.MaxExecDepth {
+				return tmplrt.ExecError("signin-options", "{{template \"signin-glyph\" (dict \"L\" $L \"Glyph\" $glyph)}}", tmplrt.DepthError())
+			}
+			v49, err := fn.dict_72aa8d8f("L", x1, "Glyph", tmplrt.Arg(x3))
+			if err != nil {
+				return tmplrt.ExecError("signin-options", "dict \"L\" $L \"Glyph\" $glyph", tmplrt.CallError("dict", err))
+			}
+			if err := exec_1b24f25e597ad443(b, reflect.ValueOf(v49), fn, depth+1); err != nil {
+				return err
+			}
+			b.WriteString("<span><span>")
+			v50 := tmplrt.Unwrap(x4)
+			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v50)))
+			b.WriteString("</span><bdi>")
+			v51, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_options_remove")
+			if err != nil {
+				return tmplrt.ExecError("signin-options", "T $L \"rastrillo.ui.signin_options_remove\"", tmplrt.CallError("T", err))
+			}
+			v52 := reflect.ValueOf(v51)
+			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v52)))
+			b.WriteString("</bdi></span></button></form>\n")
+		} else {
+			b.WriteString("<a rst-btn=\"block\" href=\"")
+			v53, err := tmplrt.Field(dot, "AddPath")
+			if err != nil {
+				return tmplrt.ExecError("signin-options", ".AddPath", err)
+			}
+			v54 := tmplrt.Unwrap(v53)
+			tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v54))))
+			b.WriteString("\">")
+			if depth == tmplrt.MaxExecDepth {
+				return tmplrt.ExecError("signin-options", "{{template \"signin-glyph\" (dict \"L\" $L \"Glyph\" $glyph)}}", tmplrt.DepthError())
+			}
+			v55, err := fn.dict_72aa8d8f("L", x1, "Glyph", tmplrt.Arg(x3))
+			if err != nil {
+				return tmplrt.ExecError("signin-options", "dict \"L\" $L \"Glyph\" $glyph", tmplrt.CallError("dict", err))
+			}
+			if err := exec_1b24f25e597ad443(b, reflect.ValueOf(v55), fn, depth+1); err != nil {
+				return err
+			}
+			b.WriteString("<span><span>")
+			v56 := tmplrt.Unwrap(x4)
+			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v56)))
+			b.WriteString("</span><bdi>")
+			v57, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_options_add")
+			if err != nil {
+				return tmplrt.ExecError("signin-options", "T $L \"rastrillo.ui.signin_options_add\"", tmplrt.CallError("T", err))
+			}
+			v58 := reflect.ValueOf(v57)
+			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v58)))
+			b.WriteString("</bdi></span>")
+			if depth == tmplrt.MaxExecDepth {
+				return tmplrt.ExecError("signin-options", "{{template \"signin-glyph\" (dict \"L\" $L \"Glyph\" \"next\")}}", tmplrt.DepthError())
+			}
+			v59, err := fn.dict_72aa8d8f("L", x1, "Glyph", "next")
+			if err != nil {
+				return tmplrt.ExecError("signin-options", "dict \"L\" $L \"Glyph\" \"next\"", tmplrt.CallError("dict", err))
+			}
+			if err := exec_1b24f25e597ad443(b, reflect.ValueOf(v59), fn, depth+1); err != nil {
+				return err
+			}
+			b.WriteString("</a>\n")
+		}
+		return nil
+	}); err != nil {
+		return tmplrt.ExecError("signin-options", "$o.Ways", err)
+	}
+	b.WriteString("</div>\n</div>\n</section>")
+	return nil
+}
+
+// facts_88bfb5d7d8a8748b is what exec_88bfb5d7d8a8748b assumes of the types it reads.
+var facts_88bfb5d7d8a8748b = tmplrt.Facts{
+	Funcs: map[string]reflect.Type{
+		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
+	},
+	Facts: []tmplrt.Fact{
+		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
+	},
+}
+
 // exec_88ca0c9f48eaa4da renders "locale-menu.html".
 func exec_88ca0c9f48eaa4da(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
 	b.WriteString("\n\n")
@@ -26141,6 +24718,12 @@ var facts_92de3beba99d723a = tmplrt.Facts{
 		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
 		{Func: "icon_bd1e407c", Type: "html/template.HTML string"},
 	},
+}
+
+// exec_942b459573ebb06e renders "signin.html".
+func exec_942b459573ebb06e(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
+	b.WriteString("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n")
+	return nil
 }
 
 // exec_95a13fd4f6cf6356 renders "pipeline-order-3".
@@ -28511,75 +27094,6 @@ var facts_a496c096626de715_de204de4 = tmplrt.Facts{
 	},
 }
 
-// exec_a4a2687cde36400d renders "signin-glyph".
-func exec_a4a2687cde36400d(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
-	b.WriteString("<svg class=\"icon\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\">")
-	v1, err := tmplrt.Field(dot, "Glyph")
-	if err != nil {
-		return tmplrt.ExecError("signin-glyph", ".Glyph", err)
-	}
-	v2 := tmplrt.Unwrap(v1)
-	x1 := v2
-	_ = x1
-	v3, err := tmplrt.Eq(x1, reflect.ValueOf("next"))
-	if err != nil {
-		return tmplrt.ExecError("signin-glyph", "eq $glyph \"next\"", tmplrt.CallError("eq", err))
-	}
-	if v3 {
-		b.WriteString("<path d=\"m9 18 6-6-6-6\"/>")
-	} else {
-		v4, err := tmplrt.Eq(x1, reflect.ValueOf("back"))
-		if err != nil {
-			return tmplrt.ExecError("signin-glyph", "eq $glyph \"back\"", tmplrt.CallError("eq", err))
-		}
-		if v4 {
-			b.WriteString("<path d=\"m15 18-6-6 6-6\"/>")
-		} else {
-			v5, err := tmplrt.Eq(x1, reflect.ValueOf("mail"))
-			if err != nil {
-				return tmplrt.ExecError("signin-glyph", "eq $glyph \"mail\"", tmplrt.CallError("eq", err))
-			}
-			if v5 {
-				b.WriteString("<rect width=\"20\" height=\"16\" x=\"2\" y=\"4\" rx=\"2\"/><path d=\"m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7\"/>")
-			} else {
-				v6, err := tmplrt.Eq(x1, reflect.ValueOf("key"))
-				if err != nil {
-					return tmplrt.ExecError("signin-glyph", "eq $glyph \"key\"", tmplrt.CallError("eq", err))
-				}
-				if v6 {
-					b.WriteString("<path d=\"M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z\"/><circle cx=\"16.5\" cy=\"7.5\" r=\".5\" fill=\"currentColor\"/>")
-				} else {
-					v7, err := tmplrt.Eq(x1, reflect.ValueOf("at"))
-					if err != nil {
-						return tmplrt.ExecError("signin-glyph", "eq $glyph \"at\"", tmplrt.CallError("eq", err))
-					}
-					if v7 {
-						b.WriteString("<circle cx=\"12\" cy=\"12\" r=\"4\"/><path d=\"M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8\"/>")
-					} else {
-						v8, err := tmplrt.Eq(x1, reflect.ValueOf("shield"))
-						if err != nil {
-							return tmplrt.ExecError("signin-glyph", "eq $glyph \"shield\"", tmplrt.CallError("eq", err))
-						}
-						if v8 {
-							b.WriteString("<path d=\"M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z\"/>")
-						} else {
-							v9, err := tmplrt.Eq(x1, reflect.ValueOf("lock"))
-							if err != nil {
-								return tmplrt.ExecError("signin-glyph", "eq $glyph \"lock\"", tmplrt.CallError("eq", err))
-							}
-							if v9 {
-								b.WriteString("<rect width=\"18\" height=\"11\" x=\"3\" y=\"11\" rx=\"2\" ry=\"2\"/><path d=\"M7 11V7a5 5 0 0 1 10 0v4\"/>")
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-	b.WriteString("</svg>")
-	return nil
-}
-
 // exec_a5b2348c689dfd5c renders "who.html".
 func exec_a5b2348c689dfd5c(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
 	return nil
@@ -28908,218 +27422,6 @@ var facts_a69ba9b5f5e79bde_e1f5342c = tmplrt.Facts{
 	Facts: []tmplrt.Fact{
 		{Type: "*amadan.net/rastrillo/rastrillo/tmpl/internal/corpus.failing"},
 		{Path: []string{".Title() func() (string, error)"}, Type: "string"},
-	},
-}
-
-// exec_a712dfb3c50f8922 renders "error-page".
-func exec_a712dfb3c50f8922(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
-	root := dot
-	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
-	x1 := v1
-	_ = x1
-	v3, err := tmplrt.Field(dot, "Status")
-	if err != nil {
-		return tmplrt.ExecError("error-page", ".Status", err)
-	}
-	v4, err := tmplrt.Eq(v3, reflect.ValueOf(404))
-	if err != nil {
-		return tmplrt.ExecError("error-page", "eq .Status 404", tmplrt.CallError("eq", err))
-	}
-	v2 := tmplrt.ValueArg(reflect.ValueOf(v4))
-	if !tmplrt.Truth(v2) {
-		v5, err := tmplrt.Field(dot, "Status")
-		if err != nil {
-			return tmplrt.ExecError("error-page", ".Status", err)
-		}
-		v6, err := tmplrt.Eq(v5, reflect.ValueOf(403))
-		if err != nil {
-			return tmplrt.ExecError("error-page", "eq .Status 403", tmplrt.CallError("eq", err))
-		}
-		v2 = tmplrt.ValueArg(reflect.ValueOf(v6))
-		if !tmplrt.Truth(v2) {
-			v7, err := tmplrt.Field(dot, "Status")
-			if err != nil {
-				return tmplrt.ExecError("error-page", ".Status", err)
-			}
-			v8, err := tmplrt.Eq(v7, reflect.ValueOf(422))
-			if err != nil {
-				return tmplrt.ExecError("error-page", "eq .Status 422", tmplrt.CallError("eq", err))
-			}
-			v2 = tmplrt.ValueArg(reflect.ValueOf(v8))
-			if !tmplrt.Truth(v2) {
-				v9, err := tmplrt.Field(dot, "Status")
-				if err != nil {
-					return tmplrt.ExecError("error-page", ".Status", err)
-				}
-				v10, err := tmplrt.Eq(v9, reflect.ValueOf(500))
-				if err != nil {
-					return tmplrt.ExecError("error-page", "eq .Status 500", tmplrt.CallError("eq", err))
-				}
-				v2 = tmplrt.ValueArg(reflect.ValueOf(v10))
-				if !tmplrt.Truth(v2) {
-					v11, err := tmplrt.Field(dot, "Status")
-					if err != nil {
-						return tmplrt.ExecError("error-page", ".Status", err)
-					}
-					v12, err := tmplrt.Eq(v11, reflect.ValueOf(503))
-					if err != nil {
-						return tmplrt.ExecError("error-page", "eq .Status 503", tmplrt.CallError("eq", err))
-					}
-					v2 = tmplrt.ValueArg(reflect.ValueOf(v12))
-				}
-			}
-		}
-	}
-	v13 := tmplrt.Unwrap(v2)
-	x2 := v13
-	_ = x2
-	b.WriteString("<div rst-error>\n  <p rst-error-status>")
-	v14, err := tmplrt.Field(dot, "Status")
-	if err != nil {
-		return tmplrt.ExecError("error-page", ".Status", err)
-	}
-	v15 := tmplrt.Unwrap(v14)
-	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v15)))
-	b.WriteString("</p>\n  <h1 rst-error-title>")
-	v16, err := tmplrt.Field(dot, "Title")
-	if err != nil {
-		return tmplrt.ExecError("error-page", ".Title", err)
-	}
-	v17 := tmplrt.Unwrap(v16)
-	if tmplrt.Truth(v17) {
-		v18, err := tmplrt.Field(dot, "Title")
-		if err != nil {
-			return tmplrt.ExecError("error-page", ".Title", err)
-		}
-		v19 := tmplrt.Unwrap(v18)
-		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v19)))
-	} else {
-		v20 := tmplrt.Unwrap(x2)
-		if tmplrt.Truth(v20) {
-			v21, err := tmplrt.Field(dot, "Status")
-			if err != nil {
-				return tmplrt.ExecError("error-page", ".Status", err)
-			}
-			v22 := tmplrt.Printf("rastrillo.ui.error_%d_title", tmplrt.Arg(v21))
-			v23, err := fn.T_a3eca208(x1, v22)
-			if err != nil {
-				return tmplrt.ExecError("error-page", "T $L (printf \"rastrillo.ui.error_%d_title\" .Status)", tmplrt.CallError("T", err))
-			}
-			v24 := reflect.ValueOf(v23)
-			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v24)))
-		} else {
-			v25, err := fn.T_a3eca208(x1, "rastrillo.ui.error_generic_title")
-			if err != nil {
-				return tmplrt.ExecError("error-page", "T $L \"rastrillo.ui.error_generic_title\"", tmplrt.CallError("T", err))
-			}
-			v26 := reflect.ValueOf(v25)
-			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v26)))
-		}
-	}
-	b.WriteString("</h1>\n  <p rst-error-body>")
-	v27, err := tmplrt.Field(dot, "Body")
-	if err != nil {
-		return tmplrt.ExecError("error-page", ".Body", err)
-	}
-	v28 := tmplrt.Unwrap(v27)
-	if tmplrt.Truth(v28) {
-		v29, err := tmplrt.Field(dot, "Body")
-		if err != nil {
-			return tmplrt.ExecError("error-page", ".Body", err)
-		}
-		v30 := tmplrt.Unwrap(v29)
-		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v30)))
-	} else {
-		v31 := tmplrt.Unwrap(x2)
-		if tmplrt.Truth(v31) {
-			v32, err := tmplrt.Field(dot, "Status")
-			if err != nil {
-				return tmplrt.ExecError("error-page", ".Status", err)
-			}
-			v33 := tmplrt.Printf("rastrillo.ui.error_%d_body", tmplrt.Arg(v32))
-			v34, err := fn.T_a3eca208(x1, v33)
-			if err != nil {
-				return tmplrt.ExecError("error-page", "T $L (printf \"rastrillo.ui.error_%d_body\" .Status)", tmplrt.CallError("T", err))
-			}
-			v35 := reflect.ValueOf(v34)
-			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v35)))
-		} else {
-			v36, err := fn.T_a3eca208(x1, "rastrillo.ui.error_generic_body")
-			if err != nil {
-				return tmplrt.ExecError("error-page", "T $L \"rastrillo.ui.error_generic_body\"", tmplrt.CallError("T", err))
-			}
-			v37 := reflect.ValueOf(v36)
-			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v37)))
-		}
-	}
-	b.WriteString("</p>\n  <p rst-error-cta><a rst-btn=\"primary\" href=\"")
-	v39, err := tmplrt.Field(dot, "HomeHref")
-	if err != nil {
-		return tmplrt.ExecError("error-page", ".HomeHref", err)
-	}
-	v38 := tmplrt.ValueArg(v39)
-	if !tmplrt.Truth(v38) {
-		v38 = tmplrt.ValueArg(reflect.ValueOf("/"))
-	}
-	v40 := tmplrt.Unwrap(v38)
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v40))))
-	b.WriteString("\">")
-	v41, err := fn.T_a3eca208(x1, "rastrillo.ui.error_home")
-	if err != nil {
-		return tmplrt.ExecError("error-page", "T $L \"rastrillo.ui.error_home\"", tmplrt.CallError("T", err))
-	}
-	v42 := reflect.ValueOf(v41)
-	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v42)))
-	b.WriteString("</a>")
-	v43, err := tmplrt.Field(dot, "BackHref")
-	if err != nil {
-		return tmplrt.ExecError("error-page", ".BackHref", err)
-	}
-	v44 := tmplrt.Unwrap(v43)
-	if tmplrt.Truth(v44) {
-		dot := v44
-		_ = dot
-		b.WriteString(" <a rst-btn href=\"")
-		v45 := tmplrt.Unwrap(dot)
-		tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v45))))
-		b.WriteString("\">")
-		v46, err := fn.T_a3eca208(x1, "rastrillo.ui.error_back")
-		if err != nil {
-			return tmplrt.ExecError("error-page", "T $L \"rastrillo.ui.error_back\"", tmplrt.CallError("T", err))
-		}
-		v47 := reflect.ValueOf(v46)
-		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v47)))
-		b.WriteString("</a>")
-	}
-	b.WriteString("</p>")
-	v48, err := tmplrt.Field(dot, "Ref")
-	if err != nil {
-		return tmplrt.ExecError("error-page", ".Ref", err)
-	}
-	v49 := tmplrt.Unwrap(v48)
-	if tmplrt.Truth(v49) {
-		dot := v49
-		_ = dot
-		b.WriteString("\n  <p class=\"rst-mono\" rst-error-ref dir=\"auto\">")
-		v50, err := fn.Tf_a3eca208(x1, "rastrillo.ui.error_ref", "ref", tmplrt.Arg(dot))
-		if err != nil {
-			return tmplrt.ExecError("error-page", "Tf $L \"rastrillo.ui.error_ref\" \"ref\" .", tmplrt.CallError("Tf", err))
-		}
-		v51 := reflect.ValueOf(v50)
-		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v51)))
-		b.WriteString("</p>")
-	}
-	b.WriteString("\n</div>")
-	return nil
-}
-
-// facts_a712dfb3c50f8922 is what exec_a712dfb3c50f8922 assumes of the types it reads.
-var facts_a712dfb3c50f8922 = tmplrt.Facts{
-	Funcs: map[string]reflect.Type{
-		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
-	},
-	Facts: []tmplrt.Fact{
-		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
 	},
 }
 
@@ -31896,254 +30198,6 @@ func exec_b29f7da01ee7285f(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs
 	return nil
 }
 
-// exec_b2bc55e79055d0a5 renders "signin-secret-door".
-func exec_b2bc55e79055d0a5(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
-	root := dot
-	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
-	x1 := v1
-	_ = x1
-	v2, err := tmplrt.Field(dot, "State")
-	if err != nil {
-		return tmplrt.ExecError("signin-secret-door", ".State", err)
-	}
-	v3 := tmplrt.Unwrap(v2)
-	x2 := v3
-	_ = x2
-	v4, err := tmplrt.Field(dot, "Proof")
-	if err != nil {
-		return tmplrt.ExecError("signin-secret-door", ".Proof", err)
-	}
-	v5 := tmplrt.Unwrap(v4)
-	x3 := v5
-	_ = x3
-	b.WriteString("<form rst-signin-form method=\"post\" action=\"")
-	v6, err := tmplrt.Field(dot, "Door")
-	if err != nil {
-		return tmplrt.ExecError("signin-secret-door", ".Door.Path", err)
-	}
-	v7, err := tmplrt.Field(v6, "Path")
-	if err != nil {
-		return tmplrt.ExecError("signin-secret-door", ".Door.Path", err)
-	}
-	v8 := tmplrt.Unwrap(v7)
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v8))))
-	b.WriteString("\"")
-	v9 := tmplrt.Unwrap(x3)
-	if tmplrt.Truth(v9) {
-		dot := v9
-		_ = dot
-		b.WriteString(" ")
-		v10, err := tmplrt.Field(dot, "Attrs")
-		if err != nil {
-			return tmplrt.ExecError("signin-secret-door", ".Attrs", err)
-		}
-		v11 := tmplrt.Unwrap(v10)
-		b.WriteString(tmplrt.HTMLNameFilter(tmplrt.Arg(v11)))
-	}
-	b.WriteString(">")
-	v12 := tmplrt.Unwrap(x3)
-	if tmplrt.Truth(v12) {
-		dot := v12
-		_ = dot
-		v13, err := tmplrt.Field(dot, "Fields")
-		if err != nil {
-			return tmplrt.ExecError("signin-secret-door", ".Fields", err)
-		}
-		v14 := tmplrt.Unwrap(v13)
-		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v14)))
-	}
-	b.WriteString("\n")
-	v15, err := tmplrt.Field(x2, "ReturnTo")
-	if err != nil {
-		return tmplrt.ExecError("signin-secret-door", "$s.ReturnTo", err)
-	}
-	v16 := tmplrt.Unwrap(v15)
-	if tmplrt.Truth(v16) {
-		dot := v16
-		_ = dot
-		b.WriteString("<input type=\"hidden\" name=\"return_to\" value=\"")
-		v17 := tmplrt.Unwrap(dot)
-		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v17)))
-		b.WriteString("\">\n")
-	}
-	v19, err := tmplrt.Field(x2, "Reauth")
-	if err != nil {
-		return tmplrt.ExecError("signin-secret-door", "$s.Reauth", err)
-	}
-	v18 := tmplrt.ValueArg(v19)
-	if !tmplrt.Truth(v18) {
-		v20, err := tmplrt.Field(x2, "Problem")
-		if err != nil {
-			return tmplrt.ExecError("signin-secret-door", "$s.Problem", err)
-		}
-		v21, err := tmplrt.Eq(v20, reflect.ValueOf("reauth"))
-		if err != nil {
-			return tmplrt.ExecError("signin-secret-door", "eq $s.Problem \"reauth\"", tmplrt.CallError("eq", err))
-		}
-		v18 = tmplrt.ValueArg(reflect.ValueOf(v21))
-	}
-	v22 := tmplrt.Unwrap(v18)
-	if tmplrt.Truth(v22) {
-		b.WriteString("<input type=\"hidden\" name=\"reauth\" value=\"1\">\n")
-	}
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("signin-secret-door", "{{template \"field\" (dict \"L\" $L \"ID\" \"rst-signin-email\" \"Name\" \"address\" \"Label\" (T $L \"rastrillo.ui.signin_email\") \"Type\" \"email\" \"Autocomplete\" \"username\" \"Required\" true \"Value\" $s.Address \"Autofocus\" (eq .Focus \"field\"))}}", tmplrt.DepthError())
-	}
-	v23, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_email")
-	if err != nil {
-		return tmplrt.ExecError("signin-secret-door", "T $L \"rastrillo.ui.signin_email\"", tmplrt.CallError("T", err))
-	}
-	v24 := reflect.ValueOf(v23)
-	v25, err := tmplrt.Field(x2, "Address")
-	if err != nil {
-		return tmplrt.ExecError("signin-secret-door", "$s.Address", err)
-	}
-	v26, err := tmplrt.Field(dot, "Focus")
-	if err != nil {
-		return tmplrt.ExecError("signin-secret-door", ".Focus", err)
-	}
-	v27, err := tmplrt.Eq(v26, reflect.ValueOf("field"))
-	if err != nil {
-		return tmplrt.ExecError("signin-secret-door", "eq .Focus \"field\"", tmplrt.CallError("eq", err))
-	}
-	v28, err := fn.dict_72aa8d8f("L", x1, "ID", "rst-signin-email", "Name", "address", "Label", tmplrt.Arg(v24), "Type", "email", "Autocomplete", "username", "Required", true, "Value", tmplrt.Arg(v25), "Autofocus", v27)
-	if err != nil {
-		return tmplrt.ExecError("signin-secret-door", "dict \"L\" $L \"ID\" \"rst-signin-email\" \"Name\" \"address\" \"Label\" (T $L \"rastrillo.ui.signin_email\") \"Type\" \"email\" \"Autocomplete\" \"username\" \"Required\" true \"Value\" $s.Address \"Autofocus\" (eq .Focus \"field\")", tmplrt.CallError("dict", err))
-	}
-	if err := exec_86a6d72433195e11(b, reflect.ValueOf(v28), fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("signin-secret-door", "{{template \"field\" (dict \"L\" $L \"ID\" .ID \"Name\" .Name \"Label\" .Label \"Type\" .Type \"Inputmode\" (opt . \"Inputmode\") \"Autocomplete\" .Autocomplete \"Required\" true \"Autofocus\" (eq .Focus \"secret\"))}}", tmplrt.DepthError())
-	}
-	v29, err := tmplrt.Field(dot, "ID")
-	if err != nil {
-		return tmplrt.ExecError("signin-secret-door", ".ID", err)
-	}
-	v30, err := tmplrt.Field(dot, "Name")
-	if err != nil {
-		return tmplrt.ExecError("signin-secret-door", ".Name", err)
-	}
-	v31, err := tmplrt.Field(dot, "Label")
-	if err != nil {
-		return tmplrt.ExecError("signin-secret-door", ".Label", err)
-	}
-	v32, err := tmplrt.Field(dot, "Type")
-	if err != nil {
-		return tmplrt.ExecError("signin-secret-door", ".Type", err)
-	}
-	v33 := fn.opt_08785a53(tmplrt.Arg(dot), "Inputmode")
-	v34 := reflect.ValueOf(v33)
-	v35, err := tmplrt.Field(dot, "Autocomplete")
-	if err != nil {
-		return tmplrt.ExecError("signin-secret-door", ".Autocomplete", err)
-	}
-	v36, err := tmplrt.Field(dot, "Focus")
-	if err != nil {
-		return tmplrt.ExecError("signin-secret-door", ".Focus", err)
-	}
-	v37, err := tmplrt.Eq(v36, reflect.ValueOf("secret"))
-	if err != nil {
-		return tmplrt.ExecError("signin-secret-door", "eq .Focus \"secret\"", tmplrt.CallError("eq", err))
-	}
-	v38, err := fn.dict_72aa8d8f("L", x1, "ID", tmplrt.Arg(v29), "Name", tmplrt.Arg(v30), "Label", tmplrt.Arg(v31), "Type", tmplrt.Arg(v32), "Inputmode", tmplrt.Arg(v34), "Autocomplete", tmplrt.Arg(v35), "Required", true, "Autofocus", v37)
-	if err != nil {
-		return tmplrt.ExecError("signin-secret-door", "dict \"L\" $L \"ID\" .ID \"Name\" .Name \"Label\" .Label \"Type\" .Type \"Inputmode\" (opt . \"Inputmode\") \"Autocomplete\" .Autocomplete \"Required\" true \"Autofocus\" (eq .Focus \"secret\")", tmplrt.CallError("dict", err))
-	}
-	if err := exec_86a6d72433195e11(b, reflect.ValueOf(v38), fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n<button rst-btn=\"primary block\" type=\"submit\"")
-	v39, err := tmplrt.Field(dot, "Gated")
-	if err != nil {
-		return tmplrt.ExecError("signin-secret-door", ".Gated", err)
-	}
-	v40 := tmplrt.Unwrap(v39)
-	if tmplrt.Truth(v40) {
-		b.WriteString(" disabled data-pow-submit")
-	}
-	b.WriteString(">")
-	v41, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_code_submit")
-	if err != nil {
-		return tmplrt.ExecError("signin-secret-door", "T $L \"rastrillo.ui.signin_code_submit\"", tmplrt.CallError("T", err))
-	}
-	v42 := reflect.ValueOf(v41)
-	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v42)))
-	b.WriteString("</button>\n")
-	v43, err := tmplrt.Field(dot, "Gated")
-	if err != nil {
-		return tmplrt.ExecError("signin-secret-door", ".Gated", err)
-	}
-	v44 := tmplrt.Unwrap(v43)
-	if tmplrt.Truth(v44) {
-		var v45 reflect.Value
-		if x3.IsValid() {
-			v46, err := tmplrt.MethodOf(x3, "StatusLine")
-			if err != nil {
-				return tmplrt.ExecError("signin-secret-door", "$proof.StatusLine", err)
-			}
-			v48, err := fn.T_a3eca208(x1, "rastrillo.ui.pow_status")
-			if err != nil {
-				return tmplrt.ExecError("signin-secret-door", "T $L \"rastrillo.ui.pow_status\"", tmplrt.CallError("T", err))
-			}
-			v49 := reflect.ValueOf(v48)
-			v47, err := v46.Call(tmplrt.Val(v49))
-			if err != nil {
-				return tmplrt.ExecError("signin-secret-door", "$proof.StatusLine", err)
-			}
-			v45 = v47
-		}
-		v50 := tmplrt.Unwrap(v45)
-		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v50)))
-		b.WriteString("<noscript><p>")
-		v51, err := fn.T_a3eca208(x1, "rastrillo.ui.pow_noscript")
-		if err != nil {
-			return tmplrt.ExecError("signin-secret-door", "T $L \"rastrillo.ui.pow_noscript\"", tmplrt.CallError("T", err))
-		}
-		v52 := reflect.ValueOf(v51)
-		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v52)))
-		b.WriteString("</p></noscript>\n")
-	}
-	b.WriteString("</form>\n<a rst-btn=\"ghost\" href=\"")
-	v53, err := tmplrt.Field(x2, "EmailHref")
-	if err != nil {
-		return tmplrt.ExecError("signin-secret-door", "$s.EmailHref", err)
-	}
-	v54 := tmplrt.Unwrap(v53)
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v54))))
-	b.WriteString("\"><span>")
-	v55, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_email_instead")
-	if err != nil {
-		return tmplrt.ExecError("signin-secret-door", "T $L \"rastrillo.ui.signin_email_instead\"", tmplrt.CallError("T", err))
-	}
-	v56 := reflect.ValueOf(v55)
-	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v56)))
-	b.WriteString("</span>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("signin-secret-door", "{{template \"signin-glyph\" (dict \"L\" $L \"Glyph\" \"next\")}}", tmplrt.DepthError())
-	}
-	v57, err := fn.dict_72aa8d8f("L", x1, "Glyph", "next")
-	if err != nil {
-		return tmplrt.ExecError("signin-secret-door", "dict \"L\" $L \"Glyph\" \"next\"", tmplrt.CallError("dict", err))
-	}
-	if err := exec_a4a2687cde36400d(b, reflect.ValueOf(v57), fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</a>\n")
-	return nil
-}
-
-// facts_b2bc55e79055d0a5 is what exec_b2bc55e79055d0a5 assumes of the types it reads.
-var facts_b2bc55e79055d0a5 = tmplrt.Facts{
-	Funcs: map[string]reflect.Type{
-		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
-	},
-	Facts: []tmplrt.Fact{
-		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
-	},
-}
-
 // exec_b3bc235c58d91e45 renders "field-url.html".
 func exec_b3bc235c58d91e45(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
 	b.WriteString("\n\n")
@@ -32516,12 +30570,6 @@ var facts_b3e7fa3ee1a96057_315fd3b5 = tmplrt.Facts{
 // exec_b570a8a093aeb0f8 renders "form-foot.html".
 func exec_b570a8a093aeb0f8(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
 	b.WriteString("\n\n")
-	return nil
-}
-
-// exec_b58320bac7ab98f2 renders "signin.html".
-func exec_b58320bac7ab98f2(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
-	b.WriteString("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n")
 	return nil
 }
 
@@ -33060,1157 +31108,6 @@ func exec_b7e1c3be6f157326(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs
 	}
 	b.WriteString("\n</div>")
 	return nil
-}
-
-// exec_b82219fba3d04b88 renders "signin".
-func exec_b82219fba3d04b88(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
-	root := dot
-	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
-	x1 := v1
-	_ = x1
-	v2, err := tmplrt.Field(dot, "State")
-	if err != nil {
-		return tmplrt.ExecError("signin", ".State", err)
-	}
-	v3 := tmplrt.Unwrap(v2)
-	x2 := v3
-	_ = x2
-	v4, err := tmplrt.Field(x2, "Door")
-	if err != nil {
-		return tmplrt.ExecError("signin", "$s.Door", err)
-	}
-	v5 := tmplrt.Unwrap(v4)
-	x3 := v5
-	_ = x3
-	v6, err := tmplrt.Field(x2, "Focus")
-	if err != nil {
-		return tmplrt.ExecError("signin", "$s.Focus", err)
-	}
-	v7 := tmplrt.Unwrap(v6)
-	x4 := v7
-	_ = x4
-	v8, err := tmplrt.Field(dot, "Brand")
-	if err != nil {
-		return tmplrt.ExecError("signin", ".Brand.Name", err)
-	}
-	v9, err := tmplrt.Field(v8, "Name")
-	if err != nil {
-		return tmplrt.ExecError("signin", ".Brand.Name", err)
-	}
-	v10 := tmplrt.Unwrap(v9)
-	x5 := v10
-	_ = x5
-	v11 := fn.opt_08785a53(tmplrt.Arg(dot), "Preview")
-	v12 := reflect.ValueOf(v11)
-	x6 := v12
-	_ = x6
-	v13, err := tmplrt.Field(x2, "Proof")
-	if err != nil {
-		return tmplrt.ExecError("signin", "$s.Proof", err)
-	}
-	v14 := tmplrt.Unwrap(v13)
-	x7 := v14
-	_ = x7
-	v15 := tmplrt.ValueArg(x7)
-	if tmplrt.Truth(v15) {
-		v16, err := tmplrt.Field(x7, "NeedsScript")
-		if err != nil {
-			return tmplrt.ExecError("signin", "$proof.NeedsScript", err)
-		}
-		v15 = tmplrt.ValueArg(v16)
-	}
-	v17 := tmplrt.Unwrap(v15)
-	x8 := v17
-	_ = x8
-	v18, err := tmplrt.Field(x2, "Unavailable")
-	if err != nil {
-		return tmplrt.ExecError("signin", "$s.Unavailable", err)
-	}
-	v19 := tmplrt.Not(v18)
-	if v19 {
-		b.WriteString("<section rst-signin aria-labelledby=\"rst-signin-heading\">\n")
-		v20 := fn.opt_08785a53(tmplrt.Arg(dot), "HideBrand")
-		v21 := reflect.ValueOf(v20)
-		v22 := tmplrt.Not(v21)
-		if v22 {
-			b.WriteString("<div rst-signin-brand>")
-			v23, err := tmplrt.Field(dot, "Brand")
-			if err != nil {
-				return tmplrt.ExecError("signin", ".Brand", err)
-			}
-			v24 := fn.opt_08785a53(tmplrt.Arg(v23), "Mark")
-			v25 := reflect.ValueOf(v24)
-			if tmplrt.Truth(v25) {
-				dot := v25
-				_ = dot
-				b.WriteString("<div rst-signin-mark>")
-				v26 := tmplrt.Unwrap(dot)
-				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v26)))
-				b.WriteString("</div>")
-			}
-			b.WriteString("<p rst-signin-name>")
-			v27 := tmplrt.Unwrap(x5)
-			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v27)))
-			b.WriteString("</p>")
-			v28, err := tmplrt.Field(dot, "Brand")
-			if err != nil {
-				return tmplrt.ExecError("signin", ".Brand", err)
-			}
-			v29 := fn.opt_08785a53(tmplrt.Arg(v28), "Pitch")
-			v30 := reflect.ValueOf(v29)
-			if tmplrt.Truth(v30) {
-				dot := v30
-				_ = dot
-				b.WriteString("<p rst-signin-pitch>")
-				v31 := tmplrt.Unwrap(dot)
-				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v31)))
-				b.WriteString("</p>")
-			}
-			b.WriteString("</div>\n")
-		}
-		b.WriteString("<div rst-signin-door")
-		v32, err := tmplrt.Field(x2, "OneWay")
-		if err != nil {
-			return tmplrt.ExecError("signin", "$s.OneWay", err)
-		}
-		v33 := tmplrt.Unwrap(v32)
-		if tmplrt.Truth(v33) {
-			b.WriteString("=\"one-way\"")
-		}
-		b.WriteString(">\n")
-		v34, err := tmplrt.Eq(x3, reflect.ValueOf("continue"))
-		if err != nil {
-			return tmplrt.ExecError("signin", "eq $door \"continue\"", tmplrt.CallError("eq", err))
-		}
-		if v34 {
-			v35 := tmplrt.Not(x6)
-			if v35 {
-				b.WriteString("<meta http-equiv=\"refresh\" content=\"0;url=")
-				v36, err := tmplrt.Field(x2, "ContinueURL")
-				if err != nil {
-					return tmplrt.ExecError("signin", "$s.ContinueURL", err)
-				}
-				v37 := tmplrt.Unwrap(v36)
-				tmplrt.WriteAttrEscaped(b, tmplrt.URLFilter(tmplrt.Arg(v37)))
-				b.WriteString("\">")
-			}
-			b.WriteString("\n<h1 id=\"rst-signin-heading\">")
-			v38, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_continue_heading")
-			if err != nil {
-				return tmplrt.ExecError("signin", "T $L \"rastrillo.ui.signin_continue_heading\"", tmplrt.CallError("T", err))
-			}
-			v39 := reflect.ValueOf(v38)
-			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v39)))
-			b.WriteString("</h1>\n<p>")
-			v40, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_continue_body")
-			if err != nil {
-				return tmplrt.ExecError("signin", "T $L \"rastrillo.ui.signin_continue_body\"", tmplrt.CallError("T", err))
-			}
-			v41 := reflect.ValueOf(v40)
-			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v41)))
-			b.WriteString("</p>\n<a rst-btn=\"primary block\" href=\"")
-			v42 := tmplrt.Unwrap(x6)
-			if tmplrt.Truth(v42) {
-				b.WriteString("#")
-			} else {
-				v43, err := tmplrt.Field(x2, "ContinueURL")
-				if err != nil {
-					return tmplrt.ExecError("signin", "$s.ContinueURL", err)
-				}
-				v44 := tmplrt.Unwrap(v43)
-				tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v44))))
-			}
-			b.WriteString("\">")
-			v45, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_to_keymail")
-			if err != nil {
-				return tmplrt.ExecError("signin", "T $L \"rastrillo.ui.signin_to_keymail\"", tmplrt.CallError("T", err))
-			}
-			v46 := reflect.ValueOf(v45)
-			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v46)))
-			b.WriteString("</a>\n")
-		} else {
-			v47, err := tmplrt.Eq(x3, reflect.ValueOf("confirm"))
-			if err != nil {
-				return tmplrt.ExecError("signin", "eq $door \"confirm\"", tmplrt.CallError("eq", err))
-			}
-			if v47 {
-				b.WriteString("<h1 id=\"rst-signin-heading\">")
-				v48, err := fn.Tf_a3eca208(x1, "rastrillo.ui.signin_heading", "name", tmplrt.Arg(x5))
-				if err != nil {
-					return tmplrt.ExecError("signin", "Tf $L \"rastrillo.ui.signin_heading\" \"name\" $name", tmplrt.CallError("Tf", err))
-				}
-				v49 := reflect.ValueOf(v48)
-				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v49)))
-				b.WriteString("</h1>\n<form rst-signin-form method=\"post\" action=\"")
-				v50, err := tmplrt.Field(x2, "Confirm")
-				if err != nil {
-					return tmplrt.ExecError("signin", "$s.Confirm.Action", err)
-				}
-				v51, err := tmplrt.Field(v50, "Action")
-				if err != nil {
-					return tmplrt.ExecError("signin", "$s.Confirm.Action", err)
-				}
-				v52 := tmplrt.Unwrap(v51)
-				tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v52))))
-				b.WriteString("\">\n<input type=\"hidden\" name=\"token\" value=\"")
-				v53, err := tmplrt.Field(x2, "Confirm")
-				if err != nil {
-					return tmplrt.ExecError("signin", "$s.Confirm.Token", err)
-				}
-				v54, err := tmplrt.Field(v53, "Token")
-				if err != nil {
-					return tmplrt.ExecError("signin", "$s.Confirm.Token", err)
-				}
-				v55 := tmplrt.Unwrap(v54)
-				b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v55)))
-				b.WriteString("\">\n<button rst-btn=\"primary block\" type=\"submit\"")
-				v56, err := tmplrt.Eq(x4, reflect.ValueOf("onetap"))
-				if err != nil {
-					return tmplrt.ExecError("signin", "eq $focus \"onetap\"", tmplrt.CallError("eq", err))
-				}
-				if v56 {
-					b.WriteString(" autofocus")
-				}
-				b.WriteString(">")
-				v57, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_confirm_submit")
-				if err != nil {
-					return tmplrt.ExecError("signin", "T $L \"rastrillo.ui.signin_confirm_submit\"", tmplrt.CallError("T", err))
-				}
-				v58 := reflect.ValueOf(v57)
-				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v58)))
-				b.WriteString("</button>\n</form>\n")
-			} else {
-				v59, err := tmplrt.Eq(x3, reflect.ValueOf("sent"))
-				if err != nil {
-					return tmplrt.ExecError("signin", "eq $door \"sent\"", tmplrt.CallError("eq", err))
-				}
-				if v59 {
-					b.WriteString("<h1 id=\"rst-signin-heading\">")
-					v60, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_sent_heading")
-					if err != nil {
-						return tmplrt.ExecError("signin", "T $L \"rastrillo.ui.signin_sent_heading\"", tmplrt.CallError("T", err))
-					}
-					v61 := reflect.ValueOf(v60)
-					b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v61)))
-					b.WriteString("</h1>\n")
-					v62, err := tmplrt.Field(x2, "SentInstead")
-					if err != nil {
-						return tmplrt.ExecError("signin", "$s.SentInstead", err)
-					}
-					v63 := tmplrt.Unwrap(v62)
-					if tmplrt.Truth(v63) {
-						b.WriteString("<p>")
-						v64, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_sent_instead")
-						if err != nil {
-							return tmplrt.ExecError("signin", "T $L \"rastrillo.ui.signin_sent_instead\"", tmplrt.CallError("T", err))
-						}
-						v65 := reflect.ValueOf(v64)
-						b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v65)))
-						b.WriteString("</p>\n")
-					}
-					b.WriteString("<p>")
-					v66, err := tmplrt.Field(x2, "SentTo")
-					if err != nil {
-						return tmplrt.ExecError("signin", "$s.SentTo", err)
-					}
-					v67 := tmplrt.Unwrap(v66)
-					if tmplrt.Truth(v67) {
-						v68, err := tmplrt.Field(x2, "SentTo")
-						if err != nil {
-							return tmplrt.ExecError("signin", "$s.SentTo", err)
-						}
-						v69, err := fn.Tbdi_a3eca208(x1, "rastrillo.ui.signin_sent_to", "address", tmplrt.Arg(v68))
-						if err != nil {
-							return tmplrt.ExecError("signin", "Tbdi $L \"rastrillo.ui.signin_sent_to\" \"address\" $s.SentTo", tmplrt.CallError("Tbdi", err))
-						}
-						v70 := reflect.ValueOf(v69)
-						b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v70)))
-					} else {
-						v71, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_sent_inbox")
-						if err != nil {
-							return tmplrt.ExecError("signin", "T $L \"rastrillo.ui.signin_sent_inbox\"", tmplrt.CallError("T", err))
-						}
-						v72 := reflect.ValueOf(v71)
-						b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v72)))
-					}
-					b.WriteString(" ")
-					v73, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_sent_once")
-					if err != nil {
-						return tmplrt.ExecError("signin", "T $L \"rastrillo.ui.signin_sent_once\"", tmplrt.CallError("T", err))
-					}
-					v74 := reflect.ValueOf(v73)
-					b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v74)))
-					b.WriteString("</p>\n")
-				} else {
-					v75, err := tmplrt.Field(x2, "OneWay")
-					if err != nil {
-						return tmplrt.ExecError("signin", "$s.OneWay", err)
-					}
-					v76 := tmplrt.Unwrap(v75)
-					if tmplrt.Truth(v76) {
-						if depth == tmplrt.MaxExecDepth {
-							return tmplrt.ExecError("signin", "{{template \"signin-one-way\" (dict \"L\" $L \"State\" $s \"Door\" $door \"Focus\" $focus \"Name\" $name \"Preview\" $preview \"Proof\" $proof \"Gated\" $gated)}}", tmplrt.DepthError())
-						}
-						v77, err := fn.dict_72aa8d8f("L", x1, "State", tmplrt.Arg(x2), "Door", tmplrt.Arg(x3), "Focus", tmplrt.Arg(x4), "Name", tmplrt.Arg(x5), "Preview", tmplrt.Arg(x6), "Proof", tmplrt.Arg(x7), "Gated", tmplrt.Arg(x8))
-						if err != nil {
-							return tmplrt.ExecError("signin", "dict \"L\" $L \"State\" $s \"Door\" $door \"Focus\" $focus \"Name\" $name \"Preview\" $preview \"Proof\" $proof \"Gated\" $gated", tmplrt.CallError("dict", err))
-						}
-						if err := exec_361848301f03b50a(b, reflect.ValueOf(v77), fn, depth+1); err != nil {
-							return err
-						}
-					} else {
-						b.WriteString("<h1 id=\"rst-signin-heading\">")
-						v78, err := fn.Tf_a3eca208(x1, "rastrillo.ui.signin_heading", "name", tmplrt.Arg(x5))
-						if err != nil {
-							return tmplrt.ExecError("signin", "Tf $L \"rastrillo.ui.signin_heading\" \"name\" $name", tmplrt.CallError("Tf", err))
-						}
-						v79 := reflect.ValueOf(v78)
-						b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v79)))
-						b.WriteString("</h1>\n")
-						v81, err := tmplrt.Field(x2, "Problem")
-						if err != nil {
-							return tmplrt.ExecError("signin", "$s.Problem", err)
-						}
-						v80 := tmplrt.ValueArg(v81)
-						if tmplrt.Truth(v80) {
-							v82, err := tmplrt.Field(x2, "Problem")
-							if err != nil {
-								return tmplrt.ExecError("signin", "$s.Problem", err)
-							}
-							v83, err := tmplrt.Ne(v82, reflect.ValueOf("address"))
-							if err != nil {
-								return tmplrt.ExecError("signin", "ne $s.Problem \"address\"", tmplrt.CallError("ne", err))
-							}
-							v80 = tmplrt.ValueArg(reflect.ValueOf(v83))
-						}
-						v84 := tmplrt.Unwrap(v80)
-						if tmplrt.Truth(v84) {
-							x9 := reflect.ValueOf("negative")
-							_ = x9
-							v85, err := tmplrt.Field(x2, "Problem")
-							if err != nil {
-								return tmplrt.ExecError("signin", "$s.Problem", err)
-							}
-							v86, err := tmplrt.Eq(v85, reflect.ValueOf("reauth"))
-							if err != nil {
-								return tmplrt.ExecError("signin", "eq $s.Problem \"reauth\"", tmplrt.CallError("eq", err))
-							}
-							if v86 {
-								x9 = reflect.ValueOf("info")
-							}
-							if depth == tmplrt.MaxExecDepth {
-								return tmplrt.ExecError("signin", "{{template \"callout\" (dict \"L\" $L \"ID\" \"rst-signin-problem\" \"Tone\" $tone \"Body\" (T $L (printf \"rastrillo.ui.signin_problem_%s\" $s.Problem)) \"Focus\" (and (eq $focus \"callout\") (ne $s.Problem \"reauth\")))}}", tmplrt.DepthError())
-							}
-							v87, err := tmplrt.Field(x2, "Problem")
-							if err != nil {
-								return tmplrt.ExecError("signin", "$s.Problem", err)
-							}
-							v88 := tmplrt.Printf("rastrillo.ui.signin_problem_%s", tmplrt.Arg(v87))
-							v89, err := fn.T_a3eca208(x1, v88)
-							if err != nil {
-								return tmplrt.ExecError("signin", "T $L (printf \"rastrillo.ui.signin_problem_%s\" $s.Problem)", tmplrt.CallError("T", err))
-							}
-							v90 := reflect.ValueOf(v89)
-							v92, err := tmplrt.Eq(x4, reflect.ValueOf("callout"))
-							if err != nil {
-								return tmplrt.ExecError("signin", "eq $focus \"callout\"", tmplrt.CallError("eq", err))
-							}
-							v91 := tmplrt.ValueArg(reflect.ValueOf(v92))
-							if tmplrt.Truth(v91) {
-								v93, err := tmplrt.Field(x2, "Problem")
-								if err != nil {
-									return tmplrt.ExecError("signin", "$s.Problem", err)
-								}
-								v94, err := tmplrt.Ne(v93, reflect.ValueOf("reauth"))
-								if err != nil {
-									return tmplrt.ExecError("signin", "ne $s.Problem \"reauth\"", tmplrt.CallError("ne", err))
-								}
-								v91 = tmplrt.ValueArg(reflect.ValueOf(v94))
-							}
-							v95 := tmplrt.Unwrap(v91)
-							v96, err := fn.dict_72aa8d8f("L", x1, "ID", "rst-signin-problem", "Tone", tmplrt.Arg(x9), "Body", tmplrt.Arg(v90), "Focus", tmplrt.Arg(v95))
-							if err != nil {
-								return tmplrt.ExecError("signin", "dict \"L\" $L \"ID\" \"rst-signin-problem\" \"Tone\" $tone \"Body\" (T $L (printf \"rastrillo.ui.signin_problem_%s\" $s.Problem)) \"Focus\" (and (eq $focus \"callout\") (ne $s.Problem \"reauth\"))", tmplrt.CallError("dict", err))
-							}
-							if err := exec_567ff6bfe00d3ab4(b, reflect.ValueOf(v96), fn, depth+1); err != nil {
-								return err
-							}
-							b.WriteString("\n")
-						}
-						if depth == tmplrt.MaxExecDepth {
-							return tmplrt.ExecError("signin", "{{template \"signin-app-problem\" (dict \"L\" $L \"State\" $s \"Focus\" $focus)}}", tmplrt.DepthError())
-						}
-						v97, err := fn.dict_72aa8d8f("L", x1, "State", tmplrt.Arg(x2), "Focus", tmplrt.Arg(x4))
-						if err != nil {
-							return tmplrt.ExecError("signin", "dict \"L\" $L \"State\" $s \"Focus\" $focus", tmplrt.CallError("dict", err))
-						}
-						if err := exec_7483fb941f63a52e(b, reflect.ValueOf(v97), fn, depth+1); err != nil {
-							return err
-						}
-						v98, err := tmplrt.Eq(x3, reflect.ValueOf("keymail"))
-						if err != nil {
-							return tmplrt.ExecError("signin", "eq $door \"keymail\"", tmplrt.CallError("eq", err))
-						}
-						if v98 {
-							b.WriteString("<form rst-signin-form method=\"post\" action=\"")
-							v99, err := tmplrt.Field(x2, "BeginPath")
-							if err != nil {
-								return tmplrt.ExecError("signin", "$s.BeginPath", err)
-							}
-							v100 := tmplrt.Unwrap(v99)
-							tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v100))))
-							b.WriteString("\"")
-							v101 := tmplrt.Unwrap(x7)
-							if tmplrt.Truth(v101) {
-								dot := v101
-								_ = dot
-								b.WriteString(" ")
-								v102, err := tmplrt.Field(dot, "Attrs")
-								if err != nil {
-									return tmplrt.ExecError("signin", ".Attrs", err)
-								}
-								v103 := tmplrt.Unwrap(v102)
-								b.WriteString(tmplrt.HTMLNameFilter(tmplrt.Arg(v103)))
-							}
-							b.WriteString(">")
-							v104 := tmplrt.Unwrap(x7)
-							if tmplrt.Truth(v104) {
-								dot := v104
-								_ = dot
-								v105, err := tmplrt.Field(dot, "Fields")
-								if err != nil {
-									return tmplrt.ExecError("signin", ".Fields", err)
-								}
-								v106 := tmplrt.Unwrap(v105)
-								b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v106)))
-							}
-							b.WriteString("\n")
-							v107, err := tmplrt.Field(x2, "ReturnTo")
-							if err != nil {
-								return tmplrt.ExecError("signin", "$s.ReturnTo", err)
-							}
-							v108 := tmplrt.Unwrap(v107)
-							if tmplrt.Truth(v108) {
-								dot := v108
-								_ = dot
-								b.WriteString("<input type=\"hidden\" name=\"return_to\" value=\"")
-								v109 := tmplrt.Unwrap(dot)
-								b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v109)))
-								b.WriteString("\">\n")
-							}
-							b.WriteString("<input type=\"hidden\" name=\"address\" value=\"")
-							v110, err := tmplrt.Field(x2, "Remembered")
-							if err != nil {
-								return tmplrt.ExecError("signin", "$s.Remembered.Address", err)
-							}
-							v111, err := tmplrt.Field(v110, "Address")
-							if err != nil {
-								return tmplrt.ExecError("signin", "$s.Remembered.Address", err)
-							}
-							v112 := tmplrt.Unwrap(v111)
-							b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v112)))
-							b.WriteString("\">\n<input type=\"hidden\" name=\"expect\" value=\"keymail\">\n<button rst-btn=\"primary block\" type=\"submit\"")
-							v113, err := tmplrt.Eq(x4, reflect.ValueOf("onetap"))
-							if err != nil {
-								return tmplrt.ExecError("signin", "eq $focus \"onetap\"", tmplrt.CallError("eq", err))
-							}
-							if v113 {
-								b.WriteString(" autofocus")
-							}
-							v114 := tmplrt.Unwrap(x8)
-							if tmplrt.Truth(v114) {
-								b.WriteString(" disabled data-pow-submit")
-							}
-							b.WriteString("><span>")
-							v115, err := tmplrt.Field(x2, "Remembered")
-							if err != nil {
-								return tmplrt.ExecError("signin", "$s.Remembered.Address", err)
-							}
-							v116, err := tmplrt.Field(v115, "Address")
-							if err != nil {
-								return tmplrt.ExecError("signin", "$s.Remembered.Address", err)
-							}
-							v117, err := fn.Tbdi_a3eca208(x1, "rastrillo.ui.signin_continue_as", "address", tmplrt.Arg(v116))
-							if err != nil {
-								return tmplrt.ExecError("signin", "Tbdi $L \"rastrillo.ui.signin_continue_as\" \"address\" $s.Remembered.Address", tmplrt.CallError("Tbdi", err))
-							}
-							v118 := reflect.ValueOf(v117)
-							b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v118)))
-							b.WriteString("</span></button>\n")
-							v119 := tmplrt.Unwrap(x8)
-							if tmplrt.Truth(v119) {
-								var v120 reflect.Value
-								if x7.IsValid() {
-									v121, err := tmplrt.MethodOf(x7, "StatusLine")
-									if err != nil {
-										return tmplrt.ExecError("signin", "$proof.StatusLine", err)
-									}
-									v123, err := fn.T_a3eca208(x1, "rastrillo.ui.pow_status")
-									if err != nil {
-										return tmplrt.ExecError("signin", "T $L \"rastrillo.ui.pow_status\"", tmplrt.CallError("T", err))
-									}
-									v124 := reflect.ValueOf(v123)
-									v122, err := v121.Call(tmplrt.Val(v124))
-									if err != nil {
-										return tmplrt.ExecError("signin", "$proof.StatusLine", err)
-									}
-									v120 = v122
-								}
-								v125 := tmplrt.Unwrap(v120)
-								b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v125)))
-								b.WriteString("<noscript><p>")
-								v126, err := fn.T_a3eca208(x1, "rastrillo.ui.pow_noscript")
-								if err != nil {
-									return tmplrt.ExecError("signin", "T $L \"rastrillo.ui.pow_noscript\"", tmplrt.CallError("T", err))
-								}
-								v127 := reflect.ValueOf(v126)
-								b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v127)))
-								b.WriteString("</p></noscript>\n")
-							}
-							b.WriteString("</form>\n")
-						} else {
-							v128, err := tmplrt.Eq(x3, reflect.ValueOf("link"))
-							if err != nil {
-								return tmplrt.ExecError("signin", "eq $door \"link\"", tmplrt.CallError("eq", err))
-							}
-							if v128 {
-								b.WriteString("<form rst-signin-form method=\"post\" action=\"")
-								v129, err := tmplrt.Field(x2, "BeginPath")
-								if err != nil {
-									return tmplrt.ExecError("signin", "$s.BeginPath", err)
-								}
-								v130 := tmplrt.Unwrap(v129)
-								tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v130))))
-								b.WriteString("\"")
-								v131 := tmplrt.Unwrap(x7)
-								if tmplrt.Truth(v131) {
-									dot := v131
-									_ = dot
-									b.WriteString(" ")
-									v132, err := tmplrt.Field(dot, "Attrs")
-									if err != nil {
-										return tmplrt.ExecError("signin", ".Attrs", err)
-									}
-									v133 := tmplrt.Unwrap(v132)
-									b.WriteString(tmplrt.HTMLNameFilter(tmplrt.Arg(v133)))
-								}
-								b.WriteString(">")
-								v134 := tmplrt.Unwrap(x7)
-								if tmplrt.Truth(v134) {
-									dot := v134
-									_ = dot
-									v135, err := tmplrt.Field(dot, "Fields")
-									if err != nil {
-										return tmplrt.ExecError("signin", ".Fields", err)
-									}
-									v136 := tmplrt.Unwrap(v135)
-									b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v136)))
-								}
-								b.WriteString("\n")
-								v137, err := tmplrt.Field(x2, "ReturnTo")
-								if err != nil {
-									return tmplrt.ExecError("signin", "$s.ReturnTo", err)
-								}
-								v138 := tmplrt.Unwrap(v137)
-								if tmplrt.Truth(v138) {
-									dot := v138
-									_ = dot
-									b.WriteString("<input type=\"hidden\" name=\"return_to\" value=\"")
-									v139 := tmplrt.Unwrap(dot)
-									b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v139)))
-									b.WriteString("\">\n")
-								}
-								b.WriteString("<input type=\"hidden\" name=\"address\" value=\"")
-								v140, err := tmplrt.Field(x2, "Remembered")
-								if err != nil {
-									return tmplrt.ExecError("signin", "$s.Remembered.Address", err)
-								}
-								v141, err := tmplrt.Field(v140, "Address")
-								if err != nil {
-									return tmplrt.ExecError("signin", "$s.Remembered.Address", err)
-								}
-								v142 := tmplrt.Unwrap(v141)
-								b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v142)))
-								b.WriteString("\">\n<button rst-btn=\"primary block\" type=\"submit\"")
-								v143, err := tmplrt.Eq(x4, reflect.ValueOf("onetap"))
-								if err != nil {
-									return tmplrt.ExecError("signin", "eq $focus \"onetap\"", tmplrt.CallError("eq", err))
-								}
-								if v143 {
-									b.WriteString(" autofocus")
-								}
-								v144 := tmplrt.Unwrap(x8)
-								if tmplrt.Truth(v144) {
-									b.WriteString(" disabled data-pow-submit")
-								}
-								b.WriteString("><span>")
-								v145, err := tmplrt.Field(x2, "Remembered")
-								if err != nil {
-									return tmplrt.ExecError("signin", "$s.Remembered.Address", err)
-								}
-								v146, err := tmplrt.Field(v145, "Address")
-								if err != nil {
-									return tmplrt.ExecError("signin", "$s.Remembered.Address", err)
-								}
-								v147, err := fn.Tbdi_a3eca208(x1, "rastrillo.ui.signin_continue_as", "address", tmplrt.Arg(v146))
-								if err != nil {
-									return tmplrt.ExecError("signin", "Tbdi $L \"rastrillo.ui.signin_continue_as\" \"address\" $s.Remembered.Address", tmplrt.CallError("Tbdi", err))
-								}
-								v148 := reflect.ValueOf(v147)
-								b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v148)))
-								b.WriteString("</span></button>\n")
-								v149 := tmplrt.Unwrap(x8)
-								if tmplrt.Truth(v149) {
-									var v150 reflect.Value
-									if x7.IsValid() {
-										v151, err := tmplrt.MethodOf(x7, "StatusLine")
-										if err != nil {
-											return tmplrt.ExecError("signin", "$proof.StatusLine", err)
-										}
-										v153, err := fn.T_a3eca208(x1, "rastrillo.ui.pow_status")
-										if err != nil {
-											return tmplrt.ExecError("signin", "T $L \"rastrillo.ui.pow_status\"", tmplrt.CallError("T", err))
-										}
-										v154 := reflect.ValueOf(v153)
-										v152, err := v151.Call(tmplrt.Val(v154))
-										if err != nil {
-											return tmplrt.ExecError("signin", "$proof.StatusLine", err)
-										}
-										v150 = v152
-									}
-									v155 := tmplrt.Unwrap(v150)
-									b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v155)))
-									b.WriteString("<noscript><p>")
-									v156, err := fn.T_a3eca208(x1, "rastrillo.ui.pow_noscript")
-									if err != nil {
-										return tmplrt.ExecError("signin", "T $L \"rastrillo.ui.pow_noscript\"", tmplrt.CallError("T", err))
-									}
-									v157 := reflect.ValueOf(v156)
-									b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v157)))
-									b.WriteString("</p></noscript>\n")
-								}
-								b.WriteString("</form>\n")
-							} else {
-								x10 := reflect.ValueOf("after")
-								_ = x10
-								v158, err := tmplrt.Eq(x3, reflect.ValueOf("passkey"))
-								if err != nil {
-									return tmplrt.ExecError("signin", "eq $door \"passkey\"", tmplrt.CallError("eq", err))
-								}
-								if v158 {
-									x10 = reflect.ValueOf("before")
-								}
-								x11 := reflect.ValueOf("")
-								_ = x11
-								v159, err := tmplrt.Field(x2, "Problem")
-								if err != nil {
-									return tmplrt.ExecError("signin", "$s.Problem", err)
-								}
-								v160, err := tmplrt.Eq(v159, reflect.ValueOf("address"))
-								if err != nil {
-									return tmplrt.ExecError("signin", "eq $s.Problem \"address\"", tmplrt.CallError("eq", err))
-								}
-								if v160 {
-									v161, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_problem_address")
-									if err != nil {
-										return tmplrt.ExecError("signin", "T $L \"rastrillo.ui.signin_problem_address\"", tmplrt.CallError("T", err))
-									}
-									v162 := reflect.ValueOf(v161)
-									x11 = v162
-								}
-								v163 := fn.list_ae7df14d("before", "form", "after")
-								for v164 := range v163 {
-									dot := &v163[v164]
-									_ = dot
-									v165, err := tmplrt.Eq(reflect.ValueOf(dot).Elem(), reflect.ValueOf("form"))
-									if err != nil {
-										return tmplrt.ExecError("signin", "eq . \"form\"", tmplrt.CallError("eq", err))
-									}
-									if v165 {
-										b.WriteString("<form rst-signin-form method=\"post\" action=\"")
-										v166, err := tmplrt.Field(x2, "BeginPath")
-										if err != nil {
-											return tmplrt.ExecError("signin", "$s.BeginPath", err)
-										}
-										v167 := tmplrt.Unwrap(v166)
-										tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v167))))
-										b.WriteString("\"")
-										v168 := tmplrt.Unwrap(x7)
-										if tmplrt.Truth(v168) {
-											dot := v168
-											_ = dot
-											b.WriteString(" ")
-											v169, err := tmplrt.Field(dot, "Attrs")
-											if err != nil {
-												return tmplrt.ExecError("signin", ".Attrs", err)
-											}
-											v170 := tmplrt.Unwrap(v169)
-											b.WriteString(tmplrt.HTMLNameFilter(tmplrt.Arg(v170)))
-										}
-										b.WriteString(">")
-										v171 := tmplrt.Unwrap(x7)
-										if tmplrt.Truth(v171) {
-											dot := v171
-											_ = dot
-											v172, err := tmplrt.Field(dot, "Fields")
-											if err != nil {
-												return tmplrt.ExecError("signin", ".Fields", err)
-											}
-											v173 := tmplrt.Unwrap(v172)
-											b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v173)))
-										}
-										b.WriteString("\n")
-										v174, err := tmplrt.Field(x2, "ReturnTo")
-										if err != nil {
-											return tmplrt.ExecError("signin", "$s.ReturnTo", err)
-										}
-										v175 := tmplrt.Unwrap(v174)
-										if tmplrt.Truth(v175) {
-											dot := v175
-											_ = dot
-											b.WriteString("<input type=\"hidden\" name=\"return_to\" value=\"")
-											v176 := tmplrt.Unwrap(dot)
-											b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v176)))
-											b.WriteString("\">\n")
-										}
-										if depth == tmplrt.MaxExecDepth {
-											return tmplrt.ExecError("signin", "{{template \"field\" (dict \"L\" $L \"ID\" \"rst-signin-email\" \"Name\" \"address\" \"Label\" (T $L \"rastrillo.ui.signin_email\") \"Type\" \"email\" \"Autocomplete\" \"email\" \"Required\" true \"Value\" $s.Address \"Autofocus\" (eq $focus \"field\") \"Error\" $fieldErr \"QuietError\" true)}}", tmplrt.DepthError())
-										}
-										v177, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_email")
-										if err != nil {
-											return tmplrt.ExecError("signin", "T $L \"rastrillo.ui.signin_email\"", tmplrt.CallError("T", err))
-										}
-										v178 := reflect.ValueOf(v177)
-										v179, err := tmplrt.Field(x2, "Address")
-										if err != nil {
-											return tmplrt.ExecError("signin", "$s.Address", err)
-										}
-										v180, err := tmplrt.Eq(x4, reflect.ValueOf("field"))
-										if err != nil {
-											return tmplrt.ExecError("signin", "eq $focus \"field\"", tmplrt.CallError("eq", err))
-										}
-										v181, err := fn.dict_72aa8d8f("L", x1, "ID", "rst-signin-email", "Name", "address", "Label", tmplrt.Arg(v178), "Type", "email", "Autocomplete", "email", "Required", true, "Value", tmplrt.Arg(v179), "Autofocus", v180, "Error", tmplrt.Arg(x11), "QuietError", true)
-										if err != nil {
-											return tmplrt.ExecError("signin", "dict \"L\" $L \"ID\" \"rst-signin-email\" \"Name\" \"address\" \"Label\" (T $L \"rastrillo.ui.signin_email\") \"Type\" \"email\" \"Autocomplete\" \"email\" \"Required\" true \"Value\" $s.Address \"Autofocus\" (eq $focus \"field\") \"Error\" $fieldErr \"QuietError\" true", tmplrt.CallError("dict", err))
-										}
-										if err := exec_86a6d72433195e11(b, reflect.ValueOf(v181), fn, depth+1); err != nil {
-											return err
-										}
-										b.WriteString("\n")
-										v183, err := tmplrt.Field(x2, "Force")
-										if err != nil {
-											return tmplrt.ExecError("signin", "$s.Force", err)
-										}
-										v182 := tmplrt.ValueArg(v183)
-										if !tmplrt.Truth(v182) {
-											v184, err := tmplrt.Field(x2, "Problem")
-											if err != nil {
-												return tmplrt.ExecError("signin", "$s.Problem", err)
-											}
-											v185, err := tmplrt.Eq(v184, reflect.ValueOf("keymail"))
-											if err != nil {
-												return tmplrt.ExecError("signin", "eq $s.Problem \"keymail\"", tmplrt.CallError("eq", err))
-											}
-											v182 = tmplrt.ValueArg(reflect.ValueOf(v185))
-										}
-										v186 := tmplrt.Unwrap(v182)
-										if tmplrt.Truth(v186) {
-											b.WriteString("<input type=\"hidden\" name=\"force\" value=\"1\">\n")
-										}
-										b.WriteString("<button rst-btn=\"primary block\" type=\"submit\"")
-										v187 := tmplrt.Unwrap(x8)
-										if tmplrt.Truth(v187) {
-											b.WriteString(" disabled data-pow-submit")
-										}
-										b.WriteString(">")
-										v188, err := tmplrt.Field(x2, "Problem")
-										if err != nil {
-											return tmplrt.ExecError("signin", "$s.Problem", err)
-										}
-										v189, err := tmplrt.Eq(v188, reflect.ValueOf("keymail"))
-										if err != nil {
-											return tmplrt.ExecError("signin", "eq $s.Problem \"keymail\"", tmplrt.CallError("eq", err))
-										}
-										if v189 {
-											v190, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_send_link_instead")
-											if err != nil {
-												return tmplrt.ExecError("signin", "T $L \"rastrillo.ui.signin_send_link_instead\"", tmplrt.CallError("T", err))
-											}
-											v191 := reflect.ValueOf(v190)
-											b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v191)))
-										} else {
-											v192, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_submit")
-											if err != nil {
-												return tmplrt.ExecError("signin", "T $L \"rastrillo.ui.signin_submit\"", tmplrt.CallError("T", err))
-											}
-											v193 := reflect.ValueOf(v192)
-											b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v193)))
-										}
-										b.WriteString("</button>\n")
-										v194 := tmplrt.Unwrap(x8)
-										if tmplrt.Truth(v194) {
-											var v195 reflect.Value
-											if x7.IsValid() {
-												v196, err := tmplrt.MethodOf(x7, "StatusLine")
-												if err != nil {
-													return tmplrt.ExecError("signin", "$proof.StatusLine", err)
-												}
-												v198, err := fn.T_a3eca208(x1, "rastrillo.ui.pow_status")
-												if err != nil {
-													return tmplrt.ExecError("signin", "T $L \"rastrillo.ui.pow_status\"", tmplrt.CallError("T", err))
-												}
-												v199 := reflect.ValueOf(v198)
-												v197, err := v196.Call(tmplrt.Val(v199))
-												if err != nil {
-													return tmplrt.ExecError("signin", "$proof.StatusLine", err)
-												}
-												v195 = v197
-											}
-											v200 := tmplrt.Unwrap(v195)
-											b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v200)))
-											b.WriteString("<noscript><p>")
-											v201, err := fn.T_a3eca208(x1, "rastrillo.ui.pow_noscript")
-											if err != nil {
-												return tmplrt.ExecError("signin", "T $L \"rastrillo.ui.pow_noscript\"", tmplrt.CallError("T", err))
-											}
-											v202 := reflect.ValueOf(v201)
-											b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v202)))
-											b.WriteString("</p></noscript>\n")
-										}
-										b.WriteString("</form>\n")
-									} else {
-										v204, err := tmplrt.Field(x2, "Passkey")
-										if err != nil {
-											return tmplrt.ExecError("signin", "$s.Passkey", err)
-										}
-										v203 := tmplrt.ValueArg(v204)
-										if tmplrt.Truth(v203) {
-											v205, err := tmplrt.Eq(reflect.ValueOf(dot).Elem(), x10)
-											if err != nil {
-												return tmplrt.ExecError("signin", "eq . $pkSlot", tmplrt.CallError("eq", err))
-											}
-											v203 = tmplrt.ValueArg(reflect.ValueOf(v205))
-										}
-										v206 := tmplrt.Unwrap(v203)
-										if tmplrt.Truth(v206) {
-											v207, err := tmplrt.Eq(reflect.ValueOf(dot).Elem(), reflect.ValueOf("after"))
-											if err != nil {
-												return tmplrt.ExecError("signin", "eq . \"after\"", tmplrt.CallError("eq", err))
-											}
-											if v207 {
-												b.WriteString("<p rst-signin-or>")
-												v208, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_or")
-												if err != nil {
-													return tmplrt.ExecError("signin", "T $L \"rastrillo.ui.signin_or\"", tmplrt.CallError("T", err))
-												}
-												v209 := reflect.ValueOf(v208)
-												b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v209)))
-												b.WriteString("</p>\n")
-											}
-											b.WriteString("<div rst-signin-passkey><button rst-btn=\"")
-											v210, err := tmplrt.Eq(x3, reflect.ValueOf("passkey"))
-											if err != nil {
-												return tmplrt.ExecError("signin", "eq $door \"passkey\"", tmplrt.CallError("eq", err))
-											}
-											if v210 {
-												b.WriteString("primary block")
-											} else {
-												b.WriteString("block")
-											}
-											b.WriteString("\" type=\"button\"")
-											v211 := tmplrt.Not(x6)
-											if v211 {
-												b.WriteString(" hidden data-rst-passkey data-rst-passkey-begin=\"")
-												v212, err := tmplrt.Field(x2, "Passkey")
-												if err != nil {
-													return tmplrt.ExecError("signin", "$s.Passkey.BeginPath", err)
-												}
-												v213, err := tmplrt.Field(v212, "BeginPath")
-												if err != nil {
-													return tmplrt.ExecError("signin", "$s.Passkey.BeginPath", err)
-												}
-												v214 := tmplrt.Unwrap(v213)
-												b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v214)))
-												b.WriteString("\" data-rst-passkey-finish=\"")
-												v215, err := tmplrt.Field(x2, "PasskeyFinish")
-												if err != nil {
-													return tmplrt.ExecError("signin", "$s.PasskeyFinish", err)
-												}
-												v216 := tmplrt.Unwrap(v215)
-												b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v216)))
-												b.WriteString("\" data-rst-passkey-module=\"")
-												v217, err := tmplrt.Field(x2, "Passkey")
-												if err != nil {
-													return tmplrt.ExecError("signin", "$s.Passkey.ModuleURL", err)
-												}
-												v218, err := tmplrt.Field(v217, "ModuleURL")
-												if err != nil {
-													return tmplrt.ExecError("signin", "$s.Passkey.ModuleURL", err)
-												}
-												v219 := tmplrt.Unwrap(v218)
-												b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v219)))
-												b.WriteString("\"")
-												v220, err := tmplrt.Field(x2, "Passkey")
-												if err != nil {
-													return tmplrt.ExecError("signin", "$s.Passkey.LegacyRPID", err)
-												}
-												v221, err := tmplrt.Field(v220, "LegacyRPID")
-												if err != nil {
-													return tmplrt.ExecError("signin", "$s.Passkey.LegacyRPID", err)
-												}
-												v222 := tmplrt.Unwrap(v221)
-												if tmplrt.Truth(v222) {
-													dot := v222
-													_ = dot
-													b.WriteString(" data-rst-passkey-legacy-rpid=\"")
-													v223 := tmplrt.Unwrap(dot)
-													b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v223)))
-													b.WriteString("\"")
-												}
-												b.WriteString(" data-rst-passkey-cancelled=\"")
-												v224, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_passkey_cancelled")
-												if err != nil {
-													return tmplrt.ExecError("signin", "T $L \"rastrillo.ui.signin_passkey_cancelled\"", tmplrt.CallError("T", err))
-												}
-												v225 := reflect.ValueOf(v224)
-												b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v225)))
-												b.WriteString("\" data-rst-passkey-failed=\"")
-												v226, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_passkey_failed")
-												if err != nil {
-													return tmplrt.ExecError("signin", "T $L \"rastrillo.ui.signin_passkey_failed\"", tmplrt.CallError("T", err))
-												}
-												v227 := reflect.ValueOf(v226)
-												b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v227)))
-												b.WriteString("\" data-rst-passkey-unavailable=\"")
-												v228, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_passkey_unavailable")
-												if err != nil {
-													return tmplrt.ExecError("signin", "T $L \"rastrillo.ui.signin_passkey_unavailable\"", tmplrt.CallError("T", err))
-												}
-												v229 := reflect.ValueOf(v228)
-												b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v229)))
-												b.WriteString("\"")
-											}
-											b.WriteString(" aria-describedby=\"rst-signin-passkey-msg\">")
-											v230, err := tmplrt.Eq(x3, reflect.ValueOf("passkey"))
-											if err != nil {
-												return tmplrt.ExecError("signin", "eq $door \"passkey\"", tmplrt.CallError("eq", err))
-											}
-											if v230 {
-												v231, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_passkey_remembered")
-												if err != nil {
-													return tmplrt.ExecError("signin", "T $L \"rastrillo.ui.signin_passkey_remembered\"", tmplrt.CallError("T", err))
-												}
-												v232 := reflect.ValueOf(v231)
-												b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v232)))
-											} else {
-												v233, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_passkey")
-												if err != nil {
-													return tmplrt.ExecError("signin", "T $L \"rastrillo.ui.signin_passkey\"", tmplrt.CallError("T", err))
-												}
-												v234 := reflect.ValueOf(v233)
-												b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v234)))
-											}
-											b.WriteString("</button>\n<p rst-signin-passkey-msg id=\"rst-signin-passkey-msg\" aria-live=\"polite\"></p>\n</div>\n")
-											v235, err := tmplrt.Eq(reflect.ValueOf(dot).Elem(), reflect.ValueOf("before"))
-											if err != nil {
-												return tmplrt.ExecError("signin", "eq . \"before\"", tmplrt.CallError("eq", err))
-											}
-											if v235 {
-												b.WriteString("<p rst-signin-or>")
-												v236, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_or")
-												if err != nil {
-													return tmplrt.ExecError("signin", "T $L \"rastrillo.ui.signin_or\"", tmplrt.CallError("T", err))
-												}
-												v237 := reflect.ValueOf(v236)
-												b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v237)))
-												b.WriteString("</p>\n")
-											}
-											v238 := tmplrt.Not(x6)
-											if v238 {
-												b.WriteString("<script type=\"module\" src=\"")
-												v239, err := tmplrt.Field(x2, "Passkey")
-												if err != nil {
-													return tmplrt.ExecError("signin", "$s.Passkey.ScriptURL", err)
-												}
-												v240, err := tmplrt.Field(v239, "ScriptURL")
-												if err != nil {
-													return tmplrt.ExecError("signin", "$s.Passkey.ScriptURL", err)
-												}
-												v241 := tmplrt.Unwrap(v240)
-												tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v241))))
-												b.WriteString("\" data-rst-passkey-script></script>\n")
-											}
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-		v243, err := tmplrt.Ne(x3, reflect.ValueOf("ask"))
-		if err != nil {
-			return tmplrt.ExecError("signin", "ne $door \"ask\"", tmplrt.CallError("ne", err))
-		}
-		v242 := tmplrt.ValueArg(reflect.ValueOf(v243))
-		if tmplrt.Truth(v242) {
-			v244, err := tmplrt.Ne(x3, reflect.ValueOf("continue"))
-			if err != nil {
-				return tmplrt.ExecError("signin", "ne $door \"continue\"", tmplrt.CallError("ne", err))
-			}
-			v242 = tmplrt.ValueArg(reflect.ValueOf(v244))
-			if tmplrt.Truth(v242) {
-				v245, err := tmplrt.Ne(x3, reflect.ValueOf("confirm"))
-				if err != nil {
-					return tmplrt.ExecError("signin", "ne $door \"confirm\"", tmplrt.CallError("ne", err))
-				}
-				v242 = tmplrt.ValueArg(reflect.ValueOf(v245))
-				if tmplrt.Truth(v242) {
-					v247, err := tmplrt.Field(x2, "OneWay")
-					if err != nil {
-						return tmplrt.ExecError("signin", "$s.OneWay", err)
-					}
-					v248 := tmplrt.Not(v247)
-					v246 := tmplrt.ValueArg(reflect.ValueOf(v248))
-					if !tmplrt.Truth(v246) {
-						v249, err := tmplrt.Eq(x3, reflect.ValueOf("sent"))
-						if err != nil {
-							return tmplrt.ExecError("signin", "eq $door \"sent\"", tmplrt.CallError("eq", err))
-						}
-						v246 = tmplrt.ValueArg(reflect.ValueOf(v249))
-					}
-					v250 := tmplrt.Unwrap(v246)
-					v242 = tmplrt.ValueArg(v250)
-				}
-			}
-		}
-		v251 := tmplrt.Unwrap(v242)
-		if tmplrt.Truth(v251) {
-			b.WriteString("<form rst-signin-form method=\"post\" action=\"")
-			v252, err := tmplrt.Field(x2, "ForgetPath")
-			if err != nil {
-				return tmplrt.ExecError("signin", "$s.ForgetPath", err)
-			}
-			v253 := tmplrt.Unwrap(v252)
-			tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v253))))
-			b.WriteString("\">")
-			v254, err := tmplrt.Field(x2, "ReturnTo")
-			if err != nil {
-				return tmplrt.ExecError("signin", "$s.ReturnTo", err)
-			}
-			v255 := tmplrt.Unwrap(v254)
-			if tmplrt.Truth(v255) {
-				dot := v255
-				_ = dot
-				b.WriteString("<input type=\"hidden\" name=\"return_to\" value=\"")
-				v256 := tmplrt.Unwrap(dot)
-				b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v256)))
-				b.WriteString("\">\n")
-			}
-			v257, err := tmplrt.Field(x2, "OneWay")
-			if err != nil {
-				return tmplrt.ExecError("signin", "$s.OneWay", err)
-			}
-			v258 := tmplrt.Unwrap(v257)
-			if tmplrt.Truth(v258) {
-				if depth == tmplrt.MaxExecDepth {
-					return tmplrt.ExecError("signin", "{{template \"signin-forget-way\" (dict \"L\" $L \"State\" $s)}}", tmplrt.DepthError())
-				}
-				v259, err := fn.dict_72aa8d8f("L", x1, "State", tmplrt.Arg(x2))
-				if err != nil {
-					return tmplrt.ExecError("signin", "dict \"L\" $L \"State\" $s", tmplrt.CallError("dict", err))
-				}
-				if err := exec_b29f7da01ee7285f(b, reflect.ValueOf(v259), fn, depth+1); err != nil {
-					return err
-				}
-				b.WriteString("<button rst-btn=\"ghost\" type=\"submit\"><span>")
-				v260, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_different")
-				if err != nil {
-					return tmplrt.ExecError("signin", "T $L \"rastrillo.ui.signin_different\"", tmplrt.CallError("T", err))
-				}
-				v261 := reflect.ValueOf(v260)
-				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v261)))
-				b.WriteString("</span>")
-				if depth == tmplrt.MaxExecDepth {
-					return tmplrt.ExecError("signin", "{{template \"signin-glyph\" (dict \"L\" $L \"Glyph\" \"next\")}}", tmplrt.DepthError())
-				}
-				v262, err := fn.dict_72aa8d8f("L", x1, "Glyph", "next")
-				if err != nil {
-					return tmplrt.ExecError("signin", "dict \"L\" $L \"Glyph\" \"next\"", tmplrt.CallError("dict", err))
-				}
-				if err := exec_a4a2687cde36400d(b, reflect.ValueOf(v262), fn, depth+1); err != nil {
-					return err
-				}
-				b.WriteString("</button>")
-			} else {
-				b.WriteString("<button rst-btn=\"ghost block\" type=\"submit\">")
-				v263, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_different")
-				if err != nil {
-					return tmplrt.ExecError("signin", "T $L \"rastrillo.ui.signin_different\"", tmplrt.CallError("T", err))
-				}
-				v264 := reflect.ValueOf(v263)
-				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v264)))
-				b.WriteString("</button>")
-			}
-			b.WriteString("</form>\n")
-		}
-		v265 := tmplrt.ValueArg(x8)
-		if tmplrt.Truth(v265) {
-			v266, err := tmplrt.Ne(x3, reflect.ValueOf("sent"))
-			if err != nil {
-				return tmplrt.ExecError("signin", "ne $door \"sent\"", tmplrt.CallError("ne", err))
-			}
-			v265 = tmplrt.ValueArg(reflect.ValueOf(v266))
-			if tmplrt.Truth(v265) {
-				v267, err := tmplrt.Ne(x3, reflect.ValueOf("continue"))
-				if err != nil {
-					return tmplrt.ExecError("signin", "ne $door \"continue\"", tmplrt.CallError("ne", err))
-				}
-				v265 = tmplrt.ValueArg(reflect.ValueOf(v267))
-				if tmplrt.Truth(v265) {
-					v268, err := tmplrt.Ne(x3, reflect.ValueOf("confirm"))
-					if err != nil {
-						return tmplrt.ExecError("signin", "ne $door \"confirm\"", tmplrt.CallError("ne", err))
-					}
-					v265 = tmplrt.ValueArg(reflect.ValueOf(v268))
-					if tmplrt.Truth(v265) {
-						v269 := tmplrt.Not(x6)
-						v265 = tmplrt.ValueArg(reflect.ValueOf(v269))
-						if tmplrt.Truth(v265) {
-							v270, err := tmplrt.Field(x2, "OneWay")
-							if err != nil {
-								return tmplrt.ExecError("signin", "$s.OneWay", err)
-							}
-							v271 := tmplrt.Not(v270)
-							v265 = tmplrt.ValueArg(reflect.ValueOf(v271))
-						}
-					}
-				}
-			}
-		}
-		v272 := tmplrt.Unwrap(v265)
-		if tmplrt.Truth(v272) {
-			v273, err := tmplrt.Field(x7, "Script")
-			if err != nil {
-				return tmplrt.ExecError("signin", "$proof.Script", err)
-			}
-			v274 := tmplrt.Unwrap(v273)
-			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v274)))
-		}
-		b.WriteString("</div>\n</section>")
-	}
-	return nil
-}
-
-// facts_b82219fba3d04b88 is what exec_b82219fba3d04b88 assumes of the types it reads.
-var facts_b82219fba3d04b88 = tmplrt.Facts{
-	Funcs: map[string]reflect.Type{
-		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
-	},
-	Facts: []tmplrt.Fact{
-		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
-	},
 }
 
 // exec_b835b92adda3d868 renders "list-bar.html".
@@ -38600,6 +35497,434 @@ var facts_da594099ff3ca61c_315fd3b5 = tmplrt.Facts{
 	},
 }
 
+// exec_da77c547a7a0b718 renders "signin-add".
+func exec_da77c547a7a0b718(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
+	root := dot
+	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
+	x1 := v1
+	_ = x1
+	v2, err := tmplrt.Field(dot, "Add")
+	if err != nil {
+		return tmplrt.ExecError("signin-add", ".Add", err)
+	}
+	v3 := tmplrt.Unwrap(v2)
+	x2 := v3
+	_ = x2
+	v4, err := tmplrt.Field(x2, "Way")
+	if err != nil {
+		return tmplrt.ExecError("signin-add", "$a.Way.Name", err)
+	}
+	v5, err := tmplrt.Field(v4, "Name")
+	if err != nil {
+		return tmplrt.ExecError("signin-add", "$a.Way.Name", err)
+	}
+	v6 := tmplrt.Unwrap(v5)
+	x3 := v6
+	_ = x3
+	v7 := fn.opt_08785a53(tmplrt.Arg(dot), "Preview")
+	v8 := reflect.ValueOf(v7)
+	x4 := v8
+	_ = x4
+	x5 := reflect.ValueOf("")
+	_ = x5
+	v9, err := tmplrt.Field(x2, "Problem")
+	if err != nil {
+		return tmplrt.ExecError("signin-add", "$a.Problem", err)
+	}
+	v10 := tmplrt.Unwrap(v9)
+	if tmplrt.Truth(v10) {
+		dot := v10
+		_ = dot
+		v11, err := fn.T_a3eca208(x1, tmplrt.Arg(dot))
+		if err != nil {
+			return tmplrt.ExecError("signin-add", "T $L .", tmplrt.CallError("T", err))
+		}
+		v12 := reflect.ValueOf(v11)
+		x5 = v12
+	}
+	b.WriteString("<section rst-signin aria-labelledby=\"rst-signin-heading\">\n")
+	v13 := fn.opt_08785a53(tmplrt.Arg(dot), "HideBrand")
+	v14 := reflect.ValueOf(v13)
+	v15 := tmplrt.Not(v14)
+	if v15 {
+		if depth == tmplrt.MaxExecDepth {
+			return tmplrt.ExecError("signin-add", "{{template \"signin-brand\" (dict \"L\" $L \"Brand\" .Brand)}}", tmplrt.DepthError())
+		}
+		v16, err := tmplrt.Field(dot, "Brand")
+		if err != nil {
+			return tmplrt.ExecError("signin-add", ".Brand", err)
+		}
+		v17, err := fn.dict_72aa8d8f("L", x1, "Brand", tmplrt.Arg(v16))
+		if err != nil {
+			return tmplrt.ExecError("signin-add", "dict \"L\" $L \"Brand\" .Brand", tmplrt.CallError("dict", err))
+		}
+		if err := exec_79cb8cc0dd268570(b, reflect.ValueOf(v17), fn, depth+1); err != nil {
+			return err
+		}
+	}
+	b.WriteString("<div rst-signin-door=\"one-way\">\n<h1 id=\"rst-signin-heading\">")
+	v18 := tmplrt.Printf("rastrillo.ui.signin_add_%s_heading", tmplrt.Arg(x3))
+	v19, err := fn.T_a3eca208(x1, v18)
+	if err != nil {
+		return tmplrt.ExecError("signin-add", "T $L (printf \"rastrillo.ui.signin_add_%s_heading\" $way)", tmplrt.CallError("T", err))
+	}
+	v20 := reflect.ValueOf(v19)
+	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v20)))
+	b.WriteString("</h1>\n")
+	v21, err := tmplrt.Field(x2, "Done")
+	if err != nil {
+		return tmplrt.ExecError("signin-add", "$a.Done", err)
+	}
+	v22 := tmplrt.Unwrap(v21)
+	if tmplrt.Truth(v22) {
+		b.WriteString("<p>")
+		v23, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_added")
+		if err != nil {
+			return tmplrt.ExecError("signin-add", "T $L \"rastrillo.ui.signin_added\"", tmplrt.CallError("T", err))
+		}
+		v24 := reflect.ValueOf(v23)
+		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v24)))
+		b.WriteString("</p>\n<a rst-btn=\"primary block\" href=\"")
+		v25, err := tmplrt.Field(x2, "ReturnTo")
+		if err != nil {
+			return tmplrt.ExecError("signin-add", "$a.ReturnTo", err)
+		}
+		v26 := tmplrt.Unwrap(v25)
+		tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v26))))
+		b.WriteString("\" autofocus>")
+		v27, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_added_continue")
+		if err != nil {
+			return tmplrt.ExecError("signin-add", "T $L \"rastrillo.ui.signin_added_continue\"", tmplrt.CallError("T", err))
+		}
+		v28 := reflect.ValueOf(v27)
+		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v28)))
+		b.WriteString("</a>\n")
+	} else {
+		v29, err := tmplrt.Eq(x3, reflect.ValueOf("passkey"))
+		if err != nil {
+			return tmplrt.ExecError("signin-add", "eq $way \"passkey\"", tmplrt.CallError("eq", err))
+		}
+		if v29 {
+			b.WriteString("<p>")
+			v30, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_add_passkey_body")
+			if err != nil {
+				return tmplrt.ExecError("signin-add", "T $L \"rastrillo.ui.signin_add_passkey_body\"", tmplrt.CallError("T", err))
+			}
+			v31 := reflect.ValueOf(v30)
+			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v31)))
+			b.WriteString("</p>\n<div rst-signin-passkey><button rst-btn=\"primary block\" type=\"button\"")
+			v32 := tmplrt.Not(x4)
+			if v32 {
+				b.WriteString(" disabled data-rst-passkey-register data-rst-passkey-begin=\"")
+				v33, err := tmplrt.Field(x2, "Passkey")
+				if err != nil {
+					return tmplrt.ExecError("signin-add", "$a.Passkey.BeginPath", err)
+				}
+				v34, err := tmplrt.Field(v33, "BeginPath")
+				if err != nil {
+					return tmplrt.ExecError("signin-add", "$a.Passkey.BeginPath", err)
+				}
+				v35 := tmplrt.Unwrap(v34)
+				b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v35)))
+				b.WriteString("\" data-rst-passkey-finish=\"")
+				v36, err := tmplrt.Field(x2, "Passkey")
+				if err != nil {
+					return tmplrt.ExecError("signin-add", "$a.Passkey.FinishPath", err)
+				}
+				v37, err := tmplrt.Field(v36, "FinishPath")
+				if err != nil {
+					return tmplrt.ExecError("signin-add", "$a.Passkey.FinishPath", err)
+				}
+				v38 := tmplrt.Unwrap(v37)
+				b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v38)))
+				b.WriteString("\" data-rst-passkey-module=\"")
+				v39, err := tmplrt.Field(x2, "Passkey")
+				if err != nil {
+					return tmplrt.ExecError("signin-add", "$a.Passkey.ModuleURL", err)
+				}
+				v40, err := tmplrt.Field(v39, "ModuleURL")
+				if err != nil {
+					return tmplrt.ExecError("signin-add", "$a.Passkey.ModuleURL", err)
+				}
+				v41 := tmplrt.Unwrap(v40)
+				b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v41)))
+				b.WriteString("\" data-rst-passkey-user=\"")
+				v42, err := tmplrt.Field(x2, "Address")
+				if err != nil {
+					return tmplrt.ExecError("signin-add", "$a.Address", err)
+				}
+				v43 := tmplrt.Unwrap(v42)
+				b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v43)))
+				b.WriteString("\" data-rst-passkey-rp-name=\"")
+				v44, err := tmplrt.Field(dot, "Brand")
+				if err != nil {
+					return tmplrt.ExecError("signin-add", ".Brand.Name", err)
+				}
+				v45, err := tmplrt.Field(v44, "Name")
+				if err != nil {
+					return tmplrt.ExecError("signin-add", ".Brand.Name", err)
+				}
+				v46 := tmplrt.Unwrap(v45)
+				b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v46)))
+				b.WriteString("\" data-rst-passkey-failed=\"")
+				v47, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_add_passkey_failed")
+				if err != nil {
+					return tmplrt.ExecError("signin-add", "T $L \"rastrillo.ui.signin_add_passkey_failed\"", tmplrt.CallError("T", err))
+				}
+				v48 := reflect.ValueOf(v47)
+				b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v48)))
+				b.WriteString("\"")
+			}
+			b.WriteString(" aria-describedby=\"rst-signin-passkey-msg\">")
+			if depth == tmplrt.MaxExecDepth {
+				return tmplrt.ExecError("signin-add", "{{template \"signin-glyph\" (dict \"L\" $L \"Glyph\" \"key\")}}", tmplrt.DepthError())
+			}
+			v49, err := fn.dict_72aa8d8f("L", x1, "Glyph", "key")
+			if err != nil {
+				return tmplrt.ExecError("signin-add", "dict \"L\" $L \"Glyph\" \"key\"", tmplrt.CallError("dict", err))
+			}
+			if err := exec_1b24f25e597ad443(b, reflect.ValueOf(v49), fn, depth+1); err != nil {
+				return err
+			}
+			b.WriteString("<span>")
+			v50, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_add_passkey_submit")
+			if err != nil {
+				return tmplrt.ExecError("signin-add", "T $L \"rastrillo.ui.signin_add_passkey_submit\"", tmplrt.CallError("T", err))
+			}
+			v51 := reflect.ValueOf(v50)
+			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v51)))
+			b.WriteString("</span></button>\n<p rst-signin-passkey-msg id=\"rst-signin-passkey-msg\" aria-live=\"polite\"></p>\n</div>\n")
+			v52 := tmplrt.Not(x4)
+			if v52 {
+				b.WriteString("<noscript><p>")
+				v53, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_passkey_noscript")
+				if err != nil {
+					return tmplrt.ExecError("signin-add", "T $L \"rastrillo.ui.signin_passkey_noscript\"", tmplrt.CallError("T", err))
+				}
+				v54 := reflect.ValueOf(v53)
+				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v54)))
+				b.WriteString("</p></noscript>\n<script type=\"module\" src=\"")
+				v55, err := tmplrt.Field(x2, "Passkey")
+				if err != nil {
+					return tmplrt.ExecError("signin-add", "$a.Passkey.ScriptURL", err)
+				}
+				v56, err := tmplrt.Field(v55, "ScriptURL")
+				if err != nil {
+					return tmplrt.ExecError("signin-add", "$a.Passkey.ScriptURL", err)
+				}
+				v57 := tmplrt.Unwrap(v56)
+				tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v57))))
+				b.WriteString("\" data-rst-passkey-script></script>\n")
+			}
+		} else {
+			v58, err := tmplrt.Eq(x3, reflect.ValueOf("authenticator"))
+			if err != nil {
+				return tmplrt.ExecError("signin-add", "eq $way \"authenticator\"", tmplrt.CallError("eq", err))
+			}
+			if v58 {
+				b.WriteString("<p>")
+				v59, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_add_authenticator_body")
+				if err != nil {
+					return tmplrt.ExecError("signin-add", "T $L \"rastrillo.ui.signin_add_authenticator_body\"", tmplrt.CallError("T", err))
+				}
+				v60 := reflect.ValueOf(v59)
+				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v60)))
+				b.WriteString("</p>\n")
+				var v61 reflect.Value
+				if x2.IsValid() {
+					v62, err := tmplrt.MethodOf(x2, "QR")
+					if err != nil {
+						return tmplrt.ExecError("signin-add", "$a.QR", err)
+					}
+					v64, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_add_authenticator_qr")
+					if err != nil {
+						return tmplrt.ExecError("signin-add", "T $L \"rastrillo.ui.signin_add_authenticator_qr\"", tmplrt.CallError("T", err))
+					}
+					v65 := reflect.ValueOf(v64)
+					v63, err := v62.Call(tmplrt.Val(v65))
+					if err != nil {
+						return tmplrt.ExecError("signin-add", "$a.QR", err)
+					}
+					v61 = v63
+				}
+				v66 := tmplrt.Unwrap(v61)
+				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v66)))
+				b.WriteString("\n<p>")
+				v67, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_add_authenticator_key")
+				if err != nil {
+					return tmplrt.ExecError("signin-add", "T $L \"rastrillo.ui.signin_add_authenticator_key\"", tmplrt.CallError("T", err))
+				}
+				v68 := reflect.ValueOf(v67)
+				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v68)))
+				b.WriteString(" <code>")
+				v69, err := tmplrt.Field(x2, "Key")
+				if err != nil {
+					return tmplrt.ExecError("signin-add", "$a.Key", err)
+				}
+				v70 := tmplrt.Unwrap(v69)
+				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v70)))
+				b.WriteString("</code></p>\n<form rst-signin-form method=\"post\" action=\"")
+				v71, err := tmplrt.Field(x2, "Action")
+				if err != nil {
+					return tmplrt.ExecError("signin-add", "$a.Action", err)
+				}
+				v72 := tmplrt.Unwrap(v71)
+				tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v72))))
+				b.WriteString("\">")
+				v73, err := tmplrt.Field(x2, "ReturnTo")
+				if err != nil {
+					return tmplrt.ExecError("signin-add", "$a.ReturnTo", err)
+				}
+				v74 := tmplrt.Unwrap(v73)
+				if tmplrt.Truth(v74) {
+					dot := v74
+					_ = dot
+					b.WriteString("<input type=\"hidden\" name=\"return_to\" value=\"")
+					v75 := tmplrt.Unwrap(dot)
+					b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v75)))
+					b.WriteString("\">\n")
+				}
+				if depth == tmplrt.MaxExecDepth {
+					return tmplrt.ExecError("signin-add", "{{template \"field\" (dict \"L\" $L \"ID\" \"rst-signin-code\" \"Name\" \"code\" \"Label\" (T $L \"rastrillo.ui.signin_code\") \"Type\" \"text\" \"Inputmode\" \"numeric\" \"Autocomplete\" \"one-time-code\" \"Required\" true \"Autofocus\" (ne $err \"\") \"Error\" $err \"QuietError\" true)}}", tmplrt.DepthError())
+				}
+				v76, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_code")
+				if err != nil {
+					return tmplrt.ExecError("signin-add", "T $L \"rastrillo.ui.signin_code\"", tmplrt.CallError("T", err))
+				}
+				v77 := reflect.ValueOf(v76)
+				v78, err := tmplrt.Ne(x5, reflect.ValueOf(""))
+				if err != nil {
+					return tmplrt.ExecError("signin-add", "ne $err \"\"", tmplrt.CallError("ne", err))
+				}
+				v79, err := fn.dict_72aa8d8f("L", x1, "ID", "rst-signin-code", "Name", "code", "Label", tmplrt.Arg(v77), "Type", "text", "Inputmode", "numeric", "Autocomplete", "one-time-code", "Required", true, "Autofocus", v78, "Error", tmplrt.Arg(x5), "QuietError", true)
+				if err != nil {
+					return tmplrt.ExecError("signin-add", "dict \"L\" $L \"ID\" \"rst-signin-code\" \"Name\" \"code\" \"Label\" (T $L \"rastrillo.ui.signin_code\") \"Type\" \"text\" \"Inputmode\" \"numeric\" \"Autocomplete\" \"one-time-code\" \"Required\" true \"Autofocus\" (ne $err \"\") \"Error\" $err \"QuietError\" true", tmplrt.CallError("dict", err))
+				}
+				if err := exec_86a6d72433195e11(b, reflect.ValueOf(v79), fn, depth+1); err != nil {
+					return err
+				}
+				b.WriteString("\n<button rst-btn=\"primary block\" type=\"submit\">")
+				v80, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_add_authenticator_submit")
+				if err != nil {
+					return tmplrt.ExecError("signin-add", "T $L \"rastrillo.ui.signin_add_authenticator_submit\"", tmplrt.CallError("T", err))
+				}
+				v81 := reflect.ValueOf(v80)
+				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v81)))
+				b.WriteString("</button></form>\n")
+			} else {
+				b.WriteString("<p>")
+				v82, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_add_passphrase_body")
+				if err != nil {
+					return tmplrt.ExecError("signin-add", "T $L \"rastrillo.ui.signin_add_passphrase_body\"", tmplrt.CallError("T", err))
+				}
+				v83 := reflect.ValueOf(v82)
+				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v83)))
+				b.WriteString("</p>\n<form rst-signin-form method=\"post\" action=\"")
+				v84, err := tmplrt.Field(x2, "Action")
+				if err != nil {
+					return tmplrt.ExecError("signin-add", "$a.Action", err)
+				}
+				v85 := tmplrt.Unwrap(v84)
+				tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v85))))
+				b.WriteString("\">")
+				v86, err := tmplrt.Field(x2, "ReturnTo")
+				if err != nil {
+					return tmplrt.ExecError("signin-add", "$a.ReturnTo", err)
+				}
+				v87 := tmplrt.Unwrap(v86)
+				if tmplrt.Truth(v87) {
+					dot := v87
+					_ = dot
+					b.WriteString("<input type=\"hidden\" name=\"return_to\" value=\"")
+					v88 := tmplrt.Unwrap(dot)
+					b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v88)))
+					b.WriteString("\">\n")
+				}
+				v89, err := tmplrt.Field(x2, "Address")
+				if err != nil {
+					return tmplrt.ExecError("signin-add", "$a.Address", err)
+				}
+				v90 := tmplrt.Unwrap(v89)
+				if tmplrt.Truth(v90) {
+					dot := v90
+					_ = dot
+					b.WriteString("<input type=\"email\" name=\"username\" autocomplete=\"username\" value=\"")
+					v91 := tmplrt.Unwrap(dot)
+					b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v91)))
+					b.WriteString("\" hidden>\n")
+				}
+				if depth == tmplrt.MaxExecDepth {
+					return tmplrt.ExecError("signin-add", "{{template \"field\" (dict \"L\" $L \"ID\" \"rst-signin-passphrase\" \"Name\" \"passphrase\" \"Label\" (T $L \"rastrillo.ui.signin_passphrase\") \"Type\" \"password\" \"Autocomplete\" \"new-password\" \"Minlength\" \"15\" \"Required\" true \"Autofocus\" true \"Error\" $err \"QuietError\" true)}}", tmplrt.DepthError())
+				}
+				v92, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_passphrase")
+				if err != nil {
+					return tmplrt.ExecError("signin-add", "T $L \"rastrillo.ui.signin_passphrase\"", tmplrt.CallError("T", err))
+				}
+				v93 := reflect.ValueOf(v92)
+				v94, err := fn.dict_72aa8d8f("L", x1, "ID", "rst-signin-passphrase", "Name", "passphrase", "Label", tmplrt.Arg(v93), "Type", "password", "Autocomplete", "new-password", "Minlength", "15", "Required", true, "Autofocus", true, "Error", tmplrt.Arg(x5), "QuietError", true)
+				if err != nil {
+					return tmplrt.ExecError("signin-add", "dict \"L\" $L \"ID\" \"rst-signin-passphrase\" \"Name\" \"passphrase\" \"Label\" (T $L \"rastrillo.ui.signin_passphrase\") \"Type\" \"password\" \"Autocomplete\" \"new-password\" \"Minlength\" \"15\" \"Required\" true \"Autofocus\" true \"Error\" $err \"QuietError\" true", tmplrt.CallError("dict", err))
+				}
+				if err := exec_86a6d72433195e11(b, reflect.ValueOf(v94), fn, depth+1); err != nil {
+					return err
+				}
+				b.WriteString("\n<div data-rst-reveal-row")
+				v95 := tmplrt.Not(x4)
+				if v95 {
+					b.WriteString(" hidden")
+				}
+				b.WriteString("><label rst-switch><input type=\"checkbox\" data-rst-reveal aria-controls=\"rst-signin-passphrase\"><span rst-switch-track aria-hidden=\"true\"></span> ")
+				v96, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_add_passphrase_show")
+				if err != nil {
+					return tmplrt.ExecError("signin-add", "T $L \"rastrillo.ui.signin_add_passphrase_show\"", tmplrt.CallError("T", err))
+				}
+				v97 := reflect.ValueOf(v96)
+				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v97)))
+				b.WriteString("</label></div>\n<button rst-btn=\"primary block\" type=\"submit\">")
+				v98, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_add_passphrase_submit")
+				if err != nil {
+					return tmplrt.ExecError("signin-add", "T $L \"rastrillo.ui.signin_add_passphrase_submit\"", tmplrt.CallError("T", err))
+				}
+				v99 := reflect.ValueOf(v98)
+				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v99)))
+				b.WriteString("</button></form>\n")
+				v101 := tmplrt.Not(x4)
+				v100 := tmplrt.ValueArg(reflect.ValueOf(v101))
+				if tmplrt.Truth(v100) {
+					v102, err := tmplrt.Field(x2, "RevealURL")
+					if err != nil {
+						return tmplrt.ExecError("signin-add", "$a.RevealURL", err)
+					}
+					v100 = tmplrt.ValueArg(v102)
+				}
+				v103 := tmplrt.Unwrap(v100)
+				if tmplrt.Truth(v103) {
+					b.WriteString("<script type=\"module\" src=\"")
+					v104, err := tmplrt.Field(x2, "RevealURL")
+					if err != nil {
+						return tmplrt.ExecError("signin-add", "$a.RevealURL", err)
+					}
+					v105 := tmplrt.Unwrap(v104)
+					tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v105))))
+					b.WriteString("\"></script>\n")
+				}
+			}
+		}
+	}
+	b.WriteString("</div>\n</section>")
+	return nil
+}
+
+// facts_da77c547a7a0b718 is what exec_da77c547a7a0b718 assumes of the types it reads.
+var facts_da77c547a7a0b718 = tmplrt.Facts{
+	Funcs: map[string]reflect.Type{
+		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
+	},
+	Facts: []tmplrt.Fact{
+		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
+	},
+}
+
 // exec_dad34822d154cf44 renders "typed-receiver-binding".
 func exec_dad34822d154cf44(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
 	v1, err := tmplrt.Field(dot, "Child")
@@ -38653,6 +35978,1171 @@ var facts_dad34822d154cf44_4b12177a = tmplrt.Facts{
 		{Path: []string{".Child"}, Type: "*amadan.net/rastrillo/rastrillo/tmpl/internal/corpus.kid"},
 		{Path: []string{".Swap() func() string"}, Type: "string"},
 		{Path: []string{".Child", ".Say() func(string) string"}, Type: "string"},
+	},
+}
+
+// exec_db852b1bc4e5bdac renders "signin".
+func exec_db852b1bc4e5bdac(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
+	root := dot
+	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
+	x1 := v1
+	_ = x1
+	v2, err := tmplrt.Field(dot, "State")
+	if err != nil {
+		return tmplrt.ExecError("signin", ".State", err)
+	}
+	v3 := tmplrt.Unwrap(v2)
+	x2 := v3
+	_ = x2
+	v4, err := tmplrt.Field(x2, "Door")
+	if err != nil {
+		return tmplrt.ExecError("signin", "$s.Door", err)
+	}
+	v5 := tmplrt.Unwrap(v4)
+	x3 := v5
+	_ = x3
+	v6, err := tmplrt.Field(x2, "Focus")
+	if err != nil {
+		return tmplrt.ExecError("signin", "$s.Focus", err)
+	}
+	v7 := tmplrt.Unwrap(v6)
+	x4 := v7
+	_ = x4
+	v8, err := tmplrt.Field(dot, "Brand")
+	if err != nil {
+		return tmplrt.ExecError("signin", ".Brand.Name", err)
+	}
+	v9, err := tmplrt.Field(v8, "Name")
+	if err != nil {
+		return tmplrt.ExecError("signin", ".Brand.Name", err)
+	}
+	v10 := tmplrt.Unwrap(v9)
+	x5 := v10
+	_ = x5
+	v11 := fn.opt_08785a53(tmplrt.Arg(dot), "Preview")
+	v12 := reflect.ValueOf(v11)
+	x6 := v12
+	_ = x6
+	v13, err := tmplrt.Field(x2, "Proof")
+	if err != nil {
+		return tmplrt.ExecError("signin", "$s.Proof", err)
+	}
+	v14 := tmplrt.Unwrap(v13)
+	x7 := v14
+	_ = x7
+	v15 := tmplrt.ValueArg(x7)
+	if tmplrt.Truth(v15) {
+		v16, err := tmplrt.Field(x7, "NeedsScript")
+		if err != nil {
+			return tmplrt.ExecError("signin", "$proof.NeedsScript", err)
+		}
+		v15 = tmplrt.ValueArg(v16)
+	}
+	v17 := tmplrt.Unwrap(v15)
+	x8 := v17
+	_ = x8
+	v18, err := tmplrt.Field(x2, "Unavailable")
+	if err != nil {
+		return tmplrt.ExecError("signin", "$s.Unavailable", err)
+	}
+	v19 := tmplrt.Not(v18)
+	if v19 {
+		b.WriteString("<section rst-signin aria-labelledby=\"rst-signin-heading\">\n")
+		v20 := fn.opt_08785a53(tmplrt.Arg(dot), "HideBrand")
+		v21 := reflect.ValueOf(v20)
+		v22 := tmplrt.Not(v21)
+		if v22 {
+			b.WriteString("<div rst-signin-brand>")
+			v23, err := tmplrt.Field(dot, "Brand")
+			if err != nil {
+				return tmplrt.ExecError("signin", ".Brand", err)
+			}
+			v24 := fn.opt_08785a53(tmplrt.Arg(v23), "Mark")
+			v25 := reflect.ValueOf(v24)
+			if tmplrt.Truth(v25) {
+				dot := v25
+				_ = dot
+				b.WriteString("<div rst-signin-mark>")
+				v26 := tmplrt.Unwrap(dot)
+				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v26)))
+				b.WriteString("</div>")
+			}
+			b.WriteString("<p rst-signin-name>")
+			v27 := tmplrt.Unwrap(x5)
+			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v27)))
+			b.WriteString("</p>")
+			v28, err := tmplrt.Field(dot, "Brand")
+			if err != nil {
+				return tmplrt.ExecError("signin", ".Brand", err)
+			}
+			v29 := fn.opt_08785a53(tmplrt.Arg(v28), "Pitch")
+			v30 := reflect.ValueOf(v29)
+			if tmplrt.Truth(v30) {
+				dot := v30
+				_ = dot
+				b.WriteString("<p rst-signin-pitch>")
+				v31 := tmplrt.Unwrap(dot)
+				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v31)))
+				b.WriteString("</p>")
+			}
+			b.WriteString("</div>\n")
+		}
+		b.WriteString("<div rst-signin-door")
+		v32, err := tmplrt.Field(x2, "OneWay")
+		if err != nil {
+			return tmplrt.ExecError("signin", "$s.OneWay", err)
+		}
+		v33 := tmplrt.Unwrap(v32)
+		if tmplrt.Truth(v33) {
+			b.WriteString("=\"one-way\"")
+		}
+		b.WriteString(">\n")
+		v34, err := tmplrt.Eq(x3, reflect.ValueOf("continue"))
+		if err != nil {
+			return tmplrt.ExecError("signin", "eq $door \"continue\"", tmplrt.CallError("eq", err))
+		}
+		if v34 {
+			v35 := tmplrt.Not(x6)
+			if v35 {
+				b.WriteString("<meta http-equiv=\"refresh\" content=\"0;url=")
+				v36, err := tmplrt.Field(x2, "ContinueURL")
+				if err != nil {
+					return tmplrt.ExecError("signin", "$s.ContinueURL", err)
+				}
+				v37 := tmplrt.Unwrap(v36)
+				tmplrt.WriteAttrEscaped(b, tmplrt.URLFilter(tmplrt.Arg(v37)))
+				b.WriteString("\">")
+			}
+			b.WriteString("\n<h1 id=\"rst-signin-heading\">")
+			v38, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_continue_heading")
+			if err != nil {
+				return tmplrt.ExecError("signin", "T $L \"rastrillo.ui.signin_continue_heading\"", tmplrt.CallError("T", err))
+			}
+			v39 := reflect.ValueOf(v38)
+			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v39)))
+			b.WriteString("</h1>\n<p>")
+			v40, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_continue_body")
+			if err != nil {
+				return tmplrt.ExecError("signin", "T $L \"rastrillo.ui.signin_continue_body\"", tmplrt.CallError("T", err))
+			}
+			v41 := reflect.ValueOf(v40)
+			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v41)))
+			b.WriteString("</p>\n<a rst-btn=\"primary block\" href=\"")
+			v42 := tmplrt.Unwrap(x6)
+			if tmplrt.Truth(v42) {
+				b.WriteString("#")
+			} else {
+				v43, err := tmplrt.Field(x2, "ContinueURL")
+				if err != nil {
+					return tmplrt.ExecError("signin", "$s.ContinueURL", err)
+				}
+				v44 := tmplrt.Unwrap(v43)
+				tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v44))))
+			}
+			b.WriteString("\">")
+			v45, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_to_keymail")
+			if err != nil {
+				return tmplrt.ExecError("signin", "T $L \"rastrillo.ui.signin_to_keymail\"", tmplrt.CallError("T", err))
+			}
+			v46 := reflect.ValueOf(v45)
+			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v46)))
+			b.WriteString("</a>\n")
+		} else {
+			v47, err := tmplrt.Eq(x3, reflect.ValueOf("confirm"))
+			if err != nil {
+				return tmplrt.ExecError("signin", "eq $door \"confirm\"", tmplrt.CallError("eq", err))
+			}
+			if v47 {
+				b.WriteString("<h1 id=\"rst-signin-heading\">")
+				v48, err := fn.Tf_a3eca208(x1, "rastrillo.ui.signin_heading", "name", tmplrt.Arg(x5))
+				if err != nil {
+					return tmplrt.ExecError("signin", "Tf $L \"rastrillo.ui.signin_heading\" \"name\" $name", tmplrt.CallError("Tf", err))
+				}
+				v49 := reflect.ValueOf(v48)
+				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v49)))
+				b.WriteString("</h1>\n<form rst-signin-form method=\"post\" action=\"")
+				v50, err := tmplrt.Field(x2, "Confirm")
+				if err != nil {
+					return tmplrt.ExecError("signin", "$s.Confirm.Action", err)
+				}
+				v51, err := tmplrt.Field(v50, "Action")
+				if err != nil {
+					return tmplrt.ExecError("signin", "$s.Confirm.Action", err)
+				}
+				v52 := tmplrt.Unwrap(v51)
+				tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v52))))
+				b.WriteString("\">\n<input type=\"hidden\" name=\"token\" value=\"")
+				v53, err := tmplrt.Field(x2, "Confirm")
+				if err != nil {
+					return tmplrt.ExecError("signin", "$s.Confirm.Token", err)
+				}
+				v54, err := tmplrt.Field(v53, "Token")
+				if err != nil {
+					return tmplrt.ExecError("signin", "$s.Confirm.Token", err)
+				}
+				v55 := tmplrt.Unwrap(v54)
+				b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v55)))
+				b.WriteString("\">\n<button rst-btn=\"primary block\" type=\"submit\"")
+				v56, err := tmplrt.Eq(x4, reflect.ValueOf("onetap"))
+				if err != nil {
+					return tmplrt.ExecError("signin", "eq $focus \"onetap\"", tmplrt.CallError("eq", err))
+				}
+				if v56 {
+					b.WriteString(" autofocus")
+				}
+				b.WriteString(">")
+				v57, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_confirm_submit")
+				if err != nil {
+					return tmplrt.ExecError("signin", "T $L \"rastrillo.ui.signin_confirm_submit\"", tmplrt.CallError("T", err))
+				}
+				v58 := reflect.ValueOf(v57)
+				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v58)))
+				b.WriteString("</button>\n</form>\n")
+			} else {
+				v59, err := tmplrt.Eq(x3, reflect.ValueOf("sent"))
+				if err != nil {
+					return tmplrt.ExecError("signin", "eq $door \"sent\"", tmplrt.CallError("eq", err))
+				}
+				if v59 {
+					b.WriteString("<h1 id=\"rst-signin-heading\">")
+					v60, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_sent_heading")
+					if err != nil {
+						return tmplrt.ExecError("signin", "T $L \"rastrillo.ui.signin_sent_heading\"", tmplrt.CallError("T", err))
+					}
+					v61 := reflect.ValueOf(v60)
+					b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v61)))
+					b.WriteString("</h1>\n")
+					v62, err := tmplrt.Field(x2, "SentInstead")
+					if err != nil {
+						return tmplrt.ExecError("signin", "$s.SentInstead", err)
+					}
+					v63 := tmplrt.Unwrap(v62)
+					if tmplrt.Truth(v63) {
+						b.WriteString("<p>")
+						v64, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_sent_instead")
+						if err != nil {
+							return tmplrt.ExecError("signin", "T $L \"rastrillo.ui.signin_sent_instead\"", tmplrt.CallError("T", err))
+						}
+						v65 := reflect.ValueOf(v64)
+						b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v65)))
+						b.WriteString("</p>\n")
+					}
+					b.WriteString("<p>")
+					v66, err := tmplrt.Field(x2, "SentTo")
+					if err != nil {
+						return tmplrt.ExecError("signin", "$s.SentTo", err)
+					}
+					v67 := tmplrt.Unwrap(v66)
+					if tmplrt.Truth(v67) {
+						v68, err := tmplrt.Field(x2, "SentTo")
+						if err != nil {
+							return tmplrt.ExecError("signin", "$s.SentTo", err)
+						}
+						v69, err := fn.Tbdi_a3eca208(x1, "rastrillo.ui.signin_sent_to", "address", tmplrt.Arg(v68))
+						if err != nil {
+							return tmplrt.ExecError("signin", "Tbdi $L \"rastrillo.ui.signin_sent_to\" \"address\" $s.SentTo", tmplrt.CallError("Tbdi", err))
+						}
+						v70 := reflect.ValueOf(v69)
+						b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v70)))
+					} else {
+						v71, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_sent_inbox")
+						if err != nil {
+							return tmplrt.ExecError("signin", "T $L \"rastrillo.ui.signin_sent_inbox\"", tmplrt.CallError("T", err))
+						}
+						v72 := reflect.ValueOf(v71)
+						b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v72)))
+					}
+					b.WriteString(" ")
+					v73, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_sent_once")
+					if err != nil {
+						return tmplrt.ExecError("signin", "T $L \"rastrillo.ui.signin_sent_once\"", tmplrt.CallError("T", err))
+					}
+					v74 := reflect.ValueOf(v73)
+					b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v74)))
+					b.WriteString("</p>\n")
+				} else {
+					v75, err := tmplrt.Field(x2, "OneWay")
+					if err != nil {
+						return tmplrt.ExecError("signin", "$s.OneWay", err)
+					}
+					v76 := tmplrt.Unwrap(v75)
+					if tmplrt.Truth(v76) {
+						if depth == tmplrt.MaxExecDepth {
+							return tmplrt.ExecError("signin", "{{template \"signin-one-way\" (dict \"L\" $L \"State\" $s \"Door\" $door \"Focus\" $focus \"Name\" $name \"Preview\" $preview \"Proof\" $proof \"Gated\" $gated)}}", tmplrt.DepthError())
+						}
+						v77, err := fn.dict_72aa8d8f("L", x1, "State", tmplrt.Arg(x2), "Door", tmplrt.Arg(x3), "Focus", tmplrt.Arg(x4), "Name", tmplrt.Arg(x5), "Preview", tmplrt.Arg(x6), "Proof", tmplrt.Arg(x7), "Gated", tmplrt.Arg(x8))
+						if err != nil {
+							return tmplrt.ExecError("signin", "dict \"L\" $L \"State\" $s \"Door\" $door \"Focus\" $focus \"Name\" $name \"Preview\" $preview \"Proof\" $proof \"Gated\" $gated", tmplrt.CallError("dict", err))
+						}
+						if err := exec_fa8920b3c9e67243(b, reflect.ValueOf(v77), fn, depth+1); err != nil {
+							return err
+						}
+					} else {
+						b.WriteString("<h1 id=\"rst-signin-heading\">")
+						v78, err := fn.Tf_a3eca208(x1, "rastrillo.ui.signin_heading", "name", tmplrt.Arg(x5))
+						if err != nil {
+							return tmplrt.ExecError("signin", "Tf $L \"rastrillo.ui.signin_heading\" \"name\" $name", tmplrt.CallError("Tf", err))
+						}
+						v79 := reflect.ValueOf(v78)
+						b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v79)))
+						b.WriteString("</h1>\n")
+						v81, err := tmplrt.Field(x2, "Problem")
+						if err != nil {
+							return tmplrt.ExecError("signin", "$s.Problem", err)
+						}
+						v80 := tmplrt.ValueArg(v81)
+						if tmplrt.Truth(v80) {
+							v82, err := tmplrt.Field(x2, "Problem")
+							if err != nil {
+								return tmplrt.ExecError("signin", "$s.Problem", err)
+							}
+							v83, err := tmplrt.Ne(v82, reflect.ValueOf("address"))
+							if err != nil {
+								return tmplrt.ExecError("signin", "ne $s.Problem \"address\"", tmplrt.CallError("ne", err))
+							}
+							v80 = tmplrt.ValueArg(reflect.ValueOf(v83))
+						}
+						v84 := tmplrt.Unwrap(v80)
+						if tmplrt.Truth(v84) {
+							x9 := reflect.ValueOf("negative")
+							_ = x9
+							v85, err := tmplrt.Field(x2, "Problem")
+							if err != nil {
+								return tmplrt.ExecError("signin", "$s.Problem", err)
+							}
+							v86, err := tmplrt.Eq(v85, reflect.ValueOf("reauth"))
+							if err != nil {
+								return tmplrt.ExecError("signin", "eq $s.Problem \"reauth\"", tmplrt.CallError("eq", err))
+							}
+							if v86 {
+								x9 = reflect.ValueOf("info")
+							}
+							if depth == tmplrt.MaxExecDepth {
+								return tmplrt.ExecError("signin", "{{template \"callout\" (dict \"L\" $L \"ID\" \"rst-signin-problem\" \"Tone\" $tone \"Body\" (T $L (printf \"rastrillo.ui.signin_problem_%s\" $s.Problem)) \"Focus\" (and (eq $focus \"callout\") (ne $s.Problem \"reauth\")))}}", tmplrt.DepthError())
+							}
+							v87, err := tmplrt.Field(x2, "Problem")
+							if err != nil {
+								return tmplrt.ExecError("signin", "$s.Problem", err)
+							}
+							v88 := tmplrt.Printf("rastrillo.ui.signin_problem_%s", tmplrt.Arg(v87))
+							v89, err := fn.T_a3eca208(x1, v88)
+							if err != nil {
+								return tmplrt.ExecError("signin", "T $L (printf \"rastrillo.ui.signin_problem_%s\" $s.Problem)", tmplrt.CallError("T", err))
+							}
+							v90 := reflect.ValueOf(v89)
+							v92, err := tmplrt.Eq(x4, reflect.ValueOf("callout"))
+							if err != nil {
+								return tmplrt.ExecError("signin", "eq $focus \"callout\"", tmplrt.CallError("eq", err))
+							}
+							v91 := tmplrt.ValueArg(reflect.ValueOf(v92))
+							if tmplrt.Truth(v91) {
+								v93, err := tmplrt.Field(x2, "Problem")
+								if err != nil {
+									return tmplrt.ExecError("signin", "$s.Problem", err)
+								}
+								v94, err := tmplrt.Ne(v93, reflect.ValueOf("reauth"))
+								if err != nil {
+									return tmplrt.ExecError("signin", "ne $s.Problem \"reauth\"", tmplrt.CallError("ne", err))
+								}
+								v91 = tmplrt.ValueArg(reflect.ValueOf(v94))
+							}
+							v95 := tmplrt.Unwrap(v91)
+							v96, err := fn.dict_72aa8d8f("L", x1, "ID", "rst-signin-problem", "Tone", tmplrt.Arg(x9), "Body", tmplrt.Arg(v90), "Focus", tmplrt.Arg(v95))
+							if err != nil {
+								return tmplrt.ExecError("signin", "dict \"L\" $L \"ID\" \"rst-signin-problem\" \"Tone\" $tone \"Body\" (T $L (printf \"rastrillo.ui.signin_problem_%s\" $s.Problem)) \"Focus\" (and (eq $focus \"callout\") (ne $s.Problem \"reauth\"))", tmplrt.CallError("dict", err))
+							}
+							if err := exec_567ff6bfe00d3ab4(b, reflect.ValueOf(v96), fn, depth+1); err != nil {
+								return err
+							}
+							b.WriteString("\n")
+						}
+						if depth == tmplrt.MaxExecDepth {
+							return tmplrt.ExecError("signin", "{{template \"signin-app-problem\" (dict \"L\" $L \"State\" $s \"Focus\" $focus)}}", tmplrt.DepthError())
+						}
+						v97, err := fn.dict_72aa8d8f("L", x1, "State", tmplrt.Arg(x2), "Focus", tmplrt.Arg(x4))
+						if err != nil {
+							return tmplrt.ExecError("signin", "dict \"L\" $L \"State\" $s \"Focus\" $focus", tmplrt.CallError("dict", err))
+						}
+						if err := exec_7483fb941f63a52e(b, reflect.ValueOf(v97), fn, depth+1); err != nil {
+							return err
+						}
+						v98, err := tmplrt.Eq(x3, reflect.ValueOf("keymail"))
+						if err != nil {
+							return tmplrt.ExecError("signin", "eq $door \"keymail\"", tmplrt.CallError("eq", err))
+						}
+						if v98 {
+							b.WriteString("<form rst-signin-form method=\"post\" action=\"")
+							v99, err := tmplrt.Field(x2, "BeginPath")
+							if err != nil {
+								return tmplrt.ExecError("signin", "$s.BeginPath", err)
+							}
+							v100 := tmplrt.Unwrap(v99)
+							tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v100))))
+							b.WriteString("\"")
+							v101 := tmplrt.Unwrap(x7)
+							if tmplrt.Truth(v101) {
+								dot := v101
+								_ = dot
+								b.WriteString(" ")
+								v102, err := tmplrt.Field(dot, "Attrs")
+								if err != nil {
+									return tmplrt.ExecError("signin", ".Attrs", err)
+								}
+								v103 := tmplrt.Unwrap(v102)
+								b.WriteString(tmplrt.HTMLNameFilter(tmplrt.Arg(v103)))
+							}
+							b.WriteString(">")
+							v104 := tmplrt.Unwrap(x7)
+							if tmplrt.Truth(v104) {
+								dot := v104
+								_ = dot
+								v105, err := tmplrt.Field(dot, "Fields")
+								if err != nil {
+									return tmplrt.ExecError("signin", ".Fields", err)
+								}
+								v106 := tmplrt.Unwrap(v105)
+								b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v106)))
+							}
+							b.WriteString("\n")
+							v107, err := tmplrt.Field(x2, "ReturnTo")
+							if err != nil {
+								return tmplrt.ExecError("signin", "$s.ReturnTo", err)
+							}
+							v108 := tmplrt.Unwrap(v107)
+							if tmplrt.Truth(v108) {
+								dot := v108
+								_ = dot
+								b.WriteString("<input type=\"hidden\" name=\"return_to\" value=\"")
+								v109 := tmplrt.Unwrap(dot)
+								b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v109)))
+								b.WriteString("\">\n")
+							}
+							b.WriteString("<input type=\"hidden\" name=\"address\" value=\"")
+							v110, err := tmplrt.Field(x2, "Remembered")
+							if err != nil {
+								return tmplrt.ExecError("signin", "$s.Remembered.Address", err)
+							}
+							v111, err := tmplrt.Field(v110, "Address")
+							if err != nil {
+								return tmplrt.ExecError("signin", "$s.Remembered.Address", err)
+							}
+							v112 := tmplrt.Unwrap(v111)
+							b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v112)))
+							b.WriteString("\">\n<input type=\"hidden\" name=\"expect\" value=\"keymail\">\n<button rst-btn=\"primary block\" type=\"submit\"")
+							v113, err := tmplrt.Eq(x4, reflect.ValueOf("onetap"))
+							if err != nil {
+								return tmplrt.ExecError("signin", "eq $focus \"onetap\"", tmplrt.CallError("eq", err))
+							}
+							if v113 {
+								b.WriteString(" autofocus")
+							}
+							v114 := tmplrt.Unwrap(x8)
+							if tmplrt.Truth(v114) {
+								b.WriteString(" disabled data-pow-submit")
+							}
+							b.WriteString("><span>")
+							v115, err := tmplrt.Field(x2, "Remembered")
+							if err != nil {
+								return tmplrt.ExecError("signin", "$s.Remembered.Address", err)
+							}
+							v116, err := tmplrt.Field(v115, "Address")
+							if err != nil {
+								return tmplrt.ExecError("signin", "$s.Remembered.Address", err)
+							}
+							v117, err := fn.Tbdi_a3eca208(x1, "rastrillo.ui.signin_continue_as", "address", tmplrt.Arg(v116))
+							if err != nil {
+								return tmplrt.ExecError("signin", "Tbdi $L \"rastrillo.ui.signin_continue_as\" \"address\" $s.Remembered.Address", tmplrt.CallError("Tbdi", err))
+							}
+							v118 := reflect.ValueOf(v117)
+							b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v118)))
+							b.WriteString("</span></button>\n")
+							v119 := tmplrt.Unwrap(x8)
+							if tmplrt.Truth(v119) {
+								var v120 reflect.Value
+								if x7.IsValid() {
+									v121, err := tmplrt.MethodOf(x7, "StatusLine")
+									if err != nil {
+										return tmplrt.ExecError("signin", "$proof.StatusLine", err)
+									}
+									v123, err := fn.T_a3eca208(x1, "rastrillo.ui.pow_status")
+									if err != nil {
+										return tmplrt.ExecError("signin", "T $L \"rastrillo.ui.pow_status\"", tmplrt.CallError("T", err))
+									}
+									v124 := reflect.ValueOf(v123)
+									v122, err := v121.Call(tmplrt.Val(v124))
+									if err != nil {
+										return tmplrt.ExecError("signin", "$proof.StatusLine", err)
+									}
+									v120 = v122
+								}
+								v125 := tmplrt.Unwrap(v120)
+								b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v125)))
+								b.WriteString("<noscript><p>")
+								v126, err := fn.T_a3eca208(x1, "rastrillo.ui.pow_noscript")
+								if err != nil {
+									return tmplrt.ExecError("signin", "T $L \"rastrillo.ui.pow_noscript\"", tmplrt.CallError("T", err))
+								}
+								v127 := reflect.ValueOf(v126)
+								b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v127)))
+								b.WriteString("</p></noscript>\n")
+							}
+							b.WriteString("</form>\n")
+						} else {
+							v128, err := tmplrt.Eq(x3, reflect.ValueOf("link"))
+							if err != nil {
+								return tmplrt.ExecError("signin", "eq $door \"link\"", tmplrt.CallError("eq", err))
+							}
+							if v128 {
+								b.WriteString("<form rst-signin-form method=\"post\" action=\"")
+								v129, err := tmplrt.Field(x2, "BeginPath")
+								if err != nil {
+									return tmplrt.ExecError("signin", "$s.BeginPath", err)
+								}
+								v130 := tmplrt.Unwrap(v129)
+								tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v130))))
+								b.WriteString("\"")
+								v131 := tmplrt.Unwrap(x7)
+								if tmplrt.Truth(v131) {
+									dot := v131
+									_ = dot
+									b.WriteString(" ")
+									v132, err := tmplrt.Field(dot, "Attrs")
+									if err != nil {
+										return tmplrt.ExecError("signin", ".Attrs", err)
+									}
+									v133 := tmplrt.Unwrap(v132)
+									b.WriteString(tmplrt.HTMLNameFilter(tmplrt.Arg(v133)))
+								}
+								b.WriteString(">")
+								v134 := tmplrt.Unwrap(x7)
+								if tmplrt.Truth(v134) {
+									dot := v134
+									_ = dot
+									v135, err := tmplrt.Field(dot, "Fields")
+									if err != nil {
+										return tmplrt.ExecError("signin", ".Fields", err)
+									}
+									v136 := tmplrt.Unwrap(v135)
+									b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v136)))
+								}
+								b.WriteString("\n")
+								v137, err := tmplrt.Field(x2, "ReturnTo")
+								if err != nil {
+									return tmplrt.ExecError("signin", "$s.ReturnTo", err)
+								}
+								v138 := tmplrt.Unwrap(v137)
+								if tmplrt.Truth(v138) {
+									dot := v138
+									_ = dot
+									b.WriteString("<input type=\"hidden\" name=\"return_to\" value=\"")
+									v139 := tmplrt.Unwrap(dot)
+									b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v139)))
+									b.WriteString("\">\n")
+								}
+								b.WriteString("<input type=\"hidden\" name=\"address\" value=\"")
+								v140, err := tmplrt.Field(x2, "Remembered")
+								if err != nil {
+									return tmplrt.ExecError("signin", "$s.Remembered.Address", err)
+								}
+								v141, err := tmplrt.Field(v140, "Address")
+								if err != nil {
+									return tmplrt.ExecError("signin", "$s.Remembered.Address", err)
+								}
+								v142 := tmplrt.Unwrap(v141)
+								b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v142)))
+								b.WriteString("\">\n<button rst-btn=\"primary block\" type=\"submit\"")
+								v143, err := tmplrt.Eq(x4, reflect.ValueOf("onetap"))
+								if err != nil {
+									return tmplrt.ExecError("signin", "eq $focus \"onetap\"", tmplrt.CallError("eq", err))
+								}
+								if v143 {
+									b.WriteString(" autofocus")
+								}
+								v144 := tmplrt.Unwrap(x8)
+								if tmplrt.Truth(v144) {
+									b.WriteString(" disabled data-pow-submit")
+								}
+								b.WriteString("><span>")
+								v145, err := tmplrt.Field(x2, "Remembered")
+								if err != nil {
+									return tmplrt.ExecError("signin", "$s.Remembered.Address", err)
+								}
+								v146, err := tmplrt.Field(v145, "Address")
+								if err != nil {
+									return tmplrt.ExecError("signin", "$s.Remembered.Address", err)
+								}
+								v147, err := fn.Tbdi_a3eca208(x1, "rastrillo.ui.signin_continue_as", "address", tmplrt.Arg(v146))
+								if err != nil {
+									return tmplrt.ExecError("signin", "Tbdi $L \"rastrillo.ui.signin_continue_as\" \"address\" $s.Remembered.Address", tmplrt.CallError("Tbdi", err))
+								}
+								v148 := reflect.ValueOf(v147)
+								b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v148)))
+								b.WriteString("</span></button>\n")
+								v149 := tmplrt.Unwrap(x8)
+								if tmplrt.Truth(v149) {
+									var v150 reflect.Value
+									if x7.IsValid() {
+										v151, err := tmplrt.MethodOf(x7, "StatusLine")
+										if err != nil {
+											return tmplrt.ExecError("signin", "$proof.StatusLine", err)
+										}
+										v153, err := fn.T_a3eca208(x1, "rastrillo.ui.pow_status")
+										if err != nil {
+											return tmplrt.ExecError("signin", "T $L \"rastrillo.ui.pow_status\"", tmplrt.CallError("T", err))
+										}
+										v154 := reflect.ValueOf(v153)
+										v152, err := v151.Call(tmplrt.Val(v154))
+										if err != nil {
+											return tmplrt.ExecError("signin", "$proof.StatusLine", err)
+										}
+										v150 = v152
+									}
+									v155 := tmplrt.Unwrap(v150)
+									b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v155)))
+									b.WriteString("<noscript><p>")
+									v156, err := fn.T_a3eca208(x1, "rastrillo.ui.pow_noscript")
+									if err != nil {
+										return tmplrt.ExecError("signin", "T $L \"rastrillo.ui.pow_noscript\"", tmplrt.CallError("T", err))
+									}
+									v157 := reflect.ValueOf(v156)
+									b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v157)))
+									b.WriteString("</p></noscript>\n")
+								}
+								b.WriteString("</form>\n")
+							} else {
+								x10 := reflect.ValueOf("after")
+								_ = x10
+								v158, err := tmplrt.Eq(x3, reflect.ValueOf("passkey"))
+								if err != nil {
+									return tmplrt.ExecError("signin", "eq $door \"passkey\"", tmplrt.CallError("eq", err))
+								}
+								if v158 {
+									x10 = reflect.ValueOf("before")
+								}
+								x11 := reflect.ValueOf("")
+								_ = x11
+								v159, err := tmplrt.Field(x2, "Problem")
+								if err != nil {
+									return tmplrt.ExecError("signin", "$s.Problem", err)
+								}
+								v160, err := tmplrt.Eq(v159, reflect.ValueOf("address"))
+								if err != nil {
+									return tmplrt.ExecError("signin", "eq $s.Problem \"address\"", tmplrt.CallError("eq", err))
+								}
+								if v160 {
+									v161, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_problem_address")
+									if err != nil {
+										return tmplrt.ExecError("signin", "T $L \"rastrillo.ui.signin_problem_address\"", tmplrt.CallError("T", err))
+									}
+									v162 := reflect.ValueOf(v161)
+									x11 = v162
+								}
+								v163 := fn.list_ae7df14d("before", "form", "after")
+								for v164 := range v163 {
+									dot := &v163[v164]
+									_ = dot
+									v165, err := tmplrt.Eq(reflect.ValueOf(dot).Elem(), reflect.ValueOf("form"))
+									if err != nil {
+										return tmplrt.ExecError("signin", "eq . \"form\"", tmplrt.CallError("eq", err))
+									}
+									if v165 {
+										b.WriteString("<form rst-signin-form method=\"post\" action=\"")
+										v166, err := tmplrt.Field(x2, "BeginPath")
+										if err != nil {
+											return tmplrt.ExecError("signin", "$s.BeginPath", err)
+										}
+										v167 := tmplrt.Unwrap(v166)
+										tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v167))))
+										b.WriteString("\"")
+										v168 := tmplrt.Unwrap(x7)
+										if tmplrt.Truth(v168) {
+											dot := v168
+											_ = dot
+											b.WriteString(" ")
+											v169, err := tmplrt.Field(dot, "Attrs")
+											if err != nil {
+												return tmplrt.ExecError("signin", ".Attrs", err)
+											}
+											v170 := tmplrt.Unwrap(v169)
+											b.WriteString(tmplrt.HTMLNameFilter(tmplrt.Arg(v170)))
+										}
+										b.WriteString(">")
+										v171 := tmplrt.Unwrap(x7)
+										if tmplrt.Truth(v171) {
+											dot := v171
+											_ = dot
+											v172, err := tmplrt.Field(dot, "Fields")
+											if err != nil {
+												return tmplrt.ExecError("signin", ".Fields", err)
+											}
+											v173 := tmplrt.Unwrap(v172)
+											b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v173)))
+										}
+										b.WriteString("\n")
+										v174, err := tmplrt.Field(x2, "ReturnTo")
+										if err != nil {
+											return tmplrt.ExecError("signin", "$s.ReturnTo", err)
+										}
+										v175 := tmplrt.Unwrap(v174)
+										if tmplrt.Truth(v175) {
+											dot := v175
+											_ = dot
+											b.WriteString("<input type=\"hidden\" name=\"return_to\" value=\"")
+											v176 := tmplrt.Unwrap(dot)
+											b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v176)))
+											b.WriteString("\">\n")
+										}
+										if depth == tmplrt.MaxExecDepth {
+											return tmplrt.ExecError("signin", "{{template \"field\" (dict \"L\" $L \"ID\" \"rst-signin-email\" \"Name\" \"address\" \"Label\" (T $L \"rastrillo.ui.signin_email\") \"Type\" \"email\" \"Autocomplete\" \"email\" \"Required\" true \"Value\" $s.Address \"Autofocus\" (eq $focus \"field\") \"Error\" $fieldErr \"QuietError\" true)}}", tmplrt.DepthError())
+										}
+										v177, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_email")
+										if err != nil {
+											return tmplrt.ExecError("signin", "T $L \"rastrillo.ui.signin_email\"", tmplrt.CallError("T", err))
+										}
+										v178 := reflect.ValueOf(v177)
+										v179, err := tmplrt.Field(x2, "Address")
+										if err != nil {
+											return tmplrt.ExecError("signin", "$s.Address", err)
+										}
+										v180, err := tmplrt.Eq(x4, reflect.ValueOf("field"))
+										if err != nil {
+											return tmplrt.ExecError("signin", "eq $focus \"field\"", tmplrt.CallError("eq", err))
+										}
+										v181, err := fn.dict_72aa8d8f("L", x1, "ID", "rst-signin-email", "Name", "address", "Label", tmplrt.Arg(v178), "Type", "email", "Autocomplete", "email", "Required", true, "Value", tmplrt.Arg(v179), "Autofocus", v180, "Error", tmplrt.Arg(x11), "QuietError", true)
+										if err != nil {
+											return tmplrt.ExecError("signin", "dict \"L\" $L \"ID\" \"rst-signin-email\" \"Name\" \"address\" \"Label\" (T $L \"rastrillo.ui.signin_email\") \"Type\" \"email\" \"Autocomplete\" \"email\" \"Required\" true \"Value\" $s.Address \"Autofocus\" (eq $focus \"field\") \"Error\" $fieldErr \"QuietError\" true", tmplrt.CallError("dict", err))
+										}
+										if err := exec_86a6d72433195e11(b, reflect.ValueOf(v181), fn, depth+1); err != nil {
+											return err
+										}
+										b.WriteString("\n")
+										v183, err := tmplrt.Field(x2, "Force")
+										if err != nil {
+											return tmplrt.ExecError("signin", "$s.Force", err)
+										}
+										v182 := tmplrt.ValueArg(v183)
+										if !tmplrt.Truth(v182) {
+											v184, err := tmplrt.Field(x2, "Problem")
+											if err != nil {
+												return tmplrt.ExecError("signin", "$s.Problem", err)
+											}
+											v185, err := tmplrt.Eq(v184, reflect.ValueOf("keymail"))
+											if err != nil {
+												return tmplrt.ExecError("signin", "eq $s.Problem \"keymail\"", tmplrt.CallError("eq", err))
+											}
+											v182 = tmplrt.ValueArg(reflect.ValueOf(v185))
+										}
+										v186 := tmplrt.Unwrap(v182)
+										if tmplrt.Truth(v186) {
+											b.WriteString("<input type=\"hidden\" name=\"force\" value=\"1\">\n")
+										}
+										b.WriteString("<button rst-btn=\"primary block\" type=\"submit\"")
+										v187 := tmplrt.Unwrap(x8)
+										if tmplrt.Truth(v187) {
+											b.WriteString(" disabled data-pow-submit")
+										}
+										b.WriteString(">")
+										v188, err := tmplrt.Field(x2, "Problem")
+										if err != nil {
+											return tmplrt.ExecError("signin", "$s.Problem", err)
+										}
+										v189, err := tmplrt.Eq(v188, reflect.ValueOf("keymail"))
+										if err != nil {
+											return tmplrt.ExecError("signin", "eq $s.Problem \"keymail\"", tmplrt.CallError("eq", err))
+										}
+										if v189 {
+											v190, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_send_link_instead")
+											if err != nil {
+												return tmplrt.ExecError("signin", "T $L \"rastrillo.ui.signin_send_link_instead\"", tmplrt.CallError("T", err))
+											}
+											v191 := reflect.ValueOf(v190)
+											b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v191)))
+										} else {
+											v192, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_submit")
+											if err != nil {
+												return tmplrt.ExecError("signin", "T $L \"rastrillo.ui.signin_submit\"", tmplrt.CallError("T", err))
+											}
+											v193 := reflect.ValueOf(v192)
+											b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v193)))
+										}
+										b.WriteString("</button>\n")
+										v194 := tmplrt.Unwrap(x8)
+										if tmplrt.Truth(v194) {
+											var v195 reflect.Value
+											if x7.IsValid() {
+												v196, err := tmplrt.MethodOf(x7, "StatusLine")
+												if err != nil {
+													return tmplrt.ExecError("signin", "$proof.StatusLine", err)
+												}
+												v198, err := fn.T_a3eca208(x1, "rastrillo.ui.pow_status")
+												if err != nil {
+													return tmplrt.ExecError("signin", "T $L \"rastrillo.ui.pow_status\"", tmplrt.CallError("T", err))
+												}
+												v199 := reflect.ValueOf(v198)
+												v197, err := v196.Call(tmplrt.Val(v199))
+												if err != nil {
+													return tmplrt.ExecError("signin", "$proof.StatusLine", err)
+												}
+												v195 = v197
+											}
+											v200 := tmplrt.Unwrap(v195)
+											b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v200)))
+											b.WriteString("<noscript><p>")
+											v201, err := fn.T_a3eca208(x1, "rastrillo.ui.pow_noscript")
+											if err != nil {
+												return tmplrt.ExecError("signin", "T $L \"rastrillo.ui.pow_noscript\"", tmplrt.CallError("T", err))
+											}
+											v202 := reflect.ValueOf(v201)
+											b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v202)))
+											b.WriteString("</p></noscript>\n")
+										}
+										b.WriteString("</form>\n")
+									} else {
+										v204, err := tmplrt.Field(x2, "Passkey")
+										if err != nil {
+											return tmplrt.ExecError("signin", "$s.Passkey", err)
+										}
+										v203 := tmplrt.ValueArg(v204)
+										if tmplrt.Truth(v203) {
+											v205, err := tmplrt.Eq(reflect.ValueOf(dot).Elem(), x10)
+											if err != nil {
+												return tmplrt.ExecError("signin", "eq . $pkSlot", tmplrt.CallError("eq", err))
+											}
+											v203 = tmplrt.ValueArg(reflect.ValueOf(v205))
+										}
+										v206 := tmplrt.Unwrap(v203)
+										if tmplrt.Truth(v206) {
+											v207, err := tmplrt.Eq(reflect.ValueOf(dot).Elem(), reflect.ValueOf("after"))
+											if err != nil {
+												return tmplrt.ExecError("signin", "eq . \"after\"", tmplrt.CallError("eq", err))
+											}
+											if v207 {
+												b.WriteString("<p rst-signin-or>")
+												v208, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_or")
+												if err != nil {
+													return tmplrt.ExecError("signin", "T $L \"rastrillo.ui.signin_or\"", tmplrt.CallError("T", err))
+												}
+												v209 := reflect.ValueOf(v208)
+												b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v209)))
+												b.WriteString("</p>\n")
+											}
+											b.WriteString("<div rst-signin-passkey=\"")
+											v210 := reflect.ValueOf((*dot))
+											b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v210)))
+											b.WriteString("\"><button rst-btn=\"")
+											v211, err := tmplrt.Eq(x3, reflect.ValueOf("passkey"))
+											if err != nil {
+												return tmplrt.ExecError("signin", "eq $door \"passkey\"", tmplrt.CallError("eq", err))
+											}
+											if v211 {
+												b.WriteString("primary block")
+											} else {
+												b.WriteString("block")
+											}
+											b.WriteString("\" type=\"button\"")
+											v212 := tmplrt.Not(x6)
+											if v212 {
+												b.WriteString(" hidden data-rst-passkey data-rst-passkey-begin=\"")
+												v213, err := tmplrt.Field(x2, "Passkey")
+												if err != nil {
+													return tmplrt.ExecError("signin", "$s.Passkey.BeginPath", err)
+												}
+												v214, err := tmplrt.Field(v213, "BeginPath")
+												if err != nil {
+													return tmplrt.ExecError("signin", "$s.Passkey.BeginPath", err)
+												}
+												v215 := tmplrt.Unwrap(v214)
+												b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v215)))
+												b.WriteString("\" data-rst-passkey-finish=\"")
+												v216, err := tmplrt.Field(x2, "PasskeyFinish")
+												if err != nil {
+													return tmplrt.ExecError("signin", "$s.PasskeyFinish", err)
+												}
+												v217 := tmplrt.Unwrap(v216)
+												b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v217)))
+												b.WriteString("\" data-rst-passkey-module=\"")
+												v218, err := tmplrt.Field(x2, "Passkey")
+												if err != nil {
+													return tmplrt.ExecError("signin", "$s.Passkey.ModuleURL", err)
+												}
+												v219, err := tmplrt.Field(v218, "ModuleURL")
+												if err != nil {
+													return tmplrt.ExecError("signin", "$s.Passkey.ModuleURL", err)
+												}
+												v220 := tmplrt.Unwrap(v219)
+												b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v220)))
+												b.WriteString("\"")
+												v221, err := tmplrt.Field(x2, "Passkey")
+												if err != nil {
+													return tmplrt.ExecError("signin", "$s.Passkey.LegacyRPID", err)
+												}
+												v222, err := tmplrt.Field(v221, "LegacyRPID")
+												if err != nil {
+													return tmplrt.ExecError("signin", "$s.Passkey.LegacyRPID", err)
+												}
+												v223 := tmplrt.Unwrap(v222)
+												if tmplrt.Truth(v223) {
+													dot := v223
+													_ = dot
+													b.WriteString(" data-rst-passkey-legacy-rpid=\"")
+													v224 := tmplrt.Unwrap(dot)
+													b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v224)))
+													b.WriteString("\"")
+												}
+												b.WriteString(" data-rst-passkey-cancelled=\"")
+												v225, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_passkey_cancelled")
+												if err != nil {
+													return tmplrt.ExecError("signin", "T $L \"rastrillo.ui.signin_passkey_cancelled\"", tmplrt.CallError("T", err))
+												}
+												v226 := reflect.ValueOf(v225)
+												b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v226)))
+												b.WriteString("\" data-rst-passkey-failed=\"")
+												v227, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_passkey_failed")
+												if err != nil {
+													return tmplrt.ExecError("signin", "T $L \"rastrillo.ui.signin_passkey_failed\"", tmplrt.CallError("T", err))
+												}
+												v228 := reflect.ValueOf(v227)
+												b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v228)))
+												b.WriteString("\" data-rst-passkey-unavailable=\"")
+												v229, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_passkey_unavailable")
+												if err != nil {
+													return tmplrt.ExecError("signin", "T $L \"rastrillo.ui.signin_passkey_unavailable\"", tmplrt.CallError("T", err))
+												}
+												v230 := reflect.ValueOf(v229)
+												b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v230)))
+												b.WriteString("\"")
+											}
+											b.WriteString(" aria-describedby=\"rst-signin-passkey-msg\">")
+											v231, err := tmplrt.Eq(x3, reflect.ValueOf("passkey"))
+											if err != nil {
+												return tmplrt.ExecError("signin", "eq $door \"passkey\"", tmplrt.CallError("eq", err))
+											}
+											if v231 {
+												v232, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_passkey_remembered")
+												if err != nil {
+													return tmplrt.ExecError("signin", "T $L \"rastrillo.ui.signin_passkey_remembered\"", tmplrt.CallError("T", err))
+												}
+												v233 := reflect.ValueOf(v232)
+												b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v233)))
+											} else {
+												v234, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_passkey")
+												if err != nil {
+													return tmplrt.ExecError("signin", "T $L \"rastrillo.ui.signin_passkey\"", tmplrt.CallError("T", err))
+												}
+												v235 := reflect.ValueOf(v234)
+												b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v235)))
+											}
+											b.WriteString("</button>\n")
+											if depth == tmplrt.MaxExecDepth {
+												return tmplrt.ExecError("signin", "{{template \"signin-passkey-note\" (dict \"L\" $L)}}", tmplrt.DepthError())
+											}
+											v236, err := fn.dict_72aa8d8f("L", x1)
+											if err != nil {
+												return tmplrt.ExecError("signin", "dict \"L\" $L", tmplrt.CallError("dict", err))
+											}
+											if err := exec_fb1ce5b9df238224(b, reflect.ValueOf(v236), fn, depth+1); err != nil {
+												return err
+											}
+											b.WriteString("\n</div>\n")
+											v237, err := tmplrt.Eq(reflect.ValueOf(dot).Elem(), reflect.ValueOf("before"))
+											if err != nil {
+												return tmplrt.ExecError("signin", "eq . \"before\"", tmplrt.CallError("eq", err))
+											}
+											if v237 {
+												b.WriteString("<p rst-signin-or>")
+												v238, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_or")
+												if err != nil {
+													return tmplrt.ExecError("signin", "T $L \"rastrillo.ui.signin_or\"", tmplrt.CallError("T", err))
+												}
+												v239 := reflect.ValueOf(v238)
+												b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v239)))
+												b.WriteString("</p>\n")
+											}
+											v240 := tmplrt.Not(x6)
+											if v240 {
+												b.WriteString("<script type=\"module\" src=\"")
+												v241, err := tmplrt.Field(x2, "Passkey")
+												if err != nil {
+													return tmplrt.ExecError("signin", "$s.Passkey.ScriptURL", err)
+												}
+												v242, err := tmplrt.Field(v241, "ScriptURL")
+												if err != nil {
+													return tmplrt.ExecError("signin", "$s.Passkey.ScriptURL", err)
+												}
+												v243 := tmplrt.Unwrap(v242)
+												tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v243))))
+												b.WriteString("\" data-rst-passkey-script></script>\n")
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		v245, err := tmplrt.Ne(x3, reflect.ValueOf("ask"))
+		if err != nil {
+			return tmplrt.ExecError("signin", "ne $door \"ask\"", tmplrt.CallError("ne", err))
+		}
+		v244 := tmplrt.ValueArg(reflect.ValueOf(v245))
+		if tmplrt.Truth(v244) {
+			v246, err := tmplrt.Ne(x3, reflect.ValueOf("continue"))
+			if err != nil {
+				return tmplrt.ExecError("signin", "ne $door \"continue\"", tmplrt.CallError("ne", err))
+			}
+			v244 = tmplrt.ValueArg(reflect.ValueOf(v246))
+			if tmplrt.Truth(v244) {
+				v247, err := tmplrt.Ne(x3, reflect.ValueOf("confirm"))
+				if err != nil {
+					return tmplrt.ExecError("signin", "ne $door \"confirm\"", tmplrt.CallError("ne", err))
+				}
+				v244 = tmplrt.ValueArg(reflect.ValueOf(v247))
+				if tmplrt.Truth(v244) {
+					v249, err := tmplrt.Field(x2, "OneWay")
+					if err != nil {
+						return tmplrt.ExecError("signin", "$s.OneWay", err)
+					}
+					v250 := tmplrt.Not(v249)
+					v248 := tmplrt.ValueArg(reflect.ValueOf(v250))
+					if !tmplrt.Truth(v248) {
+						v251, err := tmplrt.Eq(x3, reflect.ValueOf("sent"))
+						if err != nil {
+							return tmplrt.ExecError("signin", "eq $door \"sent\"", tmplrt.CallError("eq", err))
+						}
+						v248 = tmplrt.ValueArg(reflect.ValueOf(v251))
+					}
+					v252 := tmplrt.Unwrap(v248)
+					v244 = tmplrt.ValueArg(v252)
+				}
+			}
+		}
+		v253 := tmplrt.Unwrap(v244)
+		if tmplrt.Truth(v253) {
+			b.WriteString("<form rst-signin-form method=\"post\" action=\"")
+			v254, err := tmplrt.Field(x2, "ForgetPath")
+			if err != nil {
+				return tmplrt.ExecError("signin", "$s.ForgetPath", err)
+			}
+			v255 := tmplrt.Unwrap(v254)
+			tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v255))))
+			b.WriteString("\">")
+			v256, err := tmplrt.Field(x2, "ReturnTo")
+			if err != nil {
+				return tmplrt.ExecError("signin", "$s.ReturnTo", err)
+			}
+			v257 := tmplrt.Unwrap(v256)
+			if tmplrt.Truth(v257) {
+				dot := v257
+				_ = dot
+				b.WriteString("<input type=\"hidden\" name=\"return_to\" value=\"")
+				v258 := tmplrt.Unwrap(dot)
+				b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v258)))
+				b.WriteString("\">\n")
+			}
+			v259, err := tmplrt.Field(x2, "OneWay")
+			if err != nil {
+				return tmplrt.ExecError("signin", "$s.OneWay", err)
+			}
+			v260 := tmplrt.Unwrap(v259)
+			if tmplrt.Truth(v260) {
+				if depth == tmplrt.MaxExecDepth {
+					return tmplrt.ExecError("signin", "{{template \"signin-forget-way\" (dict \"L\" $L \"State\" $s)}}", tmplrt.DepthError())
+				}
+				v261, err := fn.dict_72aa8d8f("L", x1, "State", tmplrt.Arg(x2))
+				if err != nil {
+					return tmplrt.ExecError("signin", "dict \"L\" $L \"State\" $s", tmplrt.CallError("dict", err))
+				}
+				if err := exec_b29f7da01ee7285f(b, reflect.ValueOf(v261), fn, depth+1); err != nil {
+					return err
+				}
+				b.WriteString("<button rst-btn=\"ghost\" type=\"submit\"><span>")
+				v262, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_different")
+				if err != nil {
+					return tmplrt.ExecError("signin", "T $L \"rastrillo.ui.signin_different\"", tmplrt.CallError("T", err))
+				}
+				v263 := reflect.ValueOf(v262)
+				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v263)))
+				b.WriteString("</span>")
+				if depth == tmplrt.MaxExecDepth {
+					return tmplrt.ExecError("signin", "{{template \"signin-glyph\" (dict \"L\" $L \"Glyph\" \"next\")}}", tmplrt.DepthError())
+				}
+				v264, err := fn.dict_72aa8d8f("L", x1, "Glyph", "next")
+				if err != nil {
+					return tmplrt.ExecError("signin", "dict \"L\" $L \"Glyph\" \"next\"", tmplrt.CallError("dict", err))
+				}
+				if err := exec_1b24f25e597ad443(b, reflect.ValueOf(v264), fn, depth+1); err != nil {
+					return err
+				}
+				b.WriteString("</button>")
+			} else {
+				b.WriteString("<button rst-btn=\"ghost block\" type=\"submit\">")
+				v265, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_different")
+				if err != nil {
+					return tmplrt.ExecError("signin", "T $L \"rastrillo.ui.signin_different\"", tmplrt.CallError("T", err))
+				}
+				v266 := reflect.ValueOf(v265)
+				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v266)))
+				b.WriteString("</button>")
+			}
+			b.WriteString("</form>\n")
+		}
+		v267 := tmplrt.ValueArg(x8)
+		if tmplrt.Truth(v267) {
+			v268, err := tmplrt.Ne(x3, reflect.ValueOf("sent"))
+			if err != nil {
+				return tmplrt.ExecError("signin", "ne $door \"sent\"", tmplrt.CallError("ne", err))
+			}
+			v267 = tmplrt.ValueArg(reflect.ValueOf(v268))
+			if tmplrt.Truth(v267) {
+				v269, err := tmplrt.Ne(x3, reflect.ValueOf("continue"))
+				if err != nil {
+					return tmplrt.ExecError("signin", "ne $door \"continue\"", tmplrt.CallError("ne", err))
+				}
+				v267 = tmplrt.ValueArg(reflect.ValueOf(v269))
+				if tmplrt.Truth(v267) {
+					v270, err := tmplrt.Ne(x3, reflect.ValueOf("confirm"))
+					if err != nil {
+						return tmplrt.ExecError("signin", "ne $door \"confirm\"", tmplrt.CallError("ne", err))
+					}
+					v267 = tmplrt.ValueArg(reflect.ValueOf(v270))
+					if tmplrt.Truth(v267) {
+						v271 := tmplrt.Not(x6)
+						v267 = tmplrt.ValueArg(reflect.ValueOf(v271))
+						if tmplrt.Truth(v267) {
+							v272, err := tmplrt.Field(x2, "OneWay")
+							if err != nil {
+								return tmplrt.ExecError("signin", "$s.OneWay", err)
+							}
+							v273 := tmplrt.Not(v272)
+							v267 = tmplrt.ValueArg(reflect.ValueOf(v273))
+						}
+					}
+				}
+			}
+		}
+		v274 := tmplrt.Unwrap(v267)
+		if tmplrt.Truth(v274) {
+			v275, err := tmplrt.Field(x7, "Script")
+			if err != nil {
+				return tmplrt.ExecError("signin", "$proof.Script", err)
+			}
+			v276 := tmplrt.Unwrap(v275)
+			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v276)))
+		}
+		b.WriteString("</div>\n</section>")
+	}
+	return nil
+}
+
+// facts_db852b1bc4e5bdac is what exec_db852b1bc4e5bdac assumes of the types it reads.
+var facts_db852b1bc4e5bdac = tmplrt.Facts{
+	Funcs: map[string]reflect.Type{
+		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
+	},
+	Facts: []tmplrt.Fact{
+		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
 	},
 }
 
@@ -39854,6 +38344,143 @@ var facts_e82eccd0c975519f_19dba148 = tmplrt.Facts{
 	},
 }
 
+// exec_e89abce5a0a52ff3 renders "signin-view".
+func exec_e89abce5a0a52ff3(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
+	root := dot
+	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
+	x1 := v1
+	_ = x1
+	v2, err := tmplrt.Field(dot, "View")
+	if err != nil {
+		return tmplrt.ExecError("signin-view", ".View", err)
+	}
+	v3 := tmplrt.Unwrap(v2)
+	x2 := v3
+	_ = x2
+	v4 := fn.opt_08785a53(tmplrt.Arg(dot), "Preview")
+	v5 := reflect.ValueOf(v4)
+	x3 := v5
+	_ = x3
+	v6 := fn.opt_08785a53(tmplrt.Arg(dot), "HideBrand")
+	v7 := reflect.ValueOf(v6)
+	x4 := v7
+	_ = x4
+	v8, err := tmplrt.Field(x2, "Offer")
+	if err != nil {
+		return tmplrt.ExecError("signin-view", "$v.Offer", err)
+	}
+	v9 := tmplrt.Unwrap(v8)
+	if tmplrt.Truth(v9) {
+		if depth == tmplrt.MaxExecDepth {
+			return tmplrt.ExecError("signin-view", "{{template \"signin-offer\" (dict \"L\" $L \"Offer\" $v.Offer \"Brand\" .Brand \"HideBrand\" $hide)}}", tmplrt.DepthError())
+		}
+		v10, err := tmplrt.Field(x2, "Offer")
+		if err != nil {
+			return tmplrt.ExecError("signin-view", "$v.Offer", err)
+		}
+		v11, err := tmplrt.Field(dot, "Brand")
+		if err != nil {
+			return tmplrt.ExecError("signin-view", ".Brand", err)
+		}
+		v12, err := fn.dict_72aa8d8f("L", x1, "Offer", tmplrt.Arg(v10), "Brand", tmplrt.Arg(v11), "HideBrand", tmplrt.Arg(x4))
+		if err != nil {
+			return tmplrt.ExecError("signin-view", "dict \"L\" $L \"Offer\" $v.Offer \"Brand\" .Brand \"HideBrand\" $hide", tmplrt.CallError("dict", err))
+		}
+		if err := exec_ecbbac25392c5d58(b, reflect.ValueOf(v12), fn, depth+1); err != nil {
+			return err
+		}
+	} else {
+		v13, err := tmplrt.Field(x2, "Add")
+		if err != nil {
+			return tmplrt.ExecError("signin-view", "$v.Add", err)
+		}
+		v14 := tmplrt.Unwrap(v13)
+		if tmplrt.Truth(v14) {
+			if depth == tmplrt.MaxExecDepth {
+				return tmplrt.ExecError("signin-view", "{{template \"signin-add\" (dict \"L\" $L \"Add\" $v.Add \"Brand\" .Brand \"Preview\" $preview \"HideBrand\" $hide)}}", tmplrt.DepthError())
+			}
+			v15, err := tmplrt.Field(x2, "Add")
+			if err != nil {
+				return tmplrt.ExecError("signin-view", "$v.Add", err)
+			}
+			v16, err := tmplrt.Field(dot, "Brand")
+			if err != nil {
+				return tmplrt.ExecError("signin-view", ".Brand", err)
+			}
+			v17, err := fn.dict_72aa8d8f("L", x1, "Add", tmplrt.Arg(v15), "Brand", tmplrt.Arg(v16), "Preview", tmplrt.Arg(x3), "HideBrand", tmplrt.Arg(x4))
+			if err != nil {
+				return tmplrt.ExecError("signin-view", "dict \"L\" $L \"Add\" $v.Add \"Brand\" .Brand \"Preview\" $preview \"HideBrand\" $hide", tmplrt.CallError("dict", err))
+			}
+			if err := exec_da77c547a7a0b718(b, reflect.ValueOf(v17), fn, depth+1); err != nil {
+				return err
+			}
+		} else {
+			v18, err := tmplrt.Field(x2, "Options")
+			if err != nil {
+				return tmplrt.ExecError("signin-view", "$v.Options", err)
+			}
+			v19 := tmplrt.Unwrap(v18)
+			if tmplrt.Truth(v19) {
+				if depth == tmplrt.MaxExecDepth {
+					return tmplrt.ExecError("signin-view", "{{template \"signin-options\" (dict \"L\" $L \"Options\" $v.Options \"Brand\" .Brand \"HideBrand\" $hide)}}", tmplrt.DepthError())
+				}
+				v20, err := tmplrt.Field(x2, "Options")
+				if err != nil {
+					return tmplrt.ExecError("signin-view", "$v.Options", err)
+				}
+				v21, err := tmplrt.Field(dot, "Brand")
+				if err != nil {
+					return tmplrt.ExecError("signin-view", ".Brand", err)
+				}
+				v22, err := fn.dict_72aa8d8f("L", x1, "Options", tmplrt.Arg(v20), "Brand", tmplrt.Arg(v21), "HideBrand", tmplrt.Arg(x4))
+				if err != nil {
+					return tmplrt.ExecError("signin-view", "dict \"L\" $L \"Options\" $v.Options \"Brand\" .Brand \"HideBrand\" $hide", tmplrt.CallError("dict", err))
+				}
+				if err := exec_88bfb5d7d8a8748b(b, reflect.ValueOf(v22), fn, depth+1); err != nil {
+					return err
+				}
+			} else {
+				v23, err := tmplrt.Field(x2, "Signin")
+				if err != nil {
+					return tmplrt.ExecError("signin-view", "$v.Signin", err)
+				}
+				v24 := tmplrt.Unwrap(v23)
+				if tmplrt.Truth(v24) {
+					if depth == tmplrt.MaxExecDepth {
+						return tmplrt.ExecError("signin-view", "{{template \"signin\" (dict \"L\" $L \"State\" $v.Signin \"Brand\" .Brand \"Preview\" $preview \"HideBrand\" $hide)}}", tmplrt.DepthError())
+					}
+					v25, err := tmplrt.Field(x2, "Signin")
+					if err != nil {
+						return tmplrt.ExecError("signin-view", "$v.Signin", err)
+					}
+					v26, err := tmplrt.Field(dot, "Brand")
+					if err != nil {
+						return tmplrt.ExecError("signin-view", ".Brand", err)
+					}
+					v27, err := fn.dict_72aa8d8f("L", x1, "State", tmplrt.Arg(v25), "Brand", tmplrt.Arg(v26), "Preview", tmplrt.Arg(x3), "HideBrand", tmplrt.Arg(x4))
+					if err != nil {
+						return tmplrt.ExecError("signin-view", "dict \"L\" $L \"State\" $v.Signin \"Brand\" .Brand \"Preview\" $preview \"HideBrand\" $hide", tmplrt.CallError("dict", err))
+					}
+					if err := exec_db852b1bc4e5bdac(b, reflect.ValueOf(v27), fn, depth+1); err != nil {
+						return err
+					}
+				}
+			}
+		}
+	}
+	return nil
+}
+
+// facts_e89abce5a0a52ff3 is what exec_e89abce5a0a52ff3 assumes of the types it reads.
+var facts_e89abce5a0a52ff3 = tmplrt.Facts{
+	Funcs: map[string]reflect.Type{
+		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
+	},
+	Facts: []tmplrt.Fact{
+		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
+	},
+}
+
 // exec_ea09462fb9b75dba renders "bulk-bar.html".
 func exec_ea09462fb9b75dba(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
 	b.WriteString("\n\n")
@@ -40276,6 +38903,238 @@ var facts_eca4cbdd99301d16_e1f5342c = tmplrt.Facts{
 	Facts: []tmplrt.Fact{
 		{Type: "*amadan.net/rastrillo/rastrillo/tmpl/internal/corpus.failing"},
 		{Path: []string{".Title() func() (string, error)"}, Type: "string"},
+	},
+}
+
+// exec_ecbbac25392c5d58 renders "signin-offer".
+func exec_ecbbac25392c5d58(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
+	root := dot
+	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
+	x1 := v1
+	_ = x1
+	v2, err := tmplrt.Field(dot, "Offer")
+	if err != nil {
+		return tmplrt.ExecError("signin-offer", ".Offer", err)
+	}
+	v3 := tmplrt.Unwrap(v2)
+	x2 := v3
+	_ = x2
+	b.WriteString("<section rst-signin aria-labelledby=\"rst-signin-heading\">\n")
+	v4 := fn.opt_08785a53(tmplrt.Arg(dot), "HideBrand")
+	v5 := reflect.ValueOf(v4)
+	v6 := tmplrt.Not(v5)
+	if v6 {
+		if depth == tmplrt.MaxExecDepth {
+			return tmplrt.ExecError("signin-offer", "{{template \"signin-brand\" (dict \"L\" $L \"Brand\" .Brand)}}", tmplrt.DepthError())
+		}
+		v7, err := tmplrt.Field(dot, "Brand")
+		if err != nil {
+			return tmplrt.ExecError("signin-offer", ".Brand", err)
+		}
+		v8, err := fn.dict_72aa8d8f("L", x1, "Brand", tmplrt.Arg(v7))
+		if err != nil {
+			return tmplrt.ExecError("signin-offer", "dict \"L\" $L \"Brand\" .Brand", tmplrt.CallError("dict", err))
+		}
+		if err := exec_79cb8cc0dd268570(b, reflect.ValueOf(v8), fn, depth+1); err != nil {
+			return err
+		}
+	}
+	b.WriteString("<div rst-signin-door=\"one-way\">\n<h1 id=\"rst-signin-heading\">")
+	v9, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_offer_heading")
+	if err != nil {
+		return tmplrt.ExecError("signin-offer", "T $L \"rastrillo.ui.signin_offer_heading\"", tmplrt.CallError("T", err))
+	}
+	v10 := reflect.ValueOf(v9)
+	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v10)))
+	b.WriteString("</h1>\n<p>")
+	v11, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_offer_body")
+	if err != nil {
+		return tmplrt.ExecError("signin-offer", "T $L \"rastrillo.ui.signin_offer_body\"", tmplrt.CallError("T", err))
+	}
+	v12 := reflect.ValueOf(v11)
+	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v12)))
+	b.WriteString("</p>\n<div rst-signin-ways>\n")
+	v13, err := tmplrt.Field(x2, "Choices")
+	if err != nil {
+		return tmplrt.ExecError("signin-offer", "$o.Choices", err)
+	}
+	v14 := tmplrt.Unwrap(v13)
+	if err := tmplrt.Range(v14, func(_, dot reflect.Value) error {
+		b.WriteString("<a rst-btn=\"block\" href=\"")
+		v15, err := tmplrt.Field(dot, "Href")
+		if err != nil {
+			return tmplrt.ExecError("signin-offer", ".Href", err)
+		}
+		v16 := tmplrt.Unwrap(v15)
+		tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v16))))
+		b.WriteString("\">")
+		v17, err := tmplrt.Field(dot, "Way")
+		if err != nil {
+			return tmplrt.ExecError("signin-offer", ".Way", err)
+		}
+		v18, err := tmplrt.Eq(v17, reflect.ValueOf("passkey"))
+		if err != nil {
+			return tmplrt.ExecError("signin-offer", "eq .Way \"passkey\"", tmplrt.CallError("eq", err))
+		}
+		if v18 {
+			if depth == tmplrt.MaxExecDepth {
+				return tmplrt.ExecError("signin-offer", "{{template \"signin-glyph\" (dict \"L\" $L \"Glyph\" \"key\")}}", tmplrt.DepthError())
+			}
+			v19, err := fn.dict_72aa8d8f("L", x1, "Glyph", "key")
+			if err != nil {
+				return tmplrt.ExecError("signin-offer", "dict \"L\" $L \"Glyph\" \"key\"", tmplrt.CallError("dict", err))
+			}
+			if err := exec_1b24f25e597ad443(b, reflect.ValueOf(v19), fn, depth+1); err != nil {
+				return err
+			}
+			b.WriteString("<span><span>")
+			v20, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_offer_passkey")
+			if err != nil {
+				return tmplrt.ExecError("signin-offer", "T $L \"rastrillo.ui.signin_offer_passkey\"", tmplrt.CallError("T", err))
+			}
+			v21 := reflect.ValueOf(v20)
+			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v21)))
+			b.WriteString(" ")
+			if depth == tmplrt.MaxExecDepth {
+				return tmplrt.ExecError("signin-offer", "{{template \"badge\" (dict \"L\" $L \"Label\" (T $L \"rastrillo.ui.signin_offer_recommended\") \"Tone\" \"positive\")}}", tmplrt.DepthError())
+			}
+			v22, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_offer_recommended")
+			if err != nil {
+				return tmplrt.ExecError("signin-offer", "T $L \"rastrillo.ui.signin_offer_recommended\"", tmplrt.CallError("T", err))
+			}
+			v23 := reflect.ValueOf(v22)
+			v24, err := fn.dict_72aa8d8f("L", x1, "Label", tmplrt.Arg(v23), "Tone", "positive")
+			if err != nil {
+				return tmplrt.ExecError("signin-offer", "dict \"L\" $L \"Label\" (T $L \"rastrillo.ui.signin_offer_recommended\") \"Tone\" \"positive\"", tmplrt.CallError("dict", err))
+			}
+			if err := exec_898e25eb0002fb8e(b, reflect.ValueOf(v24), fn, depth+1); err != nil {
+				return err
+			}
+			b.WriteString("</span><bdi>")
+			v25, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_offer_passkey_detail")
+			if err != nil {
+				return tmplrt.ExecError("signin-offer", "T $L \"rastrillo.ui.signin_offer_passkey_detail\"", tmplrt.CallError("T", err))
+			}
+			v26 := reflect.ValueOf(v25)
+			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v26)))
+			b.WriteString("</bdi></span>")
+		} else {
+			v27, err := tmplrt.Field(dot, "Way")
+			if err != nil {
+				return tmplrt.ExecError("signin-offer", ".Way", err)
+			}
+			v28, err := tmplrt.Eq(v27, reflect.ValueOf("authenticator"))
+			if err != nil {
+				return tmplrt.ExecError("signin-offer", "eq .Way \"authenticator\"", tmplrt.CallError("eq", err))
+			}
+			if v28 {
+				if depth == tmplrt.MaxExecDepth {
+					return tmplrt.ExecError("signin-offer", "{{template \"signin-glyph\" (dict \"L\" $L \"Glyph\" \"shield\")}}", tmplrt.DepthError())
+				}
+				v29, err := fn.dict_72aa8d8f("L", x1, "Glyph", "shield")
+				if err != nil {
+					return tmplrt.ExecError("signin-offer", "dict \"L\" $L \"Glyph\" \"shield\"", tmplrt.CallError("dict", err))
+				}
+				if err := exec_1b24f25e597ad443(b, reflect.ValueOf(v29), fn, depth+1); err != nil {
+					return err
+				}
+				b.WriteString("<span><span>")
+				v30, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_offer_authenticator")
+				if err != nil {
+					return tmplrt.ExecError("signin-offer", "T $L \"rastrillo.ui.signin_offer_authenticator\"", tmplrt.CallError("T", err))
+				}
+				v31 := reflect.ValueOf(v30)
+				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v31)))
+				b.WriteString("</span><bdi>")
+				v32, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_offer_authenticator_detail")
+				if err != nil {
+					return tmplrt.ExecError("signin-offer", "T $L \"rastrillo.ui.signin_offer_authenticator_detail\"", tmplrt.CallError("T", err))
+				}
+				v33 := reflect.ValueOf(v32)
+				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v33)))
+				b.WriteString("</bdi></span>")
+			} else {
+				if depth == tmplrt.MaxExecDepth {
+					return tmplrt.ExecError("signin-offer", "{{template \"signin-glyph\" (dict \"L\" $L \"Glyph\" \"lock\")}}", tmplrt.DepthError())
+				}
+				v34, err := fn.dict_72aa8d8f("L", x1, "Glyph", "lock")
+				if err != nil {
+					return tmplrt.ExecError("signin-offer", "dict \"L\" $L \"Glyph\" \"lock\"", tmplrt.CallError("dict", err))
+				}
+				if err := exec_1b24f25e597ad443(b, reflect.ValueOf(v34), fn, depth+1); err != nil {
+					return err
+				}
+				b.WriteString("<span><span>")
+				v35, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_offer_passphrase")
+				if err != nil {
+					return tmplrt.ExecError("signin-offer", "T $L \"rastrillo.ui.signin_offer_passphrase\"", tmplrt.CallError("T", err))
+				}
+				v36 := reflect.ValueOf(v35)
+				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v36)))
+				b.WriteString("</span><bdi>")
+				v37, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_offer_passphrase_detail")
+				if err != nil {
+					return tmplrt.ExecError("signin-offer", "T $L \"rastrillo.ui.signin_offer_passphrase_detail\"", tmplrt.CallError("T", err))
+				}
+				v38 := reflect.ValueOf(v37)
+				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v38)))
+				b.WriteString("</bdi></span>")
+			}
+		}
+		if depth == tmplrt.MaxExecDepth {
+			return tmplrt.ExecError("signin-offer", "{{template \"signin-glyph\" (dict \"L\" $L \"Glyph\" \"next\")}}", tmplrt.DepthError())
+		}
+		v39, err := fn.dict_72aa8d8f("L", x1, "Glyph", "next")
+		if err != nil {
+			return tmplrt.ExecError("signin-offer", "dict \"L\" $L \"Glyph\" \"next\"", tmplrt.CallError("dict", err))
+		}
+		if err := exec_1b24f25e597ad443(b, reflect.ValueOf(v39), fn, depth+1); err != nil {
+			return err
+		}
+		b.WriteString("</a>\n")
+		return nil
+	}); err != nil {
+		return tmplrt.ExecError("signin-offer", "$o.Choices", err)
+	}
+	b.WriteString("</div>\n<form rst-signin-form method=\"post\" action=\"")
+	v40, err := tmplrt.Field(x2, "LaterPath")
+	if err != nil {
+		return tmplrt.ExecError("signin-offer", "$o.LaterPath", err)
+	}
+	v41 := tmplrt.Unwrap(v40)
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v41))))
+	b.WriteString("\">")
+	v42, err := tmplrt.Field(x2, "ReturnTo")
+	if err != nil {
+		return tmplrt.ExecError("signin-offer", "$o.ReturnTo", err)
+	}
+	v43 := tmplrt.Unwrap(v42)
+	if tmplrt.Truth(v43) {
+		dot := v43
+		_ = dot
+		b.WriteString("<input type=\"hidden\" name=\"return_to\" value=\"")
+		v44 := tmplrt.Unwrap(dot)
+		b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v44)))
+		b.WriteString("\">\n")
+	}
+	b.WriteString("<button rst-btn=\"ghost\" type=\"submit\"><span>")
+	v45, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_offer_later")
+	if err != nil {
+		return tmplrt.ExecError("signin-offer", "T $L \"rastrillo.ui.signin_offer_later\"", tmplrt.CallError("T", err))
+	}
+	v46 := reflect.ValueOf(v45)
+	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v46)))
+	b.WriteString("</span></button></form>\n</div>\n</section>")
+	return nil
+}
+
+// facts_ecbbac25392c5d58 is what exec_ecbbac25392c5d58 assumes of the types it reads.
+var facts_ecbbac25392c5d58 = tmplrt.Facts{
+	Funcs: map[string]reflect.Type{
+		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
+	},
+	Facts: []tmplrt.Fact{
+		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
 	},
 }
 
@@ -40703,6 +39562,48 @@ var facts_ecd478b37e204c6a_19dba148 = tmplrt.Facts{
 		{Path: []string{".Done"}, Type: "bool"},
 		{Path: []string{".Items"}, Type: "[]amadan.net/rastrillo/rastrillo/tmpl/internal/corpus.entry"},
 		{Path: []string{".Any"}, Type: "interface {}"},
+	},
+}
+
+// exec_eda34502b080cc0b renders "layout".
+func exec_eda34502b080cc0b(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
+	root := dot
+	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
+	x1 := v1
+	_ = x1
+	b.WriteString("<title>")
+	v2, err := fn.T_a3eca208(x1, "app.title")
+	if err != nil {
+		return tmplrt.ExecError("layout", "T $L \"app.title\"", tmplrt.CallError("T", err))
+	}
+	v3 := reflect.ValueOf(v2)
+	b.WriteString(tmplrt.RCDATAEscaper(tmplrt.Arg(v3)))
+	b.WriteString("</title>")
+	v4 := fn.icon_bd1e407c("check")
+	b.WriteString(tmplrt.HTMLEscaper(v4))
+	b.WriteString("<link href=\"")
+	v5 := fn.asset_0e0a6fbe("x.css")
+	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v5)))
+	b.WriteString("\">")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("layout", "{{template \"content\" .}}", tmplrt.DepthError())
+	}
+	v6 := tmplrt.Unwrap(dot)
+	if err := exec_f739432ec939f25f(b, v6, fn, depth+1); err != nil {
+		return err
+	}
+	return nil
+}
+
+// facts_eda34502b080cc0b is what exec_eda34502b080cc0b assumes of the types it reads.
+var facts_eda34502b080cc0b = tmplrt.Facts{
+	Funcs: map[string]reflect.Type{
+		"icon_bd1e407c":      reflect.TypeFor[func(string) template.HTML](),
+		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
+	},
+	Facts: []tmplrt.Fact{
+		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
+		{Func: "icon_bd1e407c", Type: "html/template.HTML string"},
 	},
 }
 
@@ -42012,48 +40913,6 @@ var facts_f3e5c215deb469db_19dba148 = tmplrt.Facts{
 	},
 }
 
-// exec_f43d2c22bf39daa7 renders "layout".
-func exec_f43d2c22bf39daa7(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
-	root := dot
-	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
-	x1 := v1
-	_ = x1
-	b.WriteString("<title>")
-	v2, err := fn.T_a3eca208(x1, "app.title")
-	if err != nil {
-		return tmplrt.ExecError("layout", "T $L \"app.title\"", tmplrt.CallError("T", err))
-	}
-	v3 := reflect.ValueOf(v2)
-	b.WriteString(tmplrt.RCDATAEscaper(tmplrt.Arg(v3)))
-	b.WriteString("</title>")
-	v4 := fn.icon_bd1e407c("check")
-	b.WriteString(tmplrt.HTMLEscaper(v4))
-	b.WriteString("<link href=\"")
-	v5 := fn.asset_0e0a6fbe("x.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v5)))
-	b.WriteString("\">")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"content\" .}}", tmplrt.DepthError())
-	}
-	v6 := tmplrt.Unwrap(dot)
-	if err := exec_f862805fca1a81e4(b, v6, fn, depth+1); err != nil {
-		return err
-	}
-	return nil
-}
-
-// facts_f43d2c22bf39daa7 is what exec_f43d2c22bf39daa7 assumes of the types it reads.
-var facts_f43d2c22bf39daa7 = tmplrt.Facts{
-	Funcs: map[string]reflect.Type{
-		"icon_bd1e407c":      reflect.TypeFor[func(string) template.HTML](),
-		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
-	},
-	Facts: []tmplrt.Fact{
-		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
-		{Func: "icon_bd1e407c", Type: "html/template.HTML string"},
-	},
-}
-
 // exec_f4a75a5b855434cb renders "missingkey-print-default".
 func exec_f4a75a5b855434cb(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
 	v1, err := tmplrt.Field(dot, "Missing")
@@ -42203,207 +41062,40 @@ var facts_f6803f5d526ebf0c_19dba148 = tmplrt.Facts{
 	},
 }
 
-// exec_f7d9a038afc9082e renders "layout".
-func exec_f7d9a038afc9082e(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
+// exec_f739432ec939f25f renders "content".
+func exec_f739432ec939f25f(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
 	root := dot
 	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
 	x1 := v1
 	_ = x1
-	b.WriteString("<!doctype html>\n<html lang=\"")
 	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"lang$htmltemplate_stateAttr_delimDoubleQuote\" .}}", tmplrt.DepthError())
+		return tmplrt.ExecError("content", "{{template \"error-page\" dict \"L\" $L \"Status\" .Status \"Ref\" .Ref}}", tmplrt.DepthError())
 	}
-	v2 := tmplrt.Unwrap(dot)
-	if err := exec_abae878773236025(b, v2, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\" dir=\"")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"dir$htmltemplate_stateAttr_delimDoubleQuote\" .}}", tmplrt.DepthError())
-	}
-	v3 := tmplrt.Unwrap(dot)
-	if err := exec_30bfb3ff0d39cc14(b, v3, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width\">\n<title>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"title$htmltemplate_stateRCDATA_elementTitle\" .}}", tmplrt.DepthError())
-	}
-	v4 := tmplrt.Unwrap(dot)
-	if err := exec_dd9a8f29d7f092e6(b, v4, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</title>\n<link rel=\"stylesheet\" href=\"")
-	v5 := fn.asset_0e0a6fbe("static/tokens.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v5)))
-	b.WriteString("\">\n<link rel=\"stylesheet\" href=\"")
-	v6 := fn.asset_0e0a6fbe("static/theme.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v6)))
-	b.WriteString("\">\n\n<link rel=\"stylesheet\" href=\"")
-	v7 := fn.asset_0e0a6fbe("static/shell.css")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v7)))
-	b.WriteString("\">\n<script defer src=\"")
-	v8 := fn.asset_0e0a6fbe("static/rastrillo.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v8)))
-	b.WriteString("\"></script>\n<script defer src=\"")
-	v9 := fn.asset_0e0a6fbe("static/busy.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v9)))
-	b.WriteString("\"></script>\n\n<script defer src=\"")
-	v10 := fn.asset_0e0a6fbe("static/light.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v10)))
-	b.WriteString("\"></script>\n\n<script defer blocking=\"render\" src=\"")
-	v11 := fn.asset_0e0a6fbe("static/shell.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v11)))
-	b.WriteString("\"></script>\n")
-	v12 := fn.iconAssets_e8f4e4f5()
-	b.WriteString(tmplrt.HTMLEscaper(v12))
-	b.WriteString("\n<script defer src=\"")
-	v13 := fn.asset_0e0a6fbe("static/select.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v13)))
-	b.WriteString("\"></script>\n<script defer src=\"")
-	v14 := fn.asset_0e0a6fbe("static/calendar.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v14)))
-	b.WriteString("\"></script>\n<script defer src=\"")
-	v15 := fn.asset_0e0a6fbe("static/datetime.js")
-	tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(v15)))
-	b.WriteString("\"></script>\n\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"head\" .}}", tmplrt.DepthError())
-	}
-	v16 := tmplrt.Unwrap(dot)
-	if err := exec_43ebd9331896345f(b, v16, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n</head>\n<body>\n\n<div rst-shell-sidebar=\"")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"view$htmltemplate_stateAttr_delimDoubleQuote\" .}}", tmplrt.DepthError())
-	}
-	v17 := tmplrt.Unwrap(dot)
-	if err := exec_2dc89848829575fb(b, v17, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\">\n<a rst-skip href=\"#main\">")
-	v18, err := fn.T_a3eca208(x1, "rastrillo.ui.shell_skip")
+	v2, err := tmplrt.Field(dot, "Status")
 	if err != nil {
-		return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.shell_skip\"", tmplrt.CallError("T", err))
+		return tmplrt.ExecError("content", ".Status", err)
 	}
-	v19 := reflect.ValueOf(v18)
-	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v19)))
-	b.WriteString("</a>\n\n<header rst-shell-bar><a rst-shell-up href=\"")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"up$htmltemplate_stateURL_delimDoubleQuote_attrURL\" .}}", tmplrt.DepthError())
-	}
-	v20 := tmplrt.Unwrap(dot)
-	if err := exec_31ad09fd84c8ecff(b, v20, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\" rel=\"up\" aria-label=\"")
-	v21, err := fn.T_a3eca208(x1, "rastrillo.ui.shell_up_label")
+	v3, err := tmplrt.Field(dot, "Ref")
 	if err != nil {
-		return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.shell_up_label\"", tmplrt.CallError("T", err))
+		return tmplrt.ExecError("content", ".Ref", err)
 	}
-	v22 := reflect.ValueOf(v21)
-	v23, err := fn.Tf_a3eca208(x1, "rastrillo.ui.shell_up", "name", tmplrt.Arg(v22))
+	v4, err := fn.dict_72aa8d8f("L", x1, "Status", tmplrt.Arg(v2), "Ref", tmplrt.Arg(v3))
 	if err != nil {
-		return tmplrt.ExecError("layout", "Tf $L \"rastrillo.ui.shell_up\" \"name\" (T $L \"rastrillo.ui.shell_up_label\")", tmplrt.CallError("Tf", err))
+		return tmplrt.ExecError("content", "dict \"L\" $L \"Status\" .Status \"Ref\" .Ref", tmplrt.CallError("dict", err))
 	}
-	v24 := reflect.ValueOf(v23)
-	b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v24)))
-	b.WriteString("\">")
-	v25 := fn.icon_bd1e407c("chevron-left")
-	b.WriteString(tmplrt.HTMLEscaper(v25))
-	v26, err := fn.T_a3eca208(x1, "rastrillo.ui.shell_up_label")
-	if err != nil {
-		return tmplrt.ExecError("layout", "T $L \"rastrillo.ui.shell_up_label\"", tmplrt.CallError("T", err))
-	}
-	v27 := reflect.ValueOf(v26)
-	b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v27)))
-	b.WriteString("</a></header>\n<aside rst-shell-rail>\n\n<h1 rst-shell-title><span>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"brand\" .}}", tmplrt.DepthError())
-	}
-	v28 := tmplrt.Unwrap(dot)
-	if err := exec_83f48c879de37375(b, v28, fn, depth+1); err != nil {
+	if err := exec_61fb3a8afbe66b1c(b, reflect.ValueOf(v4), fn, depth+1); err != nil {
 		return err
 	}
-	b.WriteString("</span><span>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"title\" .}}", tmplrt.DepthError())
-	}
-	v29 := tmplrt.Unwrap(dot)
-	if err := exec_a0bbdd679bf279f3(b, v29, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</span></h1>\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"brand\" .}}", tmplrt.DepthError())
-	}
-	v30 := tmplrt.Unwrap(dot)
-	if err := exec_83f48c879de37375(b, v30, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n<nav rst-shell-nav>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"nav\" .}}", tmplrt.DepthError())
-	}
-	v31 := tmplrt.Unwrap(dot)
-	if err := exec_9742e4153b2cd941(b, v31, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</nav>\n\n<div rst-shell-rail-foot><details rst-dropdown rst-shell-profile name=\"rst-shell-menu\"><summary><span rst-shell-avatar>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"profile\" .}}", tmplrt.DepthError())
-	}
-	v32 := tmplrt.Unwrap(dot)
-	if err := exec_606dc54973cc1911(b, v32, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</span></summary><div rst-dropdown-menu><div rst-shell-who>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"profile\" .}}", tmplrt.DepthError())
-	}
-	v33 := tmplrt.Unwrap(dot)
-	if err := exec_606dc54973cc1911(b, v33, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</div>")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"locale\" .}}", tmplrt.DepthError())
-	}
-	v34 := tmplrt.Unwrap(dot)
-	if err := exec_705d1f1c72ed2826(b, v34, fn, depth+1); err != nil {
-		return err
-	}
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"account\" .}}", tmplrt.DepthError())
-	}
-	v35 := tmplrt.Unwrap(dot)
-	if err := exec_35c32244d2e12608(b, v35, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("</div></details></div>\n</aside>\n<main rst-shell-main id=\"main\">\n<div rst-page>\n")
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("layout", "{{template \"content\" .}}", tmplrt.DepthError())
-	}
-	v36 := tmplrt.Unwrap(dot)
-	if err := exec_fed7be9f579c4244(b, v36, fn, depth+1); err != nil {
-		return err
-	}
-	b.WriteString("\n</div>\n</main>\n</div>\n</body>\n</html>\n")
 	return nil
 }
 
-// facts_f7d9a038afc9082e is what exec_f7d9a038afc9082e assumes of the types it reads.
-var facts_f7d9a038afc9082e = tmplrt.Facts{
+// facts_f739432ec939f25f is what exec_f739432ec939f25f assumes of the types it reads.
+var facts_f739432ec939f25f = tmplrt.Facts{
 	Funcs: map[string]reflect.Type{
-		"iconAssets_e8f4e4f5": reflect.TypeFor[func() template.HTML](),
-		"icon_bd1e407c":       reflect.TypeFor[func(string) template.HTML](),
-		"localizer_634df8c4":  reflect.TypeFor[func(any) *ui.Localizer](),
+		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
 	},
 	Facts: []tmplrt.Fact{
 		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
-		{Func: "iconAssets_e8f4e4f5", Type: "html/template.HTML string"},
-		{Func: "icon_bd1e407c", Type: "html/template.HTML string"},
 	},
 }
 
@@ -42496,35 +41188,1437 @@ var facts_f7ef7aaa8b9bc051_b6cf1f3e = tmplrt.Facts{
 	},
 }
 
-// exec_f862805fca1a81e4 renders "content".
-func exec_f862805fca1a81e4(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
+// exec_fa8920b3c9e67243 renders "signin-one-way".
+func exec_fa8920b3c9e67243(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
 	root := dot
 	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
 	x1 := v1
 	_ = x1
+	v2, err := tmplrt.Field(dot, "State")
+	if err != nil {
+		return tmplrt.ExecError("signin-one-way", ".State", err)
+	}
+	v3 := tmplrt.Unwrap(v2)
+	x2 := v3
+	_ = x2
+	v4, err := tmplrt.Field(dot, "Door")
+	if err != nil {
+		return tmplrt.ExecError("signin-one-way", ".Door", err)
+	}
+	v5 := tmplrt.Unwrap(v4)
+	x3 := v5
+	_ = x3
+	v6, err := tmplrt.Field(dot, "Focus")
+	if err != nil {
+		return tmplrt.ExecError("signin-one-way", ".Focus", err)
+	}
+	v7 := tmplrt.Unwrap(v6)
+	x4 := v7
+	_ = x4
+	v8, err := tmplrt.Field(dot, "Preview")
+	if err != nil {
+		return tmplrt.ExecError("signin-one-way", ".Preview", err)
+	}
+	v9 := tmplrt.Unwrap(v8)
+	x5 := v9
+	_ = x5
+	v10, err := tmplrt.Field(dot, "Proof")
+	if err != nil {
+		return tmplrt.ExecError("signin-one-way", ".Proof", err)
+	}
+	v11 := tmplrt.Unwrap(v10)
+	x6 := v11
+	_ = x6
+	v12, err := tmplrt.Field(dot, "Gated")
+	if err != nil {
+		return tmplrt.ExecError("signin-one-way", ".Gated", err)
+	}
+	v13 := tmplrt.Unwrap(v12)
+	x7 := v13
+	_ = x7
+	v14, err := tmplrt.Eq(x3, reflect.ValueOf("ways"))
+	if err != nil {
+		return tmplrt.ExecError("signin-one-way", "eq $door \"ways\"", tmplrt.CallError("eq", err))
+	}
+	if v14 {
+		b.WriteString("<h1 id=\"rst-signin-heading\">")
+		v15, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_ways")
+		if err != nil {
+			return tmplrt.ExecError("signin-one-way", "T $L \"rastrillo.ui.signin_ways\"", tmplrt.CallError("T", err))
+		}
+		v16 := reflect.ValueOf(v15)
+		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v16)))
+		b.WriteString("</h1>\n")
+	} else {
+		b.WriteString("<h1 id=\"rst-signin-heading\">")
+		v17, err := tmplrt.Field(dot, "Name")
+		if err != nil {
+			return tmplrt.ExecError("signin-one-way", ".Name", err)
+		}
+		v18, err := fn.Tf_a3eca208(x1, "rastrillo.ui.signin_heading", "name", tmplrt.Arg(v17))
+		if err != nil {
+			return tmplrt.ExecError("signin-one-way", "Tf $L \"rastrillo.ui.signin_heading\" \"name\" .Name", tmplrt.CallError("Tf", err))
+		}
+		v19 := reflect.ValueOf(v18)
+		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v19)))
+		b.WriteString("</h1>\n")
+	}
+	v21, err := tmplrt.Field(x2, "Problem")
+	if err != nil {
+		return tmplrt.ExecError("signin-one-way", "$s.Problem", err)
+	}
+	v20 := tmplrt.ValueArg(v21)
+	if tmplrt.Truth(v20) {
+		v22, err := tmplrt.Field(x2, "Problem")
+		if err != nil {
+			return tmplrt.ExecError("signin-one-way", "$s.Problem", err)
+		}
+		v23, err := tmplrt.Ne(v22, reflect.ValueOf("address"))
+		if err != nil {
+			return tmplrt.ExecError("signin-one-way", "ne $s.Problem \"address\"", tmplrt.CallError("ne", err))
+		}
+		v20 = tmplrt.ValueArg(reflect.ValueOf(v23))
+	}
+	v24 := tmplrt.Unwrap(v20)
+	if tmplrt.Truth(v24) {
+		x8 := reflect.ValueOf("negative")
+		_ = x8
+		v25, err := tmplrt.Field(x2, "Problem")
+		if err != nil {
+			return tmplrt.ExecError("signin-one-way", "$s.Problem", err)
+		}
+		v26, err := tmplrt.Eq(v25, reflect.ValueOf("reauth"))
+		if err != nil {
+			return tmplrt.ExecError("signin-one-way", "eq $s.Problem \"reauth\"", tmplrt.CallError("eq", err))
+		}
+		if v26 {
+			x8 = reflect.ValueOf("info")
+		}
+		if depth == tmplrt.MaxExecDepth {
+			return tmplrt.ExecError("signin-one-way", "{{template \"callout\" (dict \"L\" $L \"ID\" \"rst-signin-problem\" \"Tone\" $tone \"Body\" (T $L (printf \"rastrillo.ui.signin_problem_%s\" $s.Problem)) \"Focus\" (and (eq $focus \"callout\") (ne $s.Problem \"reauth\")))}}", tmplrt.DepthError())
+		}
+		v27, err := tmplrt.Field(x2, "Problem")
+		if err != nil {
+			return tmplrt.ExecError("signin-one-way", "$s.Problem", err)
+		}
+		v28 := tmplrt.Printf("rastrillo.ui.signin_problem_%s", tmplrt.Arg(v27))
+		v29, err := fn.T_a3eca208(x1, v28)
+		if err != nil {
+			return tmplrt.ExecError("signin-one-way", "T $L (printf \"rastrillo.ui.signin_problem_%s\" $s.Problem)", tmplrt.CallError("T", err))
+		}
+		v30 := reflect.ValueOf(v29)
+		v32, err := tmplrt.Eq(x4, reflect.ValueOf("callout"))
+		if err != nil {
+			return tmplrt.ExecError("signin-one-way", "eq $focus \"callout\"", tmplrt.CallError("eq", err))
+		}
+		v31 := tmplrt.ValueArg(reflect.ValueOf(v32))
+		if tmplrt.Truth(v31) {
+			v33, err := tmplrt.Field(x2, "Problem")
+			if err != nil {
+				return tmplrt.ExecError("signin-one-way", "$s.Problem", err)
+			}
+			v34, err := tmplrt.Ne(v33, reflect.ValueOf("reauth"))
+			if err != nil {
+				return tmplrt.ExecError("signin-one-way", "ne $s.Problem \"reauth\"", tmplrt.CallError("ne", err))
+			}
+			v31 = tmplrt.ValueArg(reflect.ValueOf(v34))
+		}
+		v35 := tmplrt.Unwrap(v31)
+		v36, err := fn.dict_72aa8d8f("L", x1, "ID", "rst-signin-problem", "Tone", tmplrt.Arg(x8), "Body", tmplrt.Arg(v30), "Focus", tmplrt.Arg(v35))
+		if err != nil {
+			return tmplrt.ExecError("signin-one-way", "dict \"L\" $L \"ID\" \"rst-signin-problem\" \"Tone\" $tone \"Body\" (T $L (printf \"rastrillo.ui.signin_problem_%s\" $s.Problem)) \"Focus\" (and (eq $focus \"callout\") (ne $s.Problem \"reauth\"))", tmplrt.CallError("dict", err))
+		}
+		if err := exec_567ff6bfe00d3ab4(b, reflect.ValueOf(v36), fn, depth+1); err != nil {
+			return err
+		}
+		b.WriteString("\n")
+	}
 	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("content", "{{template \"error-page\" dict \"L\" $L \"Status\" .Status \"Ref\" .Ref}}", tmplrt.DepthError())
+		return tmplrt.ExecError("signin-one-way", "{{template \"signin-app-problem\" (dict \"L\" $L \"State\" $s \"Focus\" $focus)}}", tmplrt.DepthError())
 	}
-	v2, err := tmplrt.Field(dot, "Status")
+	v37, err := fn.dict_72aa8d8f("L", x1, "State", tmplrt.Arg(x2), "Focus", tmplrt.Arg(x4))
 	if err != nil {
-		return tmplrt.ExecError("content", ".Status", err)
+		return tmplrt.ExecError("signin-one-way", "dict \"L\" $L \"State\" $s \"Focus\" $focus", tmplrt.CallError("dict", err))
 	}
-	v3, err := tmplrt.Field(dot, "Ref")
-	if err != nil {
-		return tmplrt.ExecError("content", ".Ref", err)
-	}
-	v4, err := fn.dict_72aa8d8f("L", x1, "Status", tmplrt.Arg(v2), "Ref", tmplrt.Arg(v3))
-	if err != nil {
-		return tmplrt.ExecError("content", "dict \"L\" $L \"Status\" .Status \"Ref\" .Ref", tmplrt.CallError("dict", err))
-	}
-	if err := exec_a712dfb3c50f8922(b, reflect.ValueOf(v4), fn, depth+1); err != nil {
+	if err := exec_7483fb941f63a52e(b, reflect.ValueOf(v37), fn, depth+1); err != nil {
 		return err
+	}
+	v38, err := tmplrt.Eq(x3, reflect.ValueOf("ways"))
+	if err != nil {
+		return tmplrt.ExecError("signin-one-way", "eq $door \"ways\"", tmplrt.CallError("eq", err))
+	}
+	if v38 {
+		b.WriteString("<div rst-signin-ways>\n")
+		v39, err := tmplrt.Field(x2, "Ways")
+		if err != nil {
+			return tmplrt.ExecError("signin-one-way", "$s.Ways", err)
+		}
+		v40 := tmplrt.Unwrap(v39)
+		if err := tmplrt.Range(v40, func(_, dot reflect.Value) error {
+			b.WriteString("<a rst-btn=\"block\" href=\"")
+			v41, err := tmplrt.Field(dot, "Href")
+			if err != nil {
+				return tmplrt.ExecError("signin-one-way", ".Href", err)
+			}
+			v42 := tmplrt.Unwrap(v41)
+			tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v42))))
+			b.WriteString("\">")
+			v43, err := tmplrt.Field(dot, "Way")
+			if err != nil {
+				return tmplrt.ExecError("signin-one-way", ".Way", err)
+			}
+			v44, err := tmplrt.Eq(v43, reflect.ValueOf("email"))
+			if err != nil {
+				return tmplrt.ExecError("signin-one-way", "eq .Way \"email\"", tmplrt.CallError("eq", err))
+			}
+			if v44 {
+				if depth == tmplrt.MaxExecDepth {
+					return tmplrt.ExecError("signin-one-way", "{{template \"signin-glyph\" (dict \"L\" $L \"Glyph\" \"mail\")}}", tmplrt.DepthError())
+				}
+				v45, err := fn.dict_72aa8d8f("L", x1, "Glyph", "mail")
+				if err != nil {
+					return tmplrt.ExecError("signin-one-way", "dict \"L\" $L \"Glyph\" \"mail\"", tmplrt.CallError("dict", err))
+				}
+				if err := exec_1b24f25e597ad443(b, reflect.ValueOf(v45), fn, depth+1); err != nil {
+					return err
+				}
+				b.WriteString("<span>")
+				v46, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_way_email")
+				if err != nil {
+					return tmplrt.ExecError("signin-one-way", "T $L \"rastrillo.ui.signin_way_email\"", tmplrt.CallError("T", err))
+				}
+				v47 := reflect.ValueOf(v46)
+				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v47)))
+				v48, err := tmplrt.Field(dot, "Detail")
+				if err != nil {
+					return tmplrt.ExecError("signin-one-way", ".Detail", err)
+				}
+				v49 := tmplrt.Unwrap(v48)
+				if tmplrt.Truth(v49) {
+					dot := v49
+					_ = dot
+					b.WriteString(" <bdi>")
+					v50 := tmplrt.Unwrap(dot)
+					b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v50)))
+					b.WriteString("</bdi>")
+				}
+				b.WriteString("</span>")
+			} else {
+				v51, err := tmplrt.Field(dot, "Way")
+				if err != nil {
+					return tmplrt.ExecError("signin-one-way", ".Way", err)
+				}
+				v52, err := tmplrt.Eq(v51, reflect.ValueOf("passkey"))
+				if err != nil {
+					return tmplrt.ExecError("signin-one-way", "eq .Way \"passkey\"", tmplrt.CallError("eq", err))
+				}
+				if v52 {
+					if depth == tmplrt.MaxExecDepth {
+						return tmplrt.ExecError("signin-one-way", "{{template \"signin-glyph\" (dict \"L\" $L \"Glyph\" \"key\")}}", tmplrt.DepthError())
+					}
+					v53, err := fn.dict_72aa8d8f("L", x1, "Glyph", "key")
+					if err != nil {
+						return tmplrt.ExecError("signin-one-way", "dict \"L\" $L \"Glyph\" \"key\"", tmplrt.CallError("dict", err))
+					}
+					if err := exec_1b24f25e597ad443(b, reflect.ValueOf(v53), fn, depth+1); err != nil {
+						return err
+					}
+					b.WriteString("<span>")
+					v54, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_passkey")
+					if err != nil {
+						return tmplrt.ExecError("signin-one-way", "T $L \"rastrillo.ui.signin_passkey\"", tmplrt.CallError("T", err))
+					}
+					v55 := reflect.ValueOf(v54)
+					b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v55)))
+					b.WriteString("</span>")
+				} else {
+					v56, err := tmplrt.Field(dot, "Way")
+					if err != nil {
+						return tmplrt.ExecError("signin-one-way", ".Way", err)
+					}
+					v57, err := tmplrt.Eq(v56, reflect.ValueOf("authenticator"))
+					if err != nil {
+						return tmplrt.ExecError("signin-one-way", "eq .Way \"authenticator\"", tmplrt.CallError("eq", err))
+					}
+					if v57 {
+						if depth == tmplrt.MaxExecDepth {
+							return tmplrt.ExecError("signin-one-way", "{{template \"signin-glyph\" (dict \"L\" $L \"Glyph\" \"shield\")}}", tmplrt.DepthError())
+						}
+						v58, err := fn.dict_72aa8d8f("L", x1, "Glyph", "shield")
+						if err != nil {
+							return tmplrt.ExecError("signin-one-way", "dict \"L\" $L \"Glyph\" \"shield\"", tmplrt.CallError("dict", err))
+						}
+						if err := exec_1b24f25e597ad443(b, reflect.ValueOf(v58), fn, depth+1); err != nil {
+							return err
+						}
+						b.WriteString("<span>")
+						v59, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_way_authenticator")
+						if err != nil {
+							return tmplrt.ExecError("signin-one-way", "T $L \"rastrillo.ui.signin_way_authenticator\"", tmplrt.CallError("T", err))
+						}
+						v60 := reflect.ValueOf(v59)
+						b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v60)))
+						b.WriteString("</span>")
+					} else {
+						v61, err := tmplrt.Field(dot, "Way")
+						if err != nil {
+							return tmplrt.ExecError("signin-one-way", ".Way", err)
+						}
+						v62, err := tmplrt.Eq(v61, reflect.ValueOf("passphrase"))
+						if err != nil {
+							return tmplrt.ExecError("signin-one-way", "eq .Way \"passphrase\"", tmplrt.CallError("eq", err))
+						}
+						if v62 {
+							if depth == tmplrt.MaxExecDepth {
+								return tmplrt.ExecError("signin-one-way", "{{template \"signin-glyph\" (dict \"L\" $L \"Glyph\" \"lock\")}}", tmplrt.DepthError())
+							}
+							v63, err := fn.dict_72aa8d8f("L", x1, "Glyph", "lock")
+							if err != nil {
+								return tmplrt.ExecError("signin-one-way", "dict \"L\" $L \"Glyph\" \"lock\"", tmplrt.CallError("dict", err))
+							}
+							if err := exec_1b24f25e597ad443(b, reflect.ValueOf(v63), fn, depth+1); err != nil {
+								return err
+							}
+							b.WriteString("<span>")
+							v64, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_way_passphrase")
+							if err != nil {
+								return tmplrt.ExecError("signin-one-way", "T $L \"rastrillo.ui.signin_way_passphrase\"", tmplrt.CallError("T", err))
+							}
+							v65 := reflect.ValueOf(v64)
+							b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v65)))
+							b.WriteString("</span>")
+						} else {
+							v66, err := tmplrt.Field(dot, "Icon")
+							if err != nil {
+								return tmplrt.ExecError("signin-one-way", ".Icon", err)
+							}
+							v67 := tmplrt.Unwrap(v66)
+							b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v67)))
+							b.WriteString("<span>")
+							v68, err := tmplrt.Field(dot, "Label")
+							if err != nil {
+								return tmplrt.ExecError("signin-one-way", ".Label", err)
+							}
+							v69 := tmplrt.Unwrap(v68)
+							b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v69)))
+							b.WriteString("</span>")
+						}
+					}
+				}
+			}
+			if depth == tmplrt.MaxExecDepth {
+				return tmplrt.ExecError("signin-one-way", "{{template \"signin-glyph\" (dict \"L\" $L \"Glyph\" \"next\")}}", tmplrt.DepthError())
+			}
+			v70, err := fn.dict_72aa8d8f("L", x1, "Glyph", "next")
+			if err != nil {
+				return tmplrt.ExecError("signin-one-way", "dict \"L\" $L \"Glyph\" \"next\"", tmplrt.CallError("dict", err))
+			}
+			if err := exec_1b24f25e597ad443(b, reflect.ValueOf(v70), fn, depth+1); err != nil {
+				return err
+			}
+			b.WriteString("</a>\n")
+			return nil
+		}); err != nil {
+			return tmplrt.ExecError("signin-one-way", "$s.Ways", err)
+		}
+		v71, err := tmplrt.Field(x2, "Remembered")
+		if err != nil {
+			return tmplrt.ExecError("signin-one-way", "$s.Remembered", err)
+		}
+		v72 := tmplrt.Unwrap(v71)
+		if tmplrt.Truth(v72) {
+			b.WriteString("<form rst-signin-form method=\"post\" action=\"")
+			v73, err := tmplrt.Field(x2, "ForgetPath")
+			if err != nil {
+				return tmplrt.ExecError("signin-one-way", "$s.ForgetPath", err)
+			}
+			v74 := tmplrt.Unwrap(v73)
+			tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v74))))
+			b.WriteString("\">")
+			v75, err := tmplrt.Field(x2, "ReturnTo")
+			if err != nil {
+				return tmplrt.ExecError("signin-one-way", "$s.ReturnTo", err)
+			}
+			v76 := tmplrt.Unwrap(v75)
+			if tmplrt.Truth(v76) {
+				dot := v76
+				_ = dot
+				b.WriteString("<input type=\"hidden\" name=\"return_to\" value=\"")
+				v77 := tmplrt.Unwrap(dot)
+				b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v77)))
+				b.WriteString("\">\n")
+			}
+			if depth == tmplrt.MaxExecDepth {
+				return tmplrt.ExecError("signin-one-way", "{{template \"signin-forget-way\" (dict \"L\" $L \"State\" $s)}}", tmplrt.DepthError())
+			}
+			v78, err := fn.dict_72aa8d8f("L", x1, "State", tmplrt.Arg(x2))
+			if err != nil {
+				return tmplrt.ExecError("signin-one-way", "dict \"L\" $L \"State\" $s", tmplrt.CallError("dict", err))
+			}
+			if err := exec_b29f7da01ee7285f(b, reflect.ValueOf(v78), fn, depth+1); err != nil {
+				return err
+			}
+			b.WriteString("<button rst-btn=\"block\" type=\"submit\">")
+			if depth == tmplrt.MaxExecDepth {
+				return tmplrt.ExecError("signin-one-way", "{{template \"signin-glyph\" (dict \"L\" $L \"Glyph\" \"at\")}}", tmplrt.DepthError())
+			}
+			v79, err := fn.dict_72aa8d8f("L", x1, "Glyph", "at")
+			if err != nil {
+				return tmplrt.ExecError("signin-one-way", "dict \"L\" $L \"Glyph\" \"at\"", tmplrt.CallError("dict", err))
+			}
+			if err := exec_1b24f25e597ad443(b, reflect.ValueOf(v79), fn, depth+1); err != nil {
+				return err
+			}
+			b.WriteString("<span>")
+			v80, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_different")
+			if err != nil {
+				return tmplrt.ExecError("signin-one-way", "T $L \"rastrillo.ui.signin_different\"", tmplrt.CallError("T", err))
+			}
+			v81 := reflect.ValueOf(v80)
+			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v81)))
+			b.WriteString("</span>")
+			if depth == tmplrt.MaxExecDepth {
+				return tmplrt.ExecError("signin-one-way", "{{template \"signin-glyph\" (dict \"L\" $L \"Glyph\" \"next\")}}", tmplrt.DepthError())
+			}
+			v82, err := fn.dict_72aa8d8f("L", x1, "Glyph", "next")
+			if err != nil {
+				return tmplrt.ExecError("signin-one-way", "dict \"L\" $L \"Glyph\" \"next\"", tmplrt.CallError("dict", err))
+			}
+			if err := exec_1b24f25e597ad443(b, reflect.ValueOf(v82), fn, depth+1); err != nil {
+				return err
+			}
+			b.WriteString("</button></form>\n")
+		}
+		b.WriteString("</div>\n<a rst-btn=\"ghost\" href=\"")
+		v83, err := tmplrt.Field(x2, "BackHref")
+		if err != nil {
+			return tmplrt.ExecError("signin-one-way", "$s.BackHref", err)
+		}
+		v84 := tmplrt.Unwrap(v83)
+		tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v84))))
+		b.WriteString("\">")
+		if depth == tmplrt.MaxExecDepth {
+			return tmplrt.ExecError("signin-one-way", "{{template \"signin-glyph\" (dict \"L\" $L \"Glyph\" \"back\")}}", tmplrt.DepthError())
+		}
+		v85, err := fn.dict_72aa8d8f("L", x1, "Glyph", "back")
+		if err != nil {
+			return tmplrt.ExecError("signin-one-way", "dict \"L\" $L \"Glyph\" \"back\"", tmplrt.CallError("dict", err))
+		}
+		if err := exec_1b24f25e597ad443(b, reflect.ValueOf(v85), fn, depth+1); err != nil {
+			return err
+		}
+		b.WriteString("<span>")
+		v86, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_back")
+		if err != nil {
+			return tmplrt.ExecError("signin-one-way", "T $L \"rastrillo.ui.signin_back\"", tmplrt.CallError("T", err))
+		}
+		v87 := reflect.ValueOf(v86)
+		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v87)))
+		b.WriteString("</span></a>\n")
+	} else {
+		v88, err := tmplrt.Eq(x3, reflect.ValueOf("federated"))
+		if err != nil {
+			return tmplrt.ExecError("signin-one-way", "eq $door \"federated\"", tmplrt.CallError("eq", err))
+		}
+		if v88 {
+			b.WriteString("<a rst-btn=\"primary block\" href=\"")
+			v89, err := tmplrt.Field(x2, "FederatedHref")
+			if err != nil {
+				return tmplrt.ExecError("signin-one-way", "$s.FederatedHref", err)
+			}
+			v90 := tmplrt.Unwrap(v89)
+			tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v90))))
+			b.WriteString("\"")
+			v91, err := tmplrt.Eq(x4, reflect.ValueOf("onetap"))
+			if err != nil {
+				return tmplrt.ExecError("signin-one-way", "eq $focus \"onetap\"", tmplrt.CallError("eq", err))
+			}
+			if v91 {
+				b.WriteString(" autofocus")
+			}
+			b.WriteString(">")
+			v92, err := tmplrt.Field(x2, "Federated")
+			if err != nil {
+				return tmplrt.ExecError("signin-one-way", "$s.Federated.Icon", err)
+			}
+			v93, err := tmplrt.Field(v92, "Icon")
+			if err != nil {
+				return tmplrt.ExecError("signin-one-way", "$s.Federated.Icon", err)
+			}
+			v94 := tmplrt.Unwrap(v93)
+			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v94)))
+			b.WriteString("<span>")
+			v95, err := tmplrt.Field(x2, "Federated")
+			if err != nil {
+				return tmplrt.ExecError("signin-one-way", "$s.Federated.Label", err)
+			}
+			v96, err := tmplrt.Field(v95, "Label")
+			if err != nil {
+				return tmplrt.ExecError("signin-one-way", "$s.Federated.Label", err)
+			}
+			v97, err := fn.Tf_a3eca208(x1, "rastrillo.ui.signin_federated", "name", tmplrt.Arg(v96))
+			if err != nil {
+				return tmplrt.ExecError("signin-one-way", "Tf $L \"rastrillo.ui.signin_federated\" \"name\" $s.Federated.Label", tmplrt.CallError("Tf", err))
+			}
+			v98 := reflect.ValueOf(v97)
+			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v98)))
+			b.WriteString("</span></a>\n")
+		} else {
+			v99, err := tmplrt.Eq(x3, reflect.ValueOf("passkey"))
+			if err != nil {
+				return tmplrt.ExecError("signin-one-way", "eq $door \"passkey\"", tmplrt.CallError("eq", err))
+			}
+			if v99 {
+				b.WriteString("<div rst-signin-passkey=\"before\"><button rst-btn=\"primary block\" type=\"button\"")
+				v100 := tmplrt.Not(x5)
+				if v100 {
+					b.WriteString(" hidden data-rst-passkey data-rst-passkey-begin=\"")
+					v101, err := tmplrt.Field(x2, "Passkey")
+					if err != nil {
+						return tmplrt.ExecError("signin-one-way", "$s.Passkey.BeginPath", err)
+					}
+					v102, err := tmplrt.Field(v101, "BeginPath")
+					if err != nil {
+						return tmplrt.ExecError("signin-one-way", "$s.Passkey.BeginPath", err)
+					}
+					v103 := tmplrt.Unwrap(v102)
+					b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v103)))
+					b.WriteString("\" data-rst-passkey-finish=\"")
+					v104, err := tmplrt.Field(x2, "PasskeyFinish")
+					if err != nil {
+						return tmplrt.ExecError("signin-one-way", "$s.PasskeyFinish", err)
+					}
+					v105 := tmplrt.Unwrap(v104)
+					b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v105)))
+					b.WriteString("\" data-rst-passkey-module=\"")
+					v106, err := tmplrt.Field(x2, "Passkey")
+					if err != nil {
+						return tmplrt.ExecError("signin-one-way", "$s.Passkey.ModuleURL", err)
+					}
+					v107, err := tmplrt.Field(v106, "ModuleURL")
+					if err != nil {
+						return tmplrt.ExecError("signin-one-way", "$s.Passkey.ModuleURL", err)
+					}
+					v108 := tmplrt.Unwrap(v107)
+					b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v108)))
+					b.WriteString("\"")
+					v109, err := tmplrt.Field(x2, "Passkey")
+					if err != nil {
+						return tmplrt.ExecError("signin-one-way", "$s.Passkey.LegacyRPID", err)
+					}
+					v110, err := tmplrt.Field(v109, "LegacyRPID")
+					if err != nil {
+						return tmplrt.ExecError("signin-one-way", "$s.Passkey.LegacyRPID", err)
+					}
+					v111 := tmplrt.Unwrap(v110)
+					if tmplrt.Truth(v111) {
+						dot := v111
+						_ = dot
+						b.WriteString(" data-rst-passkey-legacy-rpid=\"")
+						v112 := tmplrt.Unwrap(dot)
+						b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v112)))
+						b.WriteString("\"")
+					}
+					b.WriteString(" data-rst-passkey-cancelled=\"")
+					v113, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_passkey_cancelled")
+					if err != nil {
+						return tmplrt.ExecError("signin-one-way", "T $L \"rastrillo.ui.signin_passkey_cancelled\"", tmplrt.CallError("T", err))
+					}
+					v114 := reflect.ValueOf(v113)
+					b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v114)))
+					b.WriteString("\" data-rst-passkey-failed=\"")
+					v115, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_passkey_failed")
+					if err != nil {
+						return tmplrt.ExecError("signin-one-way", "T $L \"rastrillo.ui.signin_passkey_failed\"", tmplrt.CallError("T", err))
+					}
+					v116 := reflect.ValueOf(v115)
+					b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v116)))
+					b.WriteString("\" data-rst-passkey-unavailable=\"")
+					v117, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_passkey_unavailable")
+					if err != nil {
+						return tmplrt.ExecError("signin-one-way", "T $L \"rastrillo.ui.signin_passkey_unavailable\"", tmplrt.CallError("T", err))
+					}
+					v118 := reflect.ValueOf(v117)
+					b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v118)))
+					b.WriteString("\" data-rst-passkey-fallback=\"")
+					v119, err := tmplrt.Field(x2, "EmailHref")
+					if err != nil {
+						return tmplrt.ExecError("signin-one-way", "$s.EmailHref", err)
+					}
+					v120 := tmplrt.Unwrap(v119)
+					b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v120)))
+					b.WriteString("\"")
+				}
+				b.WriteString(" aria-describedby=\"rst-signin-passkey-msg\">")
+				if depth == tmplrt.MaxExecDepth {
+					return tmplrt.ExecError("signin-one-way", "{{template \"signin-glyph\" (dict \"L\" $L \"Glyph\" \"key\")}}", tmplrt.DepthError())
+				}
+				v121, err := fn.dict_72aa8d8f("L", x1, "Glyph", "key")
+				if err != nil {
+					return tmplrt.ExecError("signin-one-way", "dict \"L\" $L \"Glyph\" \"key\"", tmplrt.CallError("dict", err))
+				}
+				if err := exec_1b24f25e597ad443(b, reflect.ValueOf(v121), fn, depth+1); err != nil {
+					return err
+				}
+				b.WriteString("<span>")
+				v123, err := tmplrt.Field(x2, "Remembered")
+				if err != nil {
+					return tmplrt.ExecError("signin-one-way", "$s.Remembered", err)
+				}
+				v122 := tmplrt.ValueArg(v123)
+				if tmplrt.Truth(v122) {
+					v124, err := tmplrt.Field(x2, "Remembered")
+					if err != nil {
+						return tmplrt.ExecError("signin-one-way", "$s.Remembered.Method", err)
+					}
+					v125, err := tmplrt.Field(v124, "Method")
+					if err != nil {
+						return tmplrt.ExecError("signin-one-way", "$s.Remembered.Method", err)
+					}
+					v126, err := tmplrt.Eq(v125, reflect.ValueOf("passkey"))
+					if err != nil {
+						return tmplrt.ExecError("signin-one-way", "eq $s.Remembered.Method \"passkey\"", tmplrt.CallError("eq", err))
+					}
+					v122 = tmplrt.ValueArg(reflect.ValueOf(v126))
+				}
+				v127 := tmplrt.Unwrap(v122)
+				if tmplrt.Truth(v127) {
+					v128, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_passkey_remembered")
+					if err != nil {
+						return tmplrt.ExecError("signin-one-way", "T $L \"rastrillo.ui.signin_passkey_remembered\"", tmplrt.CallError("T", err))
+					}
+					v129 := reflect.ValueOf(v128)
+					b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v129)))
+				} else {
+					v130, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_passkey")
+					if err != nil {
+						return tmplrt.ExecError("signin-one-way", "T $L \"rastrillo.ui.signin_passkey\"", tmplrt.CallError("T", err))
+					}
+					v131 := reflect.ValueOf(v130)
+					b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v131)))
+				}
+				b.WriteString("</span></button>\n")
+				if depth == tmplrt.MaxExecDepth {
+					return tmplrt.ExecError("signin-one-way", "{{template \"signin-passkey-note\" (dict \"L\" $L)}}", tmplrt.DepthError())
+				}
+				v132, err := fn.dict_72aa8d8f("L", x1)
+				if err != nil {
+					return tmplrt.ExecError("signin-one-way", "dict \"L\" $L", tmplrt.CallError("dict", err))
+				}
+				if err := exec_fb1ce5b9df238224(b, reflect.ValueOf(v132), fn, depth+1); err != nil {
+					return err
+				}
+				b.WriteString("\n</div>\n")
+				v133 := tmplrt.Not(x5)
+				if v133 {
+					b.WriteString("<noscript><p>")
+					v134, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_passkey_noscript")
+					if err != nil {
+						return tmplrt.ExecError("signin-one-way", "T $L \"rastrillo.ui.signin_passkey_noscript\"", tmplrt.CallError("T", err))
+					}
+					v135 := reflect.ValueOf(v134)
+					b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v135)))
+					b.WriteString("</p></noscript>\n<script type=\"module\" src=\"")
+					v136, err := tmplrt.Field(x2, "Passkey")
+					if err != nil {
+						return tmplrt.ExecError("signin-one-way", "$s.Passkey.ScriptURL", err)
+					}
+					v137, err := tmplrt.Field(v136, "ScriptURL")
+					if err != nil {
+						return tmplrt.ExecError("signin-one-way", "$s.Passkey.ScriptURL", err)
+					}
+					v138 := tmplrt.Unwrap(v137)
+					tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v138))))
+					b.WriteString("\" data-rst-passkey-script></script>\n")
+				}
+			} else {
+				v139, err := tmplrt.Eq(x3, reflect.ValueOf("authenticator"))
+				if err != nil {
+					return tmplrt.ExecError("signin-one-way", "eq $door \"authenticator\"", tmplrt.CallError("eq", err))
+				}
+				if v139 {
+					if depth == tmplrt.MaxExecDepth {
+						return tmplrt.ExecError("signin-one-way", "{{template \"signin-secret-door\" (dict \"L\" $L \"State\" $s \"Door\" $s.Authenticator \"Focus\" $focus \"Proof\" $proof \"Gated\" $gated \"ID\" \"rst-signin-code\" \"Name\" \"code\" \"Type\" \"text\" \"Inputmode\" \"numeric\" \"Autocomplete\" \"one-time-code\" \"Label\" (T $L \"rastrillo.ui.signin_code\"))}}", tmplrt.DepthError())
+					}
+					v140, err := tmplrt.Field(x2, "Authenticator")
+					if err != nil {
+						return tmplrt.ExecError("signin-one-way", "$s.Authenticator", err)
+					}
+					v141, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_code")
+					if err != nil {
+						return tmplrt.ExecError("signin-one-way", "T $L \"rastrillo.ui.signin_code\"", tmplrt.CallError("T", err))
+					}
+					v142 := reflect.ValueOf(v141)
+					v143, err := fn.dict_72aa8d8f("L", x1, "State", tmplrt.Arg(x2), "Door", tmplrt.Arg(v140), "Focus", tmplrt.Arg(x4), "Proof", tmplrt.Arg(x6), "Gated", tmplrt.Arg(x7), "ID", "rst-signin-code", "Name", "code", "Type", "text", "Inputmode", "numeric", "Autocomplete", "one-time-code", "Label", tmplrt.Arg(v142))
+					if err != nil {
+						return tmplrt.ExecError("signin-one-way", "dict \"L\" $L \"State\" $s \"Door\" $s.Authenticator \"Focus\" $focus \"Proof\" $proof \"Gated\" $gated \"ID\" \"rst-signin-code\" \"Name\" \"code\" \"Type\" \"text\" \"Inputmode\" \"numeric\" \"Autocomplete\" \"one-time-code\" \"Label\" (T $L \"rastrillo.ui.signin_code\")", tmplrt.CallError("dict", err))
+					}
+					if err := exec_5e1403c23c6b36f9(b, reflect.ValueOf(v143), fn, depth+1); err != nil {
+						return err
+					}
+				} else {
+					v144, err := tmplrt.Eq(x3, reflect.ValueOf("passphrase"))
+					if err != nil {
+						return tmplrt.ExecError("signin-one-way", "eq $door \"passphrase\"", tmplrt.CallError("eq", err))
+					}
+					if v144 {
+						if depth == tmplrt.MaxExecDepth {
+							return tmplrt.ExecError("signin-one-way", "{{template \"signin-secret-door\" (dict \"L\" $L \"State\" $s \"Door\" $s.Passphrase \"Focus\" $focus \"Proof\" $proof \"Gated\" $gated \"ID\" \"rst-signin-passphrase\" \"Name\" \"passphrase\" \"Type\" \"password\" \"Autocomplete\" \"current-password\" \"Label\" (T $L \"rastrillo.ui.signin_passphrase\"))}}", tmplrt.DepthError())
+						}
+						v145, err := tmplrt.Field(x2, "Passphrase")
+						if err != nil {
+							return tmplrt.ExecError("signin-one-way", "$s.Passphrase", err)
+						}
+						v146, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_passphrase")
+						if err != nil {
+							return tmplrt.ExecError("signin-one-way", "T $L \"rastrillo.ui.signin_passphrase\"", tmplrt.CallError("T", err))
+						}
+						v147 := reflect.ValueOf(v146)
+						v148, err := fn.dict_72aa8d8f("L", x1, "State", tmplrt.Arg(x2), "Door", tmplrt.Arg(v145), "Focus", tmplrt.Arg(x4), "Proof", tmplrt.Arg(x6), "Gated", tmplrt.Arg(x7), "ID", "rst-signin-passphrase", "Name", "passphrase", "Type", "password", "Autocomplete", "current-password", "Label", tmplrt.Arg(v147))
+						if err != nil {
+							return tmplrt.ExecError("signin-one-way", "dict \"L\" $L \"State\" $s \"Door\" $s.Passphrase \"Focus\" $focus \"Proof\" $proof \"Gated\" $gated \"ID\" \"rst-signin-passphrase\" \"Name\" \"passphrase\" \"Type\" \"password\" \"Autocomplete\" \"current-password\" \"Label\" (T $L \"rastrillo.ui.signin_passphrase\")", tmplrt.CallError("dict", err))
+						}
+						if err := exec_5e1403c23c6b36f9(b, reflect.ValueOf(v148), fn, depth+1); err != nil {
+							return err
+						}
+					} else {
+						v149, err := tmplrt.Eq(x3, reflect.ValueOf("keymail"))
+						if err != nil {
+							return tmplrt.ExecError("signin-one-way", "eq $door \"keymail\"", tmplrt.CallError("eq", err))
+						}
+						if v149 {
+							b.WriteString("<form rst-signin-form method=\"post\" action=\"")
+							v150, err := tmplrt.Field(x2, "BeginPath")
+							if err != nil {
+								return tmplrt.ExecError("signin-one-way", "$s.BeginPath", err)
+							}
+							v151 := tmplrt.Unwrap(v150)
+							tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v151))))
+							b.WriteString("\"")
+							v152 := tmplrt.Unwrap(x6)
+							if tmplrt.Truth(v152) {
+								dot := v152
+								_ = dot
+								b.WriteString(" ")
+								v153, err := tmplrt.Field(dot, "Attrs")
+								if err != nil {
+									return tmplrt.ExecError("signin-one-way", ".Attrs", err)
+								}
+								v154 := tmplrt.Unwrap(v153)
+								b.WriteString(tmplrt.HTMLNameFilter(tmplrt.Arg(v154)))
+							}
+							b.WriteString(">")
+							v155 := tmplrt.Unwrap(x6)
+							if tmplrt.Truth(v155) {
+								dot := v155
+								_ = dot
+								v156, err := tmplrt.Field(dot, "Fields")
+								if err != nil {
+									return tmplrt.ExecError("signin-one-way", ".Fields", err)
+								}
+								v157 := tmplrt.Unwrap(v156)
+								b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v157)))
+							}
+							b.WriteString("\n")
+							v158, err := tmplrt.Field(x2, "ReturnTo")
+							if err != nil {
+								return tmplrt.ExecError("signin-one-way", "$s.ReturnTo", err)
+							}
+							v159 := tmplrt.Unwrap(v158)
+							if tmplrt.Truth(v159) {
+								dot := v159
+								_ = dot
+								b.WriteString("<input type=\"hidden\" name=\"return_to\" value=\"")
+								v160 := tmplrt.Unwrap(dot)
+								b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v160)))
+								b.WriteString("\">\n")
+							}
+							v162, err := tmplrt.Field(x2, "Reauth")
+							if err != nil {
+								return tmplrt.ExecError("signin-one-way", "$s.Reauth", err)
+							}
+							v161 := tmplrt.ValueArg(v162)
+							if !tmplrt.Truth(v161) {
+								v163, err := tmplrt.Field(x2, "Problem")
+								if err != nil {
+									return tmplrt.ExecError("signin-one-way", "$s.Problem", err)
+								}
+								v164, err := tmplrt.Eq(v163, reflect.ValueOf("reauth"))
+								if err != nil {
+									return tmplrt.ExecError("signin-one-way", "eq $s.Problem \"reauth\"", tmplrt.CallError("eq", err))
+								}
+								v161 = tmplrt.ValueArg(reflect.ValueOf(v164))
+							}
+							v165 := tmplrt.Unwrap(v161)
+							if tmplrt.Truth(v165) {
+								b.WriteString("<input type=\"hidden\" name=\"reauth\" value=\"1\">\n")
+							}
+							b.WriteString("<input type=\"hidden\" name=\"address\" value=\"")
+							v166, err := tmplrt.Field(x2, "Remembered")
+							if err != nil {
+								return tmplrt.ExecError("signin-one-way", "$s.Remembered.Address", err)
+							}
+							v167, err := tmplrt.Field(v166, "Address")
+							if err != nil {
+								return tmplrt.ExecError("signin-one-way", "$s.Remembered.Address", err)
+							}
+							v168 := tmplrt.Unwrap(v167)
+							b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v168)))
+							b.WriteString("\">\n<input type=\"hidden\" name=\"expect\" value=\"keymail\">\n<button rst-btn=\"primary block\" type=\"submit\"")
+							v169, err := tmplrt.Eq(x4, reflect.ValueOf("onetap"))
+							if err != nil {
+								return tmplrt.ExecError("signin-one-way", "eq $focus \"onetap\"", tmplrt.CallError("eq", err))
+							}
+							if v169 {
+								b.WriteString(" autofocus")
+							}
+							v170 := tmplrt.Unwrap(x7)
+							if tmplrt.Truth(v170) {
+								b.WriteString(" disabled data-pow-submit")
+							}
+							b.WriteString(">")
+							if depth == tmplrt.MaxExecDepth {
+								return tmplrt.ExecError("signin-one-way", "{{template \"signin-glyph\" (dict \"L\" $L \"Glyph\" \"mail\")}}", tmplrt.DepthError())
+							}
+							v171, err := fn.dict_72aa8d8f("L", x1, "Glyph", "mail")
+							if err != nil {
+								return tmplrt.ExecError("signin-one-way", "dict \"L\" $L \"Glyph\" \"mail\"", tmplrt.CallError("dict", err))
+							}
+							if err := exec_1b24f25e597ad443(b, reflect.ValueOf(v171), fn, depth+1); err != nil {
+								return err
+							}
+							b.WriteString("<span>")
+							v172, err := tmplrt.Field(x2, "Remembered")
+							if err != nil {
+								return tmplrt.ExecError("signin-one-way", "$s.Remembered.Address", err)
+							}
+							v173, err := tmplrt.Field(v172, "Address")
+							if err != nil {
+								return tmplrt.ExecError("signin-one-way", "$s.Remembered.Address", err)
+							}
+							v174, err := fn.Tbdi_a3eca208(x1, "rastrillo.ui.signin_continue_as", "address", tmplrt.Arg(v173))
+							if err != nil {
+								return tmplrt.ExecError("signin-one-way", "Tbdi $L \"rastrillo.ui.signin_continue_as\" \"address\" $s.Remembered.Address", tmplrt.CallError("Tbdi", err))
+							}
+							v175 := reflect.ValueOf(v174)
+							b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v175)))
+							b.WriteString("</span></button>\n")
+							v176 := tmplrt.Unwrap(x7)
+							if tmplrt.Truth(v176) {
+								var v177 reflect.Value
+								if x6.IsValid() {
+									v178, err := tmplrt.MethodOf(x6, "StatusLine")
+									if err != nil {
+										return tmplrt.ExecError("signin-one-way", "$proof.StatusLine", err)
+									}
+									v180, err := fn.T_a3eca208(x1, "rastrillo.ui.pow_status")
+									if err != nil {
+										return tmplrt.ExecError("signin-one-way", "T $L \"rastrillo.ui.pow_status\"", tmplrt.CallError("T", err))
+									}
+									v181 := reflect.ValueOf(v180)
+									v179, err := v178.Call(tmplrt.Val(v181))
+									if err != nil {
+										return tmplrt.ExecError("signin-one-way", "$proof.StatusLine", err)
+									}
+									v177 = v179
+								}
+								v182 := tmplrt.Unwrap(v177)
+								b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v182)))
+								b.WriteString("<noscript><p>")
+								v183, err := fn.T_a3eca208(x1, "rastrillo.ui.pow_noscript")
+								if err != nil {
+									return tmplrt.ExecError("signin-one-way", "T $L \"rastrillo.ui.pow_noscript\"", tmplrt.CallError("T", err))
+								}
+								v184 := reflect.ValueOf(v183)
+								b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v184)))
+								b.WriteString("</p></noscript>\n")
+							}
+							b.WriteString("</form>\n")
+						} else {
+							v185, err := tmplrt.Eq(x3, reflect.ValueOf("link"))
+							if err != nil {
+								return tmplrt.ExecError("signin-one-way", "eq $door \"link\"", tmplrt.CallError("eq", err))
+							}
+							if v185 {
+								b.WriteString("<form rst-signin-form method=\"post\" action=\"")
+								v186, err := tmplrt.Field(x2, "BeginPath")
+								if err != nil {
+									return tmplrt.ExecError("signin-one-way", "$s.BeginPath", err)
+								}
+								v187 := tmplrt.Unwrap(v186)
+								tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v187))))
+								b.WriteString("\"")
+								v188 := tmplrt.Unwrap(x6)
+								if tmplrt.Truth(v188) {
+									dot := v188
+									_ = dot
+									b.WriteString(" ")
+									v189, err := tmplrt.Field(dot, "Attrs")
+									if err != nil {
+										return tmplrt.ExecError("signin-one-way", ".Attrs", err)
+									}
+									v190 := tmplrt.Unwrap(v189)
+									b.WriteString(tmplrt.HTMLNameFilter(tmplrt.Arg(v190)))
+								}
+								b.WriteString(">")
+								v191 := tmplrt.Unwrap(x6)
+								if tmplrt.Truth(v191) {
+									dot := v191
+									_ = dot
+									v192, err := tmplrt.Field(dot, "Fields")
+									if err != nil {
+										return tmplrt.ExecError("signin-one-way", ".Fields", err)
+									}
+									v193 := tmplrt.Unwrap(v192)
+									b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v193)))
+								}
+								b.WriteString("\n")
+								v194, err := tmplrt.Field(x2, "ReturnTo")
+								if err != nil {
+									return tmplrt.ExecError("signin-one-way", "$s.ReturnTo", err)
+								}
+								v195 := tmplrt.Unwrap(v194)
+								if tmplrt.Truth(v195) {
+									dot := v195
+									_ = dot
+									b.WriteString("<input type=\"hidden\" name=\"return_to\" value=\"")
+									v196 := tmplrt.Unwrap(dot)
+									b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v196)))
+									b.WriteString("\">\n")
+								}
+								v198, err := tmplrt.Field(x2, "Reauth")
+								if err != nil {
+									return tmplrt.ExecError("signin-one-way", "$s.Reauth", err)
+								}
+								v197 := tmplrt.ValueArg(v198)
+								if !tmplrt.Truth(v197) {
+									v199, err := tmplrt.Field(x2, "Problem")
+									if err != nil {
+										return tmplrt.ExecError("signin-one-way", "$s.Problem", err)
+									}
+									v200, err := tmplrt.Eq(v199, reflect.ValueOf("reauth"))
+									if err != nil {
+										return tmplrt.ExecError("signin-one-way", "eq $s.Problem \"reauth\"", tmplrt.CallError("eq", err))
+									}
+									v197 = tmplrt.ValueArg(reflect.ValueOf(v200))
+								}
+								v201 := tmplrt.Unwrap(v197)
+								if tmplrt.Truth(v201) {
+									b.WriteString("<input type=\"hidden\" name=\"reauth\" value=\"1\">\n")
+								}
+								b.WriteString("<input type=\"hidden\" name=\"address\" value=\"")
+								v202, err := tmplrt.Field(x2, "Remembered")
+								if err != nil {
+									return tmplrt.ExecError("signin-one-way", "$s.Remembered.Address", err)
+								}
+								v203, err := tmplrt.Field(v202, "Address")
+								if err != nil {
+									return tmplrt.ExecError("signin-one-way", "$s.Remembered.Address", err)
+								}
+								v204 := tmplrt.Unwrap(v203)
+								b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v204)))
+								b.WriteString("\">\n<button rst-btn=\"primary block\" type=\"submit\"")
+								v205, err := tmplrt.Eq(x4, reflect.ValueOf("onetap"))
+								if err != nil {
+									return tmplrt.ExecError("signin-one-way", "eq $focus \"onetap\"", tmplrt.CallError("eq", err))
+								}
+								if v205 {
+									b.WriteString(" autofocus")
+								}
+								v206 := tmplrt.Unwrap(x7)
+								if tmplrt.Truth(v206) {
+									b.WriteString(" disabled data-pow-submit")
+								}
+								b.WriteString(">")
+								if depth == tmplrt.MaxExecDepth {
+									return tmplrt.ExecError("signin-one-way", "{{template \"signin-glyph\" (dict \"L\" $L \"Glyph\" \"mail\")}}", tmplrt.DepthError())
+								}
+								v207, err := fn.dict_72aa8d8f("L", x1, "Glyph", "mail")
+								if err != nil {
+									return tmplrt.ExecError("signin-one-way", "dict \"L\" $L \"Glyph\" \"mail\"", tmplrt.CallError("dict", err))
+								}
+								if err := exec_1b24f25e597ad443(b, reflect.ValueOf(v207), fn, depth+1); err != nil {
+									return err
+								}
+								b.WriteString("<span>")
+								v208, err := tmplrt.Field(x2, "Remembered")
+								if err != nil {
+									return tmplrt.ExecError("signin-one-way", "$s.Remembered.Address", err)
+								}
+								v209, err := tmplrt.Field(v208, "Address")
+								if err != nil {
+									return tmplrt.ExecError("signin-one-way", "$s.Remembered.Address", err)
+								}
+								v210, err := fn.Tbdi_a3eca208(x1, "rastrillo.ui.signin_continue_as", "address", tmplrt.Arg(v209))
+								if err != nil {
+									return tmplrt.ExecError("signin-one-way", "Tbdi $L \"rastrillo.ui.signin_continue_as\" \"address\" $s.Remembered.Address", tmplrt.CallError("Tbdi", err))
+								}
+								v211 := reflect.ValueOf(v210)
+								b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v211)))
+								b.WriteString("</span></button>\n")
+								v212 := tmplrt.Unwrap(x7)
+								if tmplrt.Truth(v212) {
+									var v213 reflect.Value
+									if x6.IsValid() {
+										v214, err := tmplrt.MethodOf(x6, "StatusLine")
+										if err != nil {
+											return tmplrt.ExecError("signin-one-way", "$proof.StatusLine", err)
+										}
+										v216, err := fn.T_a3eca208(x1, "rastrillo.ui.pow_status")
+										if err != nil {
+											return tmplrt.ExecError("signin-one-way", "T $L \"rastrillo.ui.pow_status\"", tmplrt.CallError("T", err))
+										}
+										v217 := reflect.ValueOf(v216)
+										v215, err := v214.Call(tmplrt.Val(v217))
+										if err != nil {
+											return tmplrt.ExecError("signin-one-way", "$proof.StatusLine", err)
+										}
+										v213 = v215
+									}
+									v218 := tmplrt.Unwrap(v213)
+									b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v218)))
+									b.WriteString("<noscript><p>")
+									v219, err := fn.T_a3eca208(x1, "rastrillo.ui.pow_noscript")
+									if err != nil {
+										return tmplrt.ExecError("signin-one-way", "T $L \"rastrillo.ui.pow_noscript\"", tmplrt.CallError("T", err))
+									}
+									v220 := reflect.ValueOf(v219)
+									b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v220)))
+									b.WriteString("</p></noscript>\n")
+								}
+								b.WriteString("</form>\n")
+							} else {
+								v222, err := tmplrt.Field(x2, "ConditionalUI")
+								if err != nil {
+									return tmplrt.ExecError("signin-one-way", "$s.ConditionalUI", err)
+								}
+								v221 := tmplrt.ValueArg(v222)
+								if tmplrt.Truth(v221) {
+									v223 := tmplrt.Not(x5)
+									v221 = tmplrt.ValueArg(reflect.ValueOf(v223))
+								}
+								v224 := tmplrt.Unwrap(v221)
+								x10 := v224
+								_ = x10
+								x11 := reflect.ValueOf("")
+								_ = x11
+								v225, err := tmplrt.Field(x2, "Problem")
+								if err != nil {
+									return tmplrt.ExecError("signin-one-way", "$s.Problem", err)
+								}
+								v226, err := tmplrt.Eq(v225, reflect.ValueOf("address"))
+								if err != nil {
+									return tmplrt.ExecError("signin-one-way", "eq $s.Problem \"address\"", tmplrt.CallError("eq", err))
+								}
+								if v226 {
+									v227, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_problem_address")
+									if err != nil {
+										return tmplrt.ExecError("signin-one-way", "T $L \"rastrillo.ui.signin_problem_address\"", tmplrt.CallError("T", err))
+									}
+									v228 := reflect.ValueOf(v227)
+									x11 = v228
+								}
+								b.WriteString("<form rst-signin-form method=\"post\" action=\"")
+								v229, err := tmplrt.Field(x2, "BeginPath")
+								if err != nil {
+									return tmplrt.ExecError("signin-one-way", "$s.BeginPath", err)
+								}
+								v230 := tmplrt.Unwrap(v229)
+								tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v230))))
+								b.WriteString("\"")
+								v231 := tmplrt.Unwrap(x6)
+								if tmplrt.Truth(v231) {
+									dot := v231
+									_ = dot
+									b.WriteString(" ")
+									v232, err := tmplrt.Field(dot, "Attrs")
+									if err != nil {
+										return tmplrt.ExecError("signin-one-way", ".Attrs", err)
+									}
+									v233 := tmplrt.Unwrap(v232)
+									b.WriteString(tmplrt.HTMLNameFilter(tmplrt.Arg(v233)))
+								}
+								v234 := tmplrt.Unwrap(x10)
+								if tmplrt.Truth(v234) {
+									b.WriteString(" data-rst-passkey-conditional data-rst-passkey-begin=\"")
+									v235, err := tmplrt.Field(x2, "Passkey")
+									if err != nil {
+										return tmplrt.ExecError("signin-one-way", "$s.Passkey.BeginPath", err)
+									}
+									v236, err := tmplrt.Field(v235, "BeginPath")
+									if err != nil {
+										return tmplrt.ExecError("signin-one-way", "$s.Passkey.BeginPath", err)
+									}
+									v237 := tmplrt.Unwrap(v236)
+									b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v237)))
+									b.WriteString("\" data-rst-passkey-finish=\"")
+									v238, err := tmplrt.Field(x2, "PasskeyFinish")
+									if err != nil {
+										return tmplrt.ExecError("signin-one-way", "$s.PasskeyFinish", err)
+									}
+									v239 := tmplrt.Unwrap(v238)
+									b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v239)))
+									b.WriteString("\" data-rst-passkey-module=\"")
+									v240, err := tmplrt.Field(x2, "Passkey")
+									if err != nil {
+										return tmplrt.ExecError("signin-one-way", "$s.Passkey.ModuleURL", err)
+									}
+									v241, err := tmplrt.Field(v240, "ModuleURL")
+									if err != nil {
+										return tmplrt.ExecError("signin-one-way", "$s.Passkey.ModuleURL", err)
+									}
+									v242 := tmplrt.Unwrap(v241)
+									b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v242)))
+									b.WriteString("\"")
+								}
+								b.WriteString(">")
+								v243 := tmplrt.Unwrap(x6)
+								if tmplrt.Truth(v243) {
+									dot := v243
+									_ = dot
+									v244, err := tmplrt.Field(dot, "Fields")
+									if err != nil {
+										return tmplrt.ExecError("signin-one-way", ".Fields", err)
+									}
+									v245 := tmplrt.Unwrap(v244)
+									b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v245)))
+								}
+								b.WriteString("\n")
+								v246, err := tmplrt.Field(x2, "ReturnTo")
+								if err != nil {
+									return tmplrt.ExecError("signin-one-way", "$s.ReturnTo", err)
+								}
+								v247 := tmplrt.Unwrap(v246)
+								if tmplrt.Truth(v247) {
+									dot := v247
+									_ = dot
+									b.WriteString("<input type=\"hidden\" name=\"return_to\" value=\"")
+									v248 := tmplrt.Unwrap(dot)
+									b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v248)))
+									b.WriteString("\">\n")
+								}
+								v250, err := tmplrt.Field(x2, "Reauth")
+								if err != nil {
+									return tmplrt.ExecError("signin-one-way", "$s.Reauth", err)
+								}
+								v249 := tmplrt.ValueArg(v250)
+								if !tmplrt.Truth(v249) {
+									v251, err := tmplrt.Field(x2, "Problem")
+									if err != nil {
+										return tmplrt.ExecError("signin-one-way", "$s.Problem", err)
+									}
+									v252, err := tmplrt.Eq(v251, reflect.ValueOf("reauth"))
+									if err != nil {
+										return tmplrt.ExecError("signin-one-way", "eq $s.Problem \"reauth\"", tmplrt.CallError("eq", err))
+									}
+									v249 = tmplrt.ValueArg(reflect.ValueOf(v252))
+								}
+								v253 := tmplrt.Unwrap(v249)
+								if tmplrt.Truth(v253) {
+									b.WriteString("<input type=\"hidden\" name=\"reauth\" value=\"1\">\n")
+								}
+								if depth == tmplrt.MaxExecDepth {
+									return tmplrt.ExecError("signin-one-way", "{{template \"field\" (dict \"L\" $L \"ID\" \"rst-signin-email\" \"Name\" \"address\" \"Label\" (T $L \"rastrillo.ui.signin_email\") \"Type\" \"email\" \"Autocomplete\" (or (and $s.ConditionalUI \"username webauthn\") \"email\") \"Required\" true \"Value\" $s.Address \"Autofocus\" (eq $focus \"field\") \"Error\" $fieldErr \"QuietError\" true)}}", tmplrt.DepthError())
+								}
+								v254, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_email")
+								if err != nil {
+									return tmplrt.ExecError("signin-one-way", "T $L \"rastrillo.ui.signin_email\"", tmplrt.CallError("T", err))
+								}
+								v255 := reflect.ValueOf(v254)
+								v258, err := tmplrt.Field(x2, "ConditionalUI")
+								if err != nil {
+									return tmplrt.ExecError("signin-one-way", "$s.ConditionalUI", err)
+								}
+								v257 := tmplrt.ValueArg(v258)
+								if tmplrt.Truth(v257) {
+									v257 = tmplrt.ValueArg(reflect.ValueOf("username webauthn"))
+								}
+								v259 := tmplrt.Unwrap(v257)
+								v256 := tmplrt.ValueArg(v259)
+								if !tmplrt.Truth(v256) {
+									v256 = tmplrt.ValueArg(reflect.ValueOf("email"))
+								}
+								v260 := tmplrt.Unwrap(v256)
+								v261, err := tmplrt.Field(x2, "Address")
+								if err != nil {
+									return tmplrt.ExecError("signin-one-way", "$s.Address", err)
+								}
+								v262, err := tmplrt.Eq(x4, reflect.ValueOf("field"))
+								if err != nil {
+									return tmplrt.ExecError("signin-one-way", "eq $focus \"field\"", tmplrt.CallError("eq", err))
+								}
+								v263, err := fn.dict_72aa8d8f("L", x1, "ID", "rst-signin-email", "Name", "address", "Label", tmplrt.Arg(v255), "Type", "email", "Autocomplete", tmplrt.Arg(v260), "Required", true, "Value", tmplrt.Arg(v261), "Autofocus", v262, "Error", tmplrt.Arg(x11), "QuietError", true)
+								if err != nil {
+									return tmplrt.ExecError("signin-one-way", "dict \"L\" $L \"ID\" \"rst-signin-email\" \"Name\" \"address\" \"Label\" (T $L \"rastrillo.ui.signin_email\") \"Type\" \"email\" \"Autocomplete\" (or (and $s.ConditionalUI \"username webauthn\") \"email\") \"Required\" true \"Value\" $s.Address \"Autofocus\" (eq $focus \"field\") \"Error\" $fieldErr \"QuietError\" true", tmplrt.CallError("dict", err))
+								}
+								if err := exec_86a6d72433195e11(b, reflect.ValueOf(v263), fn, depth+1); err != nil {
+									return err
+								}
+								b.WriteString("\n")
+								v265, err := tmplrt.Field(x2, "Force")
+								if err != nil {
+									return tmplrt.ExecError("signin-one-way", "$s.Force", err)
+								}
+								v264 := tmplrt.ValueArg(v265)
+								if !tmplrt.Truth(v264) {
+									v266, err := tmplrt.Field(x2, "Problem")
+									if err != nil {
+										return tmplrt.ExecError("signin-one-way", "$s.Problem", err)
+									}
+									v267, err := tmplrt.Eq(v266, reflect.ValueOf("keymail"))
+									if err != nil {
+										return tmplrt.ExecError("signin-one-way", "eq $s.Problem \"keymail\"", tmplrt.CallError("eq", err))
+									}
+									v264 = tmplrt.ValueArg(reflect.ValueOf(v267))
+								}
+								v268 := tmplrt.Unwrap(v264)
+								if tmplrt.Truth(v268) {
+									b.WriteString("<input type=\"hidden\" name=\"force\" value=\"1\">\n")
+								}
+								b.WriteString("<button rst-btn=\"primary block\" type=\"submit\"")
+								v269 := tmplrt.Unwrap(x7)
+								if tmplrt.Truth(v269) {
+									b.WriteString(" disabled data-pow-submit")
+								}
+								b.WriteString(">")
+								v270, err := tmplrt.Field(x2, "Problem")
+								if err != nil {
+									return tmplrt.ExecError("signin-one-way", "$s.Problem", err)
+								}
+								v271, err := tmplrt.Eq(v270, reflect.ValueOf("keymail"))
+								if err != nil {
+									return tmplrt.ExecError("signin-one-way", "eq $s.Problem \"keymail\"", tmplrt.CallError("eq", err))
+								}
+								if v271 {
+									v272, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_send_link_instead")
+									if err != nil {
+										return tmplrt.ExecError("signin-one-way", "T $L \"rastrillo.ui.signin_send_link_instead\"", tmplrt.CallError("T", err))
+									}
+									v273 := reflect.ValueOf(v272)
+									b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v273)))
+								} else {
+									v274, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_submit")
+									if err != nil {
+										return tmplrt.ExecError("signin-one-way", "T $L \"rastrillo.ui.signin_submit\"", tmplrt.CallError("T", err))
+									}
+									v275 := reflect.ValueOf(v274)
+									b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v275)))
+								}
+								b.WriteString("</button>\n")
+								v276 := tmplrt.Unwrap(x7)
+								if tmplrt.Truth(v276) {
+									var v277 reflect.Value
+									if x6.IsValid() {
+										v278, err := tmplrt.MethodOf(x6, "StatusLine")
+										if err != nil {
+											return tmplrt.ExecError("signin-one-way", "$proof.StatusLine", err)
+										}
+										v280, err := fn.T_a3eca208(x1, "rastrillo.ui.pow_status")
+										if err != nil {
+											return tmplrt.ExecError("signin-one-way", "T $L \"rastrillo.ui.pow_status\"", tmplrt.CallError("T", err))
+										}
+										v281 := reflect.ValueOf(v280)
+										v279, err := v278.Call(tmplrt.Val(v281))
+										if err != nil {
+											return tmplrt.ExecError("signin-one-way", "$proof.StatusLine", err)
+										}
+										v277 = v279
+									}
+									v282 := tmplrt.Unwrap(v277)
+									b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v282)))
+									b.WriteString("<noscript><p>")
+									v283, err := fn.T_a3eca208(x1, "rastrillo.ui.pow_noscript")
+									if err != nil {
+										return tmplrt.ExecError("signin-one-way", "T $L \"rastrillo.ui.pow_noscript\"", tmplrt.CallError("T", err))
+									}
+									v284 := reflect.ValueOf(v283)
+									b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v284)))
+									b.WriteString("</p></noscript>\n")
+								}
+								b.WriteString("</form>\n")
+								v285 := tmplrt.Unwrap(x10)
+								if tmplrt.Truth(v285) {
+									b.WriteString("<script type=\"module\" src=\"")
+									v286, err := tmplrt.Field(x2, "Passkey")
+									if err != nil {
+										return tmplrt.ExecError("signin-one-way", "$s.Passkey.ScriptURL", err)
+									}
+									v287, err := tmplrt.Field(v286, "ScriptURL")
+									if err != nil {
+										return tmplrt.ExecError("signin-one-way", "$s.Passkey.ScriptURL", err)
+									}
+									v288 := tmplrt.Unwrap(v287)
+									tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v288))))
+									b.WriteString("\"></script>\n")
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	v289, err := tmplrt.Ne(x3, reflect.ValueOf("ways"))
+	if err != nil {
+		return tmplrt.ExecError("signin-one-way", "ne $door \"ways\"", tmplrt.CallError("ne", err))
+	}
+	if v289 {
+		v290, err := tmplrt.Field(x2, "Ways")
+		if err != nil {
+			return tmplrt.ExecError("signin-one-way", "$s.Ways", err)
+		}
+		v291 := tmplrt.Unwrap(v290)
+		if tmplrt.Truth(v291) {
+			b.WriteString("<a rst-btn=\"ghost\" href=\"")
+			v292, err := tmplrt.Field(x2, "WaysHref")
+			if err != nil {
+				return tmplrt.ExecError("signin-one-way", "$s.WaysHref", err)
+			}
+			v293 := tmplrt.Unwrap(v292)
+			tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v293))))
+			b.WriteString("\"><span>")
+			v294, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_ways")
+			if err != nil {
+				return tmplrt.ExecError("signin-one-way", "T $L \"rastrillo.ui.signin_ways\"", tmplrt.CallError("T", err))
+			}
+			v295 := reflect.ValueOf(v294)
+			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v295)))
+			b.WriteString("</span>")
+			if depth == tmplrt.MaxExecDepth {
+				return tmplrt.ExecError("signin-one-way", "{{template \"signin-glyph\" (dict \"L\" $L \"Glyph\" \"next\")}}", tmplrt.DepthError())
+			}
+			v296, err := fn.dict_72aa8d8f("L", x1, "Glyph", "next")
+			if err != nil {
+				return tmplrt.ExecError("signin-one-way", "dict \"L\" $L \"Glyph\" \"next\"", tmplrt.CallError("dict", err))
+			}
+			if err := exec_1b24f25e597ad443(b, reflect.ValueOf(v296), fn, depth+1); err != nil {
+				return err
+			}
+			b.WriteString("</a>\n")
+		} else {
+			v298, err := tmplrt.Eq(x3, reflect.ValueOf("keymail"))
+			if err != nil {
+				return tmplrt.ExecError("signin-one-way", "eq $door \"keymail\"", tmplrt.CallError("eq", err))
+			}
+			v297 := tmplrt.ValueArg(reflect.ValueOf(v298))
+			if !tmplrt.Truth(v297) {
+				v299, err := tmplrt.Eq(x3, reflect.ValueOf("link"))
+				if err != nil {
+					return tmplrt.ExecError("signin-one-way", "eq $door \"link\"", tmplrt.CallError("eq", err))
+				}
+				v297 = tmplrt.ValueArg(reflect.ValueOf(v299))
+			}
+			v300 := tmplrt.Unwrap(v297)
+			if tmplrt.Truth(v300) {
+				b.WriteString("<form rst-signin-form method=\"post\" action=\"")
+				v301, err := tmplrt.Field(x2, "ForgetPath")
+				if err != nil {
+					return tmplrt.ExecError("signin-one-way", "$s.ForgetPath", err)
+				}
+				v302 := tmplrt.Unwrap(v301)
+				tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilter(tmplrt.Arg(v302))))
+				b.WriteString("\">")
+				v303, err := tmplrt.Field(x2, "ReturnTo")
+				if err != nil {
+					return tmplrt.ExecError("signin-one-way", "$s.ReturnTo", err)
+				}
+				v304 := tmplrt.Unwrap(v303)
+				if tmplrt.Truth(v304) {
+					dot := v304
+					_ = dot
+					b.WriteString("<input type=\"hidden\" name=\"return_to\" value=\"")
+					v305 := tmplrt.Unwrap(dot)
+					b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v305)))
+					b.WriteString("\">\n")
+				}
+				if depth == tmplrt.MaxExecDepth {
+					return tmplrt.ExecError("signin-one-way", "{{template \"signin-forget-way\" (dict \"L\" $L \"State\" $s)}}", tmplrt.DepthError())
+				}
+				v306, err := fn.dict_72aa8d8f("L", x1, "State", tmplrt.Arg(x2))
+				if err != nil {
+					return tmplrt.ExecError("signin-one-way", "dict \"L\" $L \"State\" $s", tmplrt.CallError("dict", err))
+				}
+				if err := exec_b29f7da01ee7285f(b, reflect.ValueOf(v306), fn, depth+1); err != nil {
+					return err
+				}
+				b.WriteString("<button rst-btn=\"ghost\" type=\"submit\"><span>")
+				v307, err := fn.T_a3eca208(x1, "rastrillo.ui.signin_different")
+				if err != nil {
+					return tmplrt.ExecError("signin-one-way", "T $L \"rastrillo.ui.signin_different\"", tmplrt.CallError("T", err))
+				}
+				v308 := reflect.ValueOf(v307)
+				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v308)))
+				b.WriteString("</span>")
+				if depth == tmplrt.MaxExecDepth {
+					return tmplrt.ExecError("signin-one-way", "{{template \"signin-glyph\" (dict \"L\" $L \"Glyph\" \"next\")}}", tmplrt.DepthError())
+				}
+				v309, err := fn.dict_72aa8d8f("L", x1, "Glyph", "next")
+				if err != nil {
+					return tmplrt.ExecError("signin-one-way", "dict \"L\" $L \"Glyph\" \"next\"", tmplrt.CallError("dict", err))
+				}
+				if err := exec_1b24f25e597ad443(b, reflect.ValueOf(v309), fn, depth+1); err != nil {
+					return err
+				}
+				b.WriteString("</button></form>\n")
+			}
+		}
+	}
+	v310 := tmplrt.ValueArg(x7)
+	if tmplrt.Truth(v310) {
+		v312, err := tmplrt.Eq(x3, reflect.ValueOf("ask"))
+		if err != nil {
+			return tmplrt.ExecError("signin-one-way", "eq $door \"ask\"", tmplrt.CallError("eq", err))
+		}
+		v311 := tmplrt.ValueArg(reflect.ValueOf(v312))
+		if !tmplrt.Truth(v311) {
+			v313, err := tmplrt.Eq(x3, reflect.ValueOf("keymail"))
+			if err != nil {
+				return tmplrt.ExecError("signin-one-way", "eq $door \"keymail\"", tmplrt.CallError("eq", err))
+			}
+			v311 = tmplrt.ValueArg(reflect.ValueOf(v313))
+			if !tmplrt.Truth(v311) {
+				v314, err := tmplrt.Eq(x3, reflect.ValueOf("link"))
+				if err != nil {
+					return tmplrt.ExecError("signin-one-way", "eq $door \"link\"", tmplrt.CallError("eq", err))
+				}
+				v311 = tmplrt.ValueArg(reflect.ValueOf(v314))
+				if !tmplrt.Truth(v311) {
+					v315, err := tmplrt.Eq(x3, reflect.ValueOf("authenticator"))
+					if err != nil {
+						return tmplrt.ExecError("signin-one-way", "eq $door \"authenticator\"", tmplrt.CallError("eq", err))
+					}
+					v311 = tmplrt.ValueArg(reflect.ValueOf(v315))
+					if !tmplrt.Truth(v311) {
+						v316, err := tmplrt.Eq(x3, reflect.ValueOf("passphrase"))
+						if err != nil {
+							return tmplrt.ExecError("signin-one-way", "eq $door \"passphrase\"", tmplrt.CallError("eq", err))
+						}
+						v311 = tmplrt.ValueArg(reflect.ValueOf(v316))
+					}
+				}
+			}
+		}
+		v317 := tmplrt.Unwrap(v311)
+		v310 = tmplrt.ValueArg(v317)
+		if tmplrt.Truth(v310) {
+			v318 := tmplrt.Not(x5)
+			v310 = tmplrt.ValueArg(reflect.ValueOf(v318))
+		}
+	}
+	v319 := tmplrt.Unwrap(v310)
+	if tmplrt.Truth(v319) {
+		v320, err := tmplrt.Field(x6, "Script")
+		if err != nil {
+			return tmplrt.ExecError("signin-one-way", "$proof.Script", err)
+		}
+		v321 := tmplrt.Unwrap(v320)
+		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v321)))
 	}
 	return nil
 }
 
-// facts_f862805fca1a81e4 is what exec_f862805fca1a81e4 assumes of the types it reads.
-var facts_f862805fca1a81e4 = tmplrt.Facts{
+// facts_fa8920b3c9e67243 is what exec_fa8920b3c9e67243 assumes of the types it reads.
+var facts_fa8920b3c9e67243 = tmplrt.Facts{
 	Funcs: map[string]reflect.Type{
 		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
 	},
@@ -42662,6 +42756,44 @@ var facts_faf987604b23bd02_a45557e6 = tmplrt.Facts{
 		{Type: "*amadan.net/rastrillo/rastrillo/tmpl/internal/corpus.grower"},
 		{Path: []string{".Items"}, Type: "[]string"},
 		{Path: []string{".Grow() func() string"}, Type: "string"},
+	},
+}
+
+// exec_fb1ce5b9df238224 renders "signin-passkey-note".
+func exec_fb1ce5b9df238224(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
+	root := dot
+	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
+	x1 := v1
+	_ = x1
+	b.WriteString("<div rst-signin-passkey-note><p rst-signin-passkey-msg id=\"rst-signin-passkey-msg\" aria-live=\"polite\"></p><button type=\"button\" rst-signin-passkey-close hidden aria-label=\"")
+	v2, err := fn.T_a3eca208(x1, "rastrillo.ui.close")
+	if err != nil {
+		return tmplrt.ExecError("signin-passkey-note", "T $L \"rastrillo.ui.close\"", tmplrt.CallError("T", err))
+	}
+	v3 := reflect.ValueOf(v2)
+	b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v3)))
+	b.WriteString("\">")
+	if depth == tmplrt.MaxExecDepth {
+		return tmplrt.ExecError("signin-passkey-note", "{{template \"signin-glyph\" (dict \"L\" $L \"Glyph\" \"close\")}}", tmplrt.DepthError())
+	}
+	v4, err := fn.dict_72aa8d8f("L", x1, "Glyph", "close")
+	if err != nil {
+		return tmplrt.ExecError("signin-passkey-note", "dict \"L\" $L \"Glyph\" \"close\"", tmplrt.CallError("dict", err))
+	}
+	if err := exec_1b24f25e597ad443(b, reflect.ValueOf(v4), fn, depth+1); err != nil {
+		return err
+	}
+	b.WriteString("</button></div>")
+	return nil
+}
+
+// facts_fb1ce5b9df238224 is what exec_fb1ce5b9df238224 assumes of the types it reads.
+var facts_fb1ce5b9df238224 = tmplrt.Facts{
+	Funcs: map[string]reflect.Type{
+		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
+	},
+	Facts: []tmplrt.Fact{
+		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
 	},
 }
 
@@ -43107,44 +43239,6 @@ var facts_fd9930b47839f6f9_e1f5342c = tmplrt.Facts{
 func exec_fdeabaf3c84aceef(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
 	b.WriteString("\n\n")
 	return nil
-}
-
-// exec_fed7be9f579c4244 renders "content".
-func exec_fed7be9f579c4244(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
-	root := dot
-	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
-	x1 := v1
-	_ = x1
-	if depth == tmplrt.MaxExecDepth {
-		return tmplrt.ExecError("content", "{{template \"error-page\" dict \"L\" $L \"Status\" .Status \"Ref\" .Ref \"HomeHref\" (path $ \"/\")}}", tmplrt.DepthError())
-	}
-	v2, err := tmplrt.Field(dot, "Status")
-	if err != nil {
-		return tmplrt.ExecError("content", ".Status", err)
-	}
-	v3, err := tmplrt.Field(dot, "Ref")
-	if err != nil {
-		return tmplrt.ExecError("content", ".Ref", err)
-	}
-	v4 := fn.path_c02006f6(tmplrt.Arg(root), "/")
-	v5, err := fn.dict_72aa8d8f("L", x1, "Status", tmplrt.Arg(v2), "Ref", tmplrt.Arg(v3), "HomeHref", v4)
-	if err != nil {
-		return tmplrt.ExecError("content", "dict \"L\" $L \"Status\" .Status \"Ref\" .Ref \"HomeHref\" (path $ \"/\")", tmplrt.CallError("dict", err))
-	}
-	if err := exec_a712dfb3c50f8922(b, reflect.ValueOf(v5), fn, depth+1); err != nil {
-		return err
-	}
-	return nil
-}
-
-// facts_fed7be9f579c4244 is what exec_fed7be9f579c4244 assumes of the types it reads.
-var facts_fed7be9f579c4244 = tmplrt.Facts{
-	Funcs: map[string]reflect.Type{
-		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
-	},
-	Facts: []tmplrt.Fact{
-		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
-	},
 }
 
 // exec_ff74bcf3fb10792a renders "typed-pointer-binding".

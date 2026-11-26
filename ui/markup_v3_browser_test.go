@@ -65,6 +65,19 @@ const extraFixture = `
      <button class="rst-btn rst-btn--danger" type="button">Danger</button>
      <button class="rst-btn" type="button" aria-busy="true" disabled><span class="rst-spin" aria-hidden="true"></span>Saving</button></p>
 
+  <!-- The passkey door's note, written and opening upward with its
+       close button shown, and a stack's own out-of-flow layer: no
+       partial renders either in the class spelling. -->
+  <div class="rst-signin__passkey rst-signin__passkey--before">
+    <button class="rst-btn rst-btn--primary rst-btn--block"
+      type="button">Passkey</button>
+    <div class="rst-signin__passkey-note">
+      <p class="rst-signin__passkey-msg">No passkey was used.</p>
+      <button class="rst-signin__passkey-close" type="button"
+        aria-label="Close"><svg class="icon" viewBox="0 0 24 24"><path
+        d="M18 6 6 18"></path></svg></button></div></div>
+  <div class="rst-stack"><p>Text</p><div class="rst-stack-out">Layer</div></div>
+
   <!-- The size scale. lg reaches the fixture through form-foot and
        confirm-form, which both emit it; sm and block are rendered by no
        partial, so they are here or their pairing is unproven. -->

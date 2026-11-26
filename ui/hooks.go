@@ -289,18 +289,35 @@ func (reading *pageReading) addHooks(text []byte) {
 	}
 }
 
-// addWrittenHooks adds the hooks a framework function writes when the
-// command calls one, such as the stage shell's {{stageArt "rastrillo"}}:
-// the template shows only the call, never the markup it returns.
+// addWrittenHooks adds the hooks a framework function or method writes
+// when the command calls one, such as the stage shell's {{stageArt
+// "rastrillo"}} or pow's {{.Proof.StatusLine ...}}: the template shows
+// only the call, never the markup it returns.
 func (reading *pageReading) addWrittenHooks(command *parse.CommandNode) {
-	function, ok := command.Args[0].(*parse.IdentifierNode)
-	if !ok {
-		return
+	var hooks []string
+	switch called := command.Args[0].(type) {
+	case *parse.IdentifierNode:
+		hooks = vendored.WrittenHooks(called.Ident)
+	case *parse.FieldNode:
+		hooks = methodHooks(called.Ident)
+	case *parse.VariableNode:
+		hooks = methodHooks(called.Ident[1:])
+	case *parse.ChainNode:
+		hooks = methodHooks(called.Field)
 	}
-	for _, hook := range vendored.WrittenHooks(function.Ident) {
+	for _, hook := range hooks {
 		reading.hooks[hook] = true
 		reading.anyValue(hook)
 		reading.classes = setOf(reading.classes)
 		reading.classes[hook] = true
 	}
+}
+
+// methodHooks is what the method at the end of a field chain writes:
+// .Proof.StatusLine, $proof.StatusLine, (.Proof).StatusLine.
+func methodHooks(chain []string) []string {
+	if len(chain) == 0 {
+		return nil
+	}
+	return vendored.MethodHooks(chain[len(chain)-1])
 }

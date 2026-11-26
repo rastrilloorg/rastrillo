@@ -21,6 +21,11 @@
 // autofill (data-rst-passkey-conditional), which fails silently: the
 // field works without it.
 //
+// The door's message is written into its note (rst-signin-passkey-note),
+// which floats beside the button and takes no space, so it moves
+// nothing (#437). It shows its close button with a message; Escape, the
+// close button, the next press and sending a form clear it.
+//
 // Busy is drawn as rastrillo.js's busy rule draws it (aria-busy and an
 // rst-spin child, which tokens.css keys the spinner on) plus
 // aria-disabled, and never with disabled: a disabled button drops
@@ -169,10 +174,55 @@ export async function conditional({ post, authenticate, begin, finish, rpId, loc
   return {};
 }
 
+// say writes the door's message, or clears it with "", and shows the
+// note's close button only while there is one. A message with no note
+// around it, as an app's own markup from before #437 has, is written
+// all the same.
+export function say(msg, words) {
+  if (!msg) return;
+  msg.textContent = words;
+  const note = msg.closest("[rst-signin-passkey-note]");
+  const close = note && note.querySelector("[rst-signin-passkey-close]");
+  if (close) close.hidden = !words;
+}
+
+// unsay clears every door's note. When the focus was in the note, it
+// goes back to the door's button, rather than to nothing as the close
+// button hides.
+function unsay() {
+  const notes = document.querySelectorAll("[rst-signin-passkey-note]");
+  notes.forEach((note) => {
+    const msg = note.querySelector("[rst-signin-passkey-msg]");
+    if (!msg || !msg.textContent) return;
+    const inside = note.contains(document.activeElement);
+    say(msg, "");
+    const door = note.parentElement &&
+      note.parentElement.querySelector("[data-rst-passkey]");
+    if (inside && door) door.focus();
+  });
+}
+
+// dismiss lets a person put a note away: Escape, or its close button.
+// probe.js does the same where it runs, marking <html> so this does not
+// do it twice; this is for an app without the probe.
+function dismiss() {
+  const root = document.documentElement;
+  if (root.hasAttribute("data-rst-passkey-notes")) return;
+  root.setAttribute("data-rst-passkey-notes", "");
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") unsay();
+  });
+  document.addEventListener("click", (event) => {
+    const close = event.target.closest &&
+      event.target.closest("[rst-signin-passkey-close]");
+    if (close) unsay();
+  });
+}
+
 // unavailable says passkeys do not work in this browser, and on the
 // one-way door moves to the email way.
 function unavailable(btn, msg) {
-  if (msg) msg.textContent = btn.getAttribute("data-rst-passkey-unavailable") || "";
+  say(msg, btn.getAttribute("data-rst-passkey-unavailable") || "");
   fallBack(btn);
 }
 
@@ -203,7 +253,7 @@ function door(btn) {
     if (btn.getAttribute("aria-busy") === "true") return;
     const signal = startAttempt(btn);
     busy(btn, true);
-    if (msg) msg.textContent = "";
+    say(msg, "");
     const mod = await loaded;
     if (signal.aborted) {
       idle(btn, signal);
@@ -233,7 +283,7 @@ function door(btn) {
       return;
     }
     idle(btn, signal);
-    if (msg) msg.textContent = btn.getAttribute("data-rst-passkey-" + out.message) || "";
+    say(msg, btn.getAttribute("data-rst-passkey-" + out.message) || "");
   };
   claim(btn, press);
 }
@@ -321,6 +371,8 @@ if (typeof document !== "undefined") {
   document.querySelectorAll("[data-rst-passkey]").forEach(door);
   document.querySelectorAll("form[data-rst-passkey-conditional]").forEach(autofill);
   document.addEventListener("submit", endAttempt, true);
+  document.addEventListener("submit", unsay, true);
+  dismiss();
   window.addEventListener("pagehide", endAttempt);
   // A sign-in navigates away mid-busy; the back-forward cache restores
   // the page exactly as it was left, spinner and all.

@@ -16138,14 +16138,12 @@ columns pow/browser_test.go 039042547770 1
 columns pow/browser_test.go 05483fd46ef0 1
 columns pow/browser_test.go 0756eaa5dcc9 1
 columns pow/browser_test.go 08ab6396ee18 1
-columns pow/browser_test.go 094a1c1adeb7 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
 columns pow/browser_test.go 0a67df5f8f4d 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
 columns pow/browser_test.go 113755c92c63 1
 columns pow/browser_test.go 1827da57aec6 1
 columns pow/browser_test.go 1e2f4bf15a5a 1
 columns pow/browser_test.go 2245dee02c66 1
 columns pow/browser_test.go 24e298d47925 1
-columns pow/browser_test.go 2a16d902dd40 1
 columns pow/browser_test.go 2afb4ee6c081 1
 columns pow/browser_test.go 2b24f0f20a9c 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
 columns pow/browser_test.go 2c7473d486a4 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
@@ -16156,7 +16154,6 @@ columns pow/browser_test.go 3764f56cdd4d 1
 columns pow/browser_test.go 381dd2f69d1a 1
 columns pow/browser_test.go 3dab31877cb8 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
 columns pow/browser_test.go 40d64e126108 1
-columns pow/browser_test.go 44a0939f87f9 1
 columns pow/browser_test.go 4882f00d8be1 1
 columns pow/browser_test.go 4f228cd68655 1
 columns pow/browser_test.go 4fdf239a81ee 1
@@ -16175,7 +16172,6 @@ columns pow/browser_test.go 68ebe5afb9e9 1
 columns pow/browser_test.go 6902ce604318 1
 columns pow/browser_test.go 6a2a2a00feb5 1
 columns pow/browser_test.go 6be75d15f28c 1
-columns pow/browser_test.go 6c35dc6bb710 1
 columns pow/browser_test.go 746deb04f984 1
 columns pow/browser_test.go 766b85a12a2c 1
 columns pow/browser_test.go 789a5a3b80f3 1
@@ -16189,13 +16185,11 @@ columns pow/browser_test.go 97fcd0cd2f9a 1
 columns pow/browser_test.go a466cddb81b9 1
 columns pow/browser_test.go a6f048d5d47a 1
 columns pow/browser_test.go a74420d0b90a 1
-columns pow/browser_test.go aaa145b3c36d 1
 columns pow/browser_test.go ac889fe40ba7 1
 columns pow/browser_test.go b2393fb688aa 1
 columns pow/browser_test.go b5721d0207ad 1
 columns pow/browser_test.go ba52231f82f3 1
 columns pow/browser_test.go baf03955046f 1
-columns pow/browser_test.go bb84579e27c1 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
 columns pow/browser_test.go be3c2b7ca5ce 1
 columns pow/browser_test.go c231f1f59234 1
 columns pow/browser_test.go c42814b89f44 1
@@ -16206,7 +16200,6 @@ columns pow/browser_test.go d329f9e257a3 1
 columns pow/browser_test.go d555d912a948 1
 columns pow/browser_test.go d627b79aeade 2
 columns pow/browser_test.go d76a41bc2e5b 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
-columns pow/browser_test.go dc98fe97a7c5 1
 columns pow/browser_test.go dcc0bdfa510a 1
 columns pow/browser_test.go dea7174850ab 1
 columns pow/browser_test.go e966c013c78b 1
@@ -16229,9 +16222,6 @@ names pow/browser_test.go TestBrowserBusyDoesNotHoldAPowRelease/d 1
 names pow/browser_test.go TestBrowserBusyDoesNotHoldAPowRelease/n 1
 names pow/browser_test.go TestBrowserBusyHoldIsCancelledByNavigation/n 1
 names pow/browser_test.go TestBrowserEnterBeforeReadyPostsNothing/n 1
-names pow/browser_test.go TestBrowserFailureLeavesTheStatusLineShowing/c 2
-names pow/browser_test.go TestBrowserFailureLeavesTheStatusLineShowing/n 1
-names pow/browser_test.go TestBrowserFailureLeavesTheStatusLineShowing/o 1
 names pow/browser_test.go TestBrowserFastClickIsHeldNotRefused/c 1
 names pow/browser_test.go TestBrowserLeavingDuringAHoldNeverSubmits/c 1
 names pow/browser_test.go TestBrowserLeavingDuringAHoldNeverSubmits/n 1
@@ -16306,8 +16296,6 @@ names pow/challenge_test.go TestSealRefusesEveryEditedField/c 7
 names pow/challenge_test.go postValues/r 1
 names pow/challenge_test.go postValues/v 1
 names pow/challenge_test.go valuesOf/c 1
-columns pow/form.go 36fea5d85872 1
-columns pow/form.go 46d56d03734b 1
 columns pow/form.go 47e7e42a6528 1
 columns pow/form.go 8a33a4994716 1
 columns pow/form.go 8a473d7acdd6 1
@@ -16377,11 +16365,9 @@ columns pow/guard_test.go 3fece0257727 1
 columns pow/guard_test.go 4952717ba42e 1
 columns pow/guard_test.go 4b6615fc3209 1
 columns pow/guard_test.go 4b78dd93a04f 1
-columns pow/guard_test.go 57e82ca4b645 1
 columns pow/guard_test.go 59900574d6f0 1
 columns pow/guard_test.go 61d556b0f3dc 1
 columns pow/guard_test.go 688f02c530ec 1
-columns pow/guard_test.go 8735182840ec 1
 columns pow/guard_test.go 8810dde8d1a2 1
 columns pow/guard_test.go 88bb50823516 1
 columns pow/guard_test.go 89a5de3ea099 1
@@ -16446,7 +16432,6 @@ names pow/guard_test.go TestFollowOnIsAdmissibleAtOnceAndKeepsTheTrap/g 1
 names pow/guard_test.go TestFormRendering/c 2
 names pow/guard_test.go TestFormRendering/f 1
 names pow/guard_test.go TestFormRendering/g 1
-names pow/guard_test.go TestFormRendering/s 2
 names pow/guard_test.go TestHoneypotFirstAndCheapFailuresInAlso/a 1
 names pow/guard_test.go TestHoneypotFirstAndCheapFailuresInAlso/g 1
 names pow/guard_test.go TestHoneypotFirstAndCheapFailuresInAlso/r 2
@@ -19477,7 +19462,6 @@ columns ui/browser_test.go 75d9a9297564 1
 columns ui/browser_test.go 76323b1e9290 1
 columns ui/browser_test.go 76cd9cd6e7c2 1
 columns ui/browser_test.go 77a9334aa1e4 1
-columns ui/browser_test.go 79048eb69039 1
 columns ui/browser_test.go 7916b3d33080 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
 columns ui/browser_test.go 79aecd6496e3 1
 columns ui/browser_test.go 7a38a4279fe0 1
@@ -19598,7 +19582,6 @@ columns ui/browser_test.go e1d98c12e1cd 1
 columns ui/browser_test.go e2fecbb8bd53 1
 columns ui/browser_test.go e335255d9c81 1
 columns ui/browser_test.go e3791cb5f859 1
-columns ui/browser_test.go e3b107645ea3 1
 columns ui/browser_test.go e521d71b806a 1
 columns ui/browser_test.go e5a739e75a73 1 rewritten by the chromedp v0.21 port, no wider than the recorded line it replaced
 columns ui/browser_test.go e5f542721b19 1
@@ -24084,13 +24067,11 @@ columns ui/signin_browser_test.go 8c2cafefcfd5 1
 columns ui/signin_browser_test.go 8f10aaafbb7c 1
 columns ui/signin_browser_test.go 92e1aa47f489 1
 columns ui/signin_browser_test.go 936988f49f4b 1
-columns ui/signin_browser_test.go b4fdf8b96e99 1
 columns ui/signin_browser_test.go b56c91be03a4 1
 columns ui/signin_browser_test.go cc92b6b41ec2 1
 columns ui/signin_browser_test.go dbab5c6cf431 2
 columns ui/signin_browser_test.go dd03ef84da6d 1
 columns ui/signin_browser_test.go e7c9a4f09ffd 1
-columns ui/signin_browser_test.go ed41bab87d85 1
 columns ui/signin_browser_test.go f0718a85617c 1
 columns ui/signin_browser_test.go f36ee56b28e1 1
 columns ui/signin_browser_test.go f520c48a3723 1
@@ -24111,7 +24092,6 @@ names ui/signin_browser_test.go signinPage/c 1
 names ui/signin_browser_test.go signinServer/r 4
 names ui/signin_browser_test.go signinServer/w 4
 columns ui/signin_test.go 00a5d75b1098 1
-columns ui/signin_test.go 0311f6e6c8cd 1
 columns ui/signin_test.go 038585f373f8 1
 columns ui/signin_test.go 039322da1ecf 1
 columns ui/signin_test.go 04e3cc1fb459 1
@@ -24140,7 +24120,6 @@ columns ui/signin_test.go 29b939ed0c24 1
 columns ui/signin_test.go 2bf10b6ea999 1
 columns ui/signin_test.go 2c0ce80421dc 1
 columns ui/signin_test.go 2c927b7ff413 1
-columns ui/signin_test.go 2dbcc1fe887b 1
 columns ui/signin_test.go 2e9ecb56e6fb 1
 columns ui/signin_test.go 2f0c3804f73e 1
 columns ui/signin_test.go 32d104fdd09e 1
@@ -24148,7 +24127,6 @@ columns ui/signin_test.go 334f0623546e 1
 columns ui/signin_test.go 38e3bd7d2b82 1
 columns ui/signin_test.go 395f30021513 1
 columns ui/signin_test.go 3b46739df2f2 1
-columns ui/signin_test.go 3b9066f72ee6 1
 columns ui/signin_test.go 3c7cebf15a59 1
 columns ui/signin_test.go 3e67df929634 1
 columns ui/signin_test.go 401aeb2d6181 1
@@ -24192,7 +24170,6 @@ columns ui/signin_test.go 9b4f8262231a 1
 columns ui/signin_test.go 9f9471222020 1
 columns ui/signin_test.go 9fe8ad54749d 1
 columns ui/signin_test.go a007626c3d5c 1
-columns ui/signin_test.go a3938a43bc4f 1
 columns ui/signin_test.go a3deb719cb2b 1
 columns ui/signin_test.go b0ed2c883329 1
 columns ui/signin_test.go b4ca27bca670 1
@@ -25235,7 +25212,6 @@ columns ui/ui_test.go 8c9445df59a1 1
 columns ui/ui_test.go 8ca309474b2b 1
 columns ui/ui_test.go 8cda15ad3f02 1
 columns ui/ui_test.go 8ce6ea82f92a 1
-columns ui/ui_test.go 8d957fb0b59f 1 a shell's overridable block names, one list per shell, gained live-head and region:notice
 columns ui/ui_test.go 8dd617a405cd 1
 columns ui/ui_test.go 8ddbc963793e 1
 columns ui/ui_test.go 8efa24e42655 1

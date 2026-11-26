@@ -52,15 +52,24 @@ import (
 // declaration says Personal, owned by that column and erased with the
 // row: 76 more, 485. Saying ownerOf holds the subject, not the address,
 // cost no bytes: its comment was trimmed to pay for it.
+//
+// headEarly is the fifth: every shell gained a head-early block before
+// its stylesheets, so the sign-in page's passkey probe never waits for
+// them (discussion #437: the frame drawn after it moved the card). Each
+// layout copy grows 102 bytes, the block (32) and a one-line comment on
+// why it sits there (70); what it is for is in the docs. plainapp has
+// one copy, magicapp two (layout.html and stage.html) and its sign-in
+// page's define "head-early" (6): 102 and 210, with both apps 8 bytes
+// under their limits, so 94 and 202 went over.
 var before = map[string]struct {
 	total, agents, cutPercent, migrationCheck, defaultSignin,
-	lintGate, auditCheck int
+	lintGate, auditCheck, headEarly int
 }{
 	// plainapp was 41 bytes under its limit, so 508 of the 549 went over.
-	"plainapp": {73438, 6536, 25, 508, 0, 1244, 409},
+	"plainapp": {73438, 6536, 25, 508, 0, 1244, 409, 94},
 	// magicapp was already 495 bytes under its limit, so only 54 of the
 	// 549 went over.
-	"magicapp": {91400, 7360, 19, 54, 5151, 1284, 485},
+	"magicapp": {91400, 7360, 19, 54, 5151, 1284, 485, 202},
 }
 
 // iconGrowth is the code, not prose, that Fiesta 1.4.0's icons added to
@@ -80,14 +89,15 @@ func TestNewAppsReadInFewerBytes(t *testing.T) {
 		total := bytesToRead(t, directory)
 		limit := was.total*(100-was.cutPercent)/100 + iconGrowth +
 			was.migrationCheck + was.defaultSignin + was.lintGate +
-			was.auditCheck
+			was.auditCheck + was.headEarly
 		if total > limit {
 			t.Errorf("%s: %d bytes outside gen/ and static/, over %d, "+
 				"%d%% less than %d, %d for the migration check, %d "+
-				"for the default sign-in, %d for the lint gate and %d "+
-				"for the audit check", variant.name, total, limit,
-				was.cutPercent, was.total, was.migrationCheck,
-				was.defaultSignin, was.lintGate, was.auditCheck)
+				"for the default sign-in, %d for the lint gate, %d "+
+				"for the audit check and %d for head-early",
+				variant.name, total, limit, was.cutPercent, was.total,
+				was.migrationCheck, was.defaultSignin, was.lintGate,
+				was.auditCheck, was.headEarly)
 		}
 		agents := len(readFile(t, filepath.Join(directory, "AGENTS.md")))
 		if limit := was.agents + 1000; agents > limit {

@@ -225,6 +225,7 @@ empty-state   field-time       notice
 error-page    field-url        page-header      signin-app-problem
               form-error                        signin-forget-way
                                                 signin-glyph
+                                                signin-passkey-note
                                                 signin-one-way
                                                 signin-secret-door
                                                 signin-view
@@ -237,12 +238,12 @@ error-page    field-url        page-header      signin-app-problem
 ```
 
 `signin-one-way`, `signin-secret-door`, `signin-app-problem`,
-`signin-forget-way` and `signin-glyph` are parts of `signin`. Call
-`signin`, not them.
+`signin-forget-way`, `signin-glyph` and `signin-passkey-note` are parts
+of `signin`. Call `signin`, not them.
 
 `signin-view` draws every page the `signin` package hands an app, the
 sign-in screen among them. `signin-view-title` is its title, and
-`signin-view-head` goes in its `head` block. An app that uses the
+`signin-view-head` goes in its `head-early` block. An app that uses the
 package calls those three and none of the others:
 `signin-offer`, `signin-add` and `signin-options` are its pages, and
 `signin-brand` is their brand column.
@@ -1247,7 +1248,8 @@ block:
 {{define "content"}}<h1>Your notes</h1>{{end}}
 ```
 
-The blocks are `title`, `lang`, `dir` and `head` in all five shells;
+The blocks are `title`, `lang`, `dir`, `head-early` and `head` in all
+five shells;
 `brand`, `nav`, `account`, `profile`, `locale`, `scheme`, `view`, `up`
 and `upLabel` in `topbar`, `sidebar` and `console`; `locale` and
 `scheme` in `column`; `foot` in `topbar`, `console` and `stage`; and
@@ -1263,6 +1265,11 @@ passes a struct or a `dict`-built map, as long as it carries `L`.
 that has to run before the body — override it and they go in, last in
 the head, so your own CSS wins the ties it should win against
 `tokens.css` and the theme.
+
+`head-early` is your slot before the stylesheets. Use it for scripts
+that must run before the page is styled. Put `signin-head` and
+`signin-view-head` there. In `head`, their scripts wait for the
+stylesheets, and on a slow connection the sign-in card can move once.
 
 `account` is the same in every shell: the links that go inside the
 account card, such as Settings and Sign out. In `topbar`, `sidebar` and

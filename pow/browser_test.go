@@ -332,7 +332,7 @@ func powPage(bound, outside bool, extra string) func(*formRig) string {
 		}
 		return `<!doctype html><title>pow</title><form id=f method=post action=/submit ` + string(f.Attrs()) + `>` +
 			string(f.Fields()) + `<input name=email id=email value="a@example.com"` + binding + `>` + inside +
-			string(f.StatusLine("If this form does not respond, reload the page.")) +
+			string(f.StatusLine(hint)) +
 			`<noscript><p id=ns>This form needs JavaScript.</p></noscript></form>` + after + extra + string(f.Script())
 	}
 }
@@ -458,13 +458,18 @@ func TestBrowserBackForwardRestoresTheForm(t *testing.T) {
 		t.Fatalf("a held submit fired after pagehide: %d POSTs", n)
 	}
 	// pagehide ended the hold, so the restored page shows a submit that
-	// is neither busy nor disabled, and it works.
+	// is not disabled, busy only while a restarted solve runs, and it
+	// works.
 	usable := harness.Evaluate[bool](fr.Rig,
 		`dispatchEvent(new PageTransitionEvent("pageshow", {persisted: true}));
-		(b => !b.disabled && !b.hasAttribute("aria-busy"))(document.getElementById("go"))`)
+		!document.getElementById("go").disabled`)
 	if !usable {
-		t.Fatal("pageshow from the back-forward cache left the held submit disabled or busy")
+		t.Fatal("pageshow from the back-forward cache left the held " +
+			"submit disabled")
 	}
+	fr.Run(chromedp.Poll[chromedp.Void](
+		`!document.getElementById("go").hasAttribute("aria-busy")`,
+		chromedp.WithPollingTimeout(5*time.Second)))
 	fr.Run(chromedp.Click(chromedp.CSS(`#go`)))
 	if res := fr.result(t); res != "ok" {
 		t.Fatalf("after restore = %s", res)
@@ -722,28 +727,102 @@ func TestBrowserSubmitOutsideTheForm(t *testing.T) {
 	}
 }
 
-func TestBrowserFailureLeavesTheStatusLineShowing(t *testing.T) {
-	cases := map[string]rigOpts{
-		"missing module":  {cfg: func(c *pow.Config) { c.ScriptURL = "/pow/missing.js" }},
-		"blocked by CSP":  {csp: "default-src 'self'; script-src 'none'"},
-		"throwing worker": {cfg: func(c *pow.Config) { c.WorkerURL = "/bad-worker.js" }},
+// statusJS reads the status: whether it is still the visually hidden
+// region, and what it says.
+const statusJS = `(() => {
+	const s = document.querySelector("[data-pow-status]");
+	return [s.classList.contains("rst-sr-only") ? "hidden" : "shown",
+		s.getAttribute("role") || "no role", s.textContent].join(" | ");
+})()`
+
+const hint = "If this form does not respond, reload the page."
+
+// A form whose check cannot run must never post, and must say so: a
+// module that never loads and a worker that fails both show the hint,
+// the one time it takes a line, and the worker's is announced in the
+// live region too. A CSP that blocks every script blocks the hint's
+// script as well, so that form can only stay disabled.
+func TestBrowserFailureSaysSoWithoutPosting(t *testing.T) {
+	cases := map[string]struct {
+		opts rigOpts
+		want string
+	}{
+		"missing module": {rigOpts{cfg: func(cfg *pow.Config) {
+			cfg.ScriptURL = "/pow/missing.js"
+		}}, "shown | status | " + hint},
+		"throwing worker": {rigOpts{cfg: func(cfg *pow.Config) {
+			cfg.WorkerURL = "/bad-worker.js"
+		}}, "shown | status | " + hint},
+		"blocked by CSP": {rigOpts{
+			csp: "default-src 'self'; script-src 'none'",
+		}, "hidden | status | " + hint},
 	}
-	for name, o := range cases {
+	for name, failure := range cases {
 		t.Run(name, func(t *testing.T) {
-			o.page = powPage(false, false, "")
-			fr := newFormRig(t, o)
-			fr.Run(chromedp.Navigate(fr.Origin+"/"), chromedp.WaitVisible(chromedp.CSS(`[data-pow-status]`)))
+			failure.opts.page = powPage(false, false, "")
+			fr := newFormRig(t, failure.opts)
+			fr.Run(chromedp.Navigate(fr.Origin+"/"),
+				chromedp.WaitVisible(chromedp.CSS(`#go`)))
+			time.Sleep(300 * time.Millisecond)
 			fr.Run(chromedp.Click(chromedp.CSS(`#go`)))
 			time.Sleep(500 * time.Millisecond)
-			visible := harness.Evaluate[bool](fr.Rig,
-				`!document.querySelector("[data-pow-status]").hidden`)
-			if !visible {
-				t.Fatal("the status line is hidden although the form cannot work")
+			got := harness.Evaluate[string](fr.Rig, statusJS)
+			if got != failure.want {
+				t.Errorf("the status reads %q, want %q", got, failure.want)
 			}
-			if n := fr.posts.Load(); n != 0 {
-				t.Fatalf("%d POSTs from a form whose check could not run", n)
+			if posts := fr.posts.Load(); posts != 0 {
+				t.Fatalf("%d POSTs from a form whose check could not run",
+					posts)
 			}
 		})
+	}
+}
+
+// busyWatch notes, before any page script runs, whether #go ever wore
+// the busy look (aria-busy and a spinner) and when the proof was done.
+const busyWatch = `(() => {
+	window.__busy = false;
+	document.addEventListener("pow:solved",
+		() => { window.__solved = true; }, true);
+	new MutationObserver(() => {
+		const b = document.getElementById("go");
+		if (b && b.getAttribute("aria-busy") === "true" &&
+			b.querySelector("[rst-spin]")) window.__busy = true;
+	}).observe(document, {subtree: true, childList: true, attributes: true});
+})()`
+
+// While the proof computes, the submit wears the busy look the status
+// line's words used to stand in for, and drops it once the proof is
+// done; the live region stays empty, since nothing went wrong.
+func TestBrowserTheSubmitIsBusyWhileItSolves(t *testing.T) {
+	fr := newFormRig(t, rigOpts{
+		cfg:  func(cfg *pow.Config) { cfg.Difficulty = 16 },
+		page: powPage(false, false, ""),
+	})
+	fr.Run(chromedp.Func(func(
+		ctx context.Context, target *chromedp.Target,
+	) error {
+		_, err := cdp.Call(ctx, target, page.AddScriptToEvaluateOnNewDocument,
+			page.AddScriptToEvaluateOnNewDocumentParams{Source: busyWatch})
+		return err
+	}))
+	fr.waitReady(t)
+	fr.Run(chromedp.Poll[chromedp.Void](`window.__solved === true`,
+		chromedp.WithPollingTimeout(20*time.Second)))
+	got := harness.Evaluate[string](fr.Rig, `(() => {
+		const b = document.getElementById("go");
+		return [window.__busy ? "was busy" : "never busy",
+			b.getAttribute("aria-busy") || "idle",
+			b.querySelector("[rst-spin]") ? "spinner" : "no spinner"]
+			.join(", ");
+	})()`)
+	if want := "was busy, idle, no spinner"; got != want {
+		t.Errorf("the submit while and after solving: %q, want %q",
+			got, want)
+	}
+	if got, want := harness.Evaluate[string](fr.Rig, statusJS),
+		"hidden | status | "; got != want {
+		t.Errorf("once solved the status reads %q, want %q", got, want)
 	}
 }
 
@@ -842,7 +921,7 @@ func TestBrowserProofFormWithoutJavaScriptCannotSubmit(t *testing.T) {
 
 func TestBrowserEnterBeforeReadyPostsNothing(t *testing.T) {
 	// Review focus 4: implicit submission with the default button
-	// disabled must do nothing, and the visitor sees why.
+	// disabled must do nothing.
 	fr := newFormRig(t, rigOpts{page: powPage(false, false, ""), delayModule: 2 * time.Second})
 	fr.Run(chromedp.Func(func(
 		ctx context.Context, target *chromedp.Target,
@@ -855,10 +934,12 @@ func TestBrowserEnterBeforeReadyPostsNothing(t *testing.T) {
 	if n := fr.posts.Load(); n != 0 {
 		t.Fatalf("%d POSTs from Enter before the module loaded", n)
 	}
-	visible := harness.Evaluate[bool](fr.Rig,
-		`!document.querySelector("[data-pow-status]").hidden`)
-	if !visible {
-		t.Fatal("the status line is not showing while the form is not ready")
+	// Nothing appears while the module loads: a line that came and went
+	// moved whatever sat below it.
+	const want = "hidden | status | " + hint
+	if got := harness.Evaluate[string](fr.Rig, statusJS); got != want {
+		t.Errorf("before the module loaded the status reads %q, want %q",
+			got, want)
 	}
 }
 

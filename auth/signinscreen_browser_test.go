@@ -62,14 +62,26 @@ type screenApp struct {
 	// door at /signin/oficina; set it before the rig builds the app.
 	oneWay bool
 
-	// proofOff builds it with Config.ProofOff, for a drive that measures
-	// the passkey door alone: pow's status line moves the card on its own
-	// when the module hides it.
+	// proofOff builds it with Config.ProofOff, for a drive about the
+	// passkey door alone, with no proof for Continue to wait on.
 	proofOff bool
 
 	// noHead leaves signin-head out of the page's head, as in an app
 	// that upgraded without adding it.
 	noHead bool
+
+	// lateHead puts signin-head in the head block, after the
+	// stylesheets, where an app that added it before head-early existed
+	// has it.
+	lateHead bool
+}
+
+// headBlock is the layout block signin-head goes in.
+func (app *screenApp) headBlock() string {
+	if app.lateHead {
+		return "head"
+	}
+	return "head-early"
 }
 
 type seenRequest struct{ method, path, referer, origin string }
@@ -142,8 +154,8 @@ func newScreenApp(t *testing.T) (*screenApp, func(origin string) http.Handler) {
 		template.Must(tmpl.Parse(`{{define "title"}}{{template "signin-title" (dict "State" .Signin "Brand" .Brand)}}{{end}}` +
 			`{{define "content"}}{{template "signin" (dict "State" .Signin "Brand" .Brand)}}{{end}}`))
 		if !app.noHead {
-			template.Must(tmpl.Parse(`{{define "head"}}` +
-				`{{template "signin-head" (dict "State" .Signin)}}{{end}}`))
+			template.Must(tmpl.Parse(`{{define "` + app.headBlock() +
+				`"}}{{template "signin-head" (dict "State" .Signin)}}{{end}}`))
 		}
 
 		mux := http.NewServeMux()

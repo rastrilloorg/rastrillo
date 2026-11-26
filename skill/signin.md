@@ -85,7 +85,7 @@ state)` before rendering; make that handler `RenderConfirm` too, as an
 `state.AppProblem` for your refusal text. With passkeys, serve `passkey.JS()` and
 `passkey.ProbeJS()` beside `webauthn.JS()`, set the URLs (`ScriptURL`,
 `ProbeURL`, `ModuleURL`) on `state.Passkey`, render `signin-head` in the
-page's `head` block, and wire `passkey.Config.Remember:
+page's `head-early` block, and wire `passkey.Config.Remember:
 app.auth.RememberJar()`. An admission check in front of `Begin` answers
 refusals with `app.auth.AnswerAsSent(response, request)`, never its own
 `?sent=1`.

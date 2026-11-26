@@ -104,9 +104,9 @@ Then render it:
 {{.Proof.Script}}
 ```
 
-`Fields` is the sealed hidden inputs, the empty input the solver writes its answer into, and the honeypot. Use it rather than writing them yourself. The honeypot has an accessibility contract (`aria-hidden` on its wrapper, `tabindex="-1"`, `autocomplete="off"`, a name no browser autofills), and if any part of it is missing, a screen-reader user or a password manager fills the trap. `Attrs` goes on the `<form>` and tells the module the nonce, the difficulty, the worker's URL and how much of the minimum age is left. `Script` is the module's `<script type="module">` tag: render it once per page, however many forms the page has.
+`Fields` is the sealed hidden inputs, the empty input the solver writes its answer into, and the honeypot. Use it rather than writing them yourself. The honeypot has an accessibility contract (`aria-hidden` on its wrapper, `tabindex="-1"`, `autocomplete="off"`, a name no browser autofills), and if any part of it is missing, a screen-reader user or a password manager fills the trap. `Attrs` goes on the `<form>` and tells the module the nonce, the difficulty, the worker's URL and how much of the minimum age is left. `Script` is the module's `<script type="module">` tag, after a small script that shows the status if the module fails to load. Render it once per page, however many forms the page has.
 
-When the form needs a script, `form-foot`'s `Proof` key does the rest: the submit is rendered disabled with `data-pow-submit`, followed by the status line and a `<noscript>` line saying the form needs JavaScript. If you write your own button:
+When the form needs a script, `form-foot`'s `Proof` key renders the submit disabled with `data-pow-submit`, followed by the status and a `<noscript>` line saying the form needs JavaScript. If you write your own button:
 
 ```html
 <button type="submit"{{if .Proof.NeedsScript}} disabled data-pow-submit{{end}}>Send</button>
@@ -114,7 +114,9 @@ When the form needs a script, `form-foot`'s `Proof` key does the rest: the submi
 {{if .Proof.NeedsScript}}<noscript><p>{{T $L "rastrillo.ui.pow_noscript"}}</p></noscript>{{end}}
 ```
 
-A disabled submit is the only starting point that fails safe. JavaScript can't enable a control from inside `<noscript>`, and a module that's blocked by a CSP, missing, or throws leaves an honest disabled button instead of one that looks live and does nothing. The status line ("If this form doesn't respond, reload the page.") shows from the first paint, and the module hides it once the form is ready, so if the module never runs, the line is still there and still true. If the worker fails, the module shows it again. Render it inside the form. A submit button outside the form, attached with `form="..."`, works as long as it carries `data-pow-submit`.
+A disabled submit is the only starting point that fails safe. JavaScript can't enable a control from inside `<noscript>`. A module that's blocked by a CSP, missing, or throws leaves an honest disabled button instead of one that looks live and does nothing.
+
+The status takes no space, so nothing moves when the module loads. `StatusLine` puts its words ("If this form doesn't respond, reload the page.") in a live region hidden with `rst-sr-only`, which only screen readers read. While the proof runs, the submit shows its busy state with `aria-busy` and a spinner. Under forced colours, it shows no spinner. `aria-busy` marks it busy. If the worker fails or `pow.js` fails to load, the words appear on the page, and the page may move. If the worker fails, the live region also announces the words. `Script` loads `pow-hint.js` first to detect that failure, so serve all of `pow.Assets()` from one path. A CSP that blocks every script blocks both scripts, and the button stays disabled. The hidden style comes from `tokens.css`; on a page without it, the words show as a line. Render the status inside the form. A submit button outside the form, attached with `form="..."`, works as long as it carries `data-pow-submit`.
 
 If the visitor submits before the solve or the minimum age is done, the module holds the submit, shows `busy.js`'s busy state on the button (`aria-busy`, the spinner, `data-busy-label`), and sends it with the button they pressed once both are done. A button rendered with `autofocus` gets its focus back when the module enables it, so a one-tap sign-in still answers Enter.
 

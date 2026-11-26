@@ -52,10 +52,11 @@ Call one as `{{template "name" dict "L" $L "Key" value ...}}`; `L` is the locali
 - **signin-brand**: Part of signin-view. Keys: `Brand`.
 - **signin-forget-way**: Part of signin. Keys: `State`.
 - **signin-glyph**: Part of signin. Keys: `Glyph`.
-- **signin-head**: The passkey probe, for the head block. Keys: `State`.
+- **signin-head**: The passkey probe, for the head-early block. Keys: `State`.
 - **signin-offer**: Part of signin-view. Keys: `Brand`, `HideBrand`, `Offer`.
 - **signin-one-way**: Part of signin. Keys: `Door`, `Focus`, `Gated`, `Name`, `Preview`, `Proof`, `State`.
 - **signin-options**: Part of signin-view. Keys: `Brand`, `HideBrand`, `Options`.
+- **signin-passkey-note**: Part of signin.
 - **signin-secret-door**: Part of signin. Keys: `Autocomplete`, `Door`, `Focus`, `Gated`, `ID`, `Inputmode`, `Label`, `Name`, `Proof`, `State`, `Type`.
 - **signin-title**: The document title for the same state, for the page's title block: every state has one heading and a title that says the same thing, so a screen-reader user who lands on the page hears where they are. Keys: `Brand`, `State`.
 - **signin-view**: Every page of the signin package, from its View. Keys: `Brand`, `HideBrand`, `Preview`, `View`.

@@ -332,11 +332,17 @@ func TestFormRendering(t *testing.T) {
 	if fo := g.FollowOn(t0, scope); !strings.Contains(string(fo.Attrs()), `data-pow-min-age="0"`) {
 		t.Errorf("FollowOn Attrs = %s, want min age 0: a follow-on form must never be held", fo.Attrs())
 	}
-	if s := string(f.Script()); s != `<script type="module" src="/pow/pow.js"></script>` {
-		t.Errorf("Script = %s", s)
+	// The hint's script comes first, so it is listening when pow.js
+	// fails: deferred and module scripts run in document order.
+	script := `<script defer src="/pow/pow-hint.js"></script>` +
+		`<script type="module" src="/pow/pow.js" data-pow-script></script>`
+	if got := string(f.Script()); got != script {
+		t.Errorf("Script = %s", got)
 	}
-	if s := string(f.StatusLine("Reload <now>")); s != `<p data-pow-status>Reload &lt;now&gt;</p>` {
-		t.Errorf("StatusLine = %s", s)
+	status := `<p class="rst-sr-only" role="status" data-pow-status>` +
+		`Reload &lt;now&gt;</p>`
+	if got := string(f.StatusLine("Reload <now>")); got != status {
+		t.Errorf("StatusLine = %s", got)
 	}
 	np := newTestGuard(t, func(c *Config) { c.Difficulty = NoProof })
 	nf := np.Form(t0, scope)

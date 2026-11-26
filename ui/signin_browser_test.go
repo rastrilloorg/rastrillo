@@ -102,7 +102,7 @@ type signinLayout struct {
 	// The Preview passkey door: the wrapper against its button while
 	// the message is empty, and the space above the message once the
 	// script has written to it.
-	WrapperHeight, ButtonHeight, MessageSpacing float64
+	WrapperHeight, ButtonHeight, MessageSpacing, WrittenHeight float64
 	// The brand column's type: pitch, name, and the door's heading.
 	Pitch, Name, Heading float64
 	// The mark's colour against the accent's.
@@ -155,7 +155,11 @@ func TestTheSigninCardLaysOutAsDesigned(t *testing.T) {
   out.ButtonHeight = pk.getBoundingClientRect().height;
   const msg = wrap.querySelector("[rst-signin-passkey-msg]");
   msg.textContent = "No passkey was used.";
-  out.MessageSpacing = msg.getBoundingClientRect().top - pk.getBoundingClientRect().bottom;
+  const note = msg.closest("[rst-signin-passkey-note]").getBoundingClientRect();
+  const b = pk.getBoundingClientRect();
+  out.MessageSpacing = wrap.getAttribute("rst-signin-passkey") === "before" ?
+    b.top - note.bottom : note.top - b.bottom;
+  out.WrittenHeight = wrap.getBoundingClientRect().height;
 
   const size = sel => parseFloat(getComputedStyle(document.querySelector("#case-link " + sel)).fontSize);
   out.Pitch = size("[rst-signin-pitch]");
@@ -186,8 +190,17 @@ func TestTheSigninCardLaysOutAsDesigned(t *testing.T) {
 	if d := got.WrapperHeight - got.ButtonHeight; d < -0.5 || d > 0.5 {
 		t.Errorf("with its message empty the passkey pair is %.2fpx tall and its button %.2fpx; the empty message is taking space", got.WrapperHeight, got.ButtonHeight)
 	}
+	// Written, the message is a note beside the button, off it but in
+	// no line of its own: a line moved Continue under a tap (#437).
+	grown := got.WrittenHeight - got.ButtonHeight
+	if grown < -0.5 || grown > 0.5 {
+		t.Errorf("with a message the passkey pair is %.2fpx tall and its "+
+			"button %.2fpx; the message is taking space",
+			got.WrittenHeight, got.ButtonHeight)
+	}
 	if got.MessageSpacing < 4 {
-		t.Errorf("a written passkey message sits %.2fpx under its button; it needs space once it has something to say", got.MessageSpacing)
+		t.Errorf("a written passkey message sits %.2fpx off its button; "+
+			"it needs a gap", got.MessageSpacing)
 	}
 	if got.Pitch <= got.Heading || got.Pitch <= got.Name {
 		t.Errorf("the pitch is %.1fpx, the door's heading %.1fpx and the name %.1fpx; the pitch is the column's dominant line", got.Pitch, got.Heading, got.Name)

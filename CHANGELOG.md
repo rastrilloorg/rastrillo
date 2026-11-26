@@ -10,6 +10,16 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+**Upgrade: put `signin-view-head` in the new `head-early` block.** In v0.48.0, the instructions said to put it in `head`, after the stylesheets. The script waits for them, so on a slow connection the sign-in card can move once. Every shell now has a `head-early` block before its stylesheets. If you used `rastrillo new --auth=signin`, add `{{block "head-early" .}}{{end}}` to `templates/stage.html`, just before its first `<link rel="stylesheet">`. Then change `{{define "head"}}` to `{{define "head-early"}}` on the `signin-view-head` line in `templates/signin.html`. If your app renders `signin` itself, move `signin-head` the same way. The script still works in `head`.
+
+**Fixed: proof of work no longer moves the form.** Every pow form showed "If this form doesn't respond, reload the page." under its submit button until `pow.js` loaded and hid it, moving everything below up. On the centred sign-in screen, Continue moved 46px at 320px wide. The words now sit in a live region that only screen readers read. `Form.Script` now loads `pow-hint.js` from `pow.Assets()` before `pow.js`. The words appear on the page only if `pow.js` fails to load or its worker fails. The button shows a spinner while the proof runs. `aria-busy` marks it busy. Under forced colours, the button shows no spinner. If you serve the pow assets yourself, serve `pow-hint.js` beside `pow.js`. If you write the script tag yourself, render `{{.Proof.Script}}` instead. The hidden region uses `rst-sr-only` from `tokens.css`.
+
+**Fixed: a failed passkey sign-in no longer moves the form.** The failure message, such as "No passkey was used. Try again, or use your email.", used to take its own line and move Continue down 28px at 320px wide. It now appears in a note beside the passkey button, without taking up space. When the button comes before the form, as on the returning-passkey and one-way screens, the note opens above the button. It never covers the email field, Continue or Other ways to sign in. Escape or the close button hides it. It also clears when someone tries again or sends the form. Screen readers hear the message as before. This needs Fiesta 1.8.0's `tokens.css`, below.
+
+### Added: Fiesta 1.8.0
+
+Rastrillo pins Fiesta 1.8.0. Its `tokens.css` styles the passkey note. Under reduced motion, a busy button keeps its label still and the spinner takes its place, as it already does with motion. Fiesta 1.8.0 also includes Fiesta 1.7.0's stack changes. The `error-page` partial now writes `rst-error rst-stack` and adds `rst-actions` to the link row, so the stack's table spaces the lines. Apps that vendor `tokens.css` get these changes with `rastrillo doctor -fix`. With an older `tokens.css`, the passkey message still takes its own line and moves the form.
+
 ## v0.48.0
 
 **Fixed: malformed passkey registrations could crash the request.** The WebAuthn CBOR reader panicked on some short attestation objects. A body of just 4 bytes was enough. It also accepted a second spelling of the ES256 algorithm and followed nested data without a limit. A 1 MiB body could use 256 MiB of stack space. Any signed-in person could send one of these objects while registering a passkey. The server recovered from each panic, returned a 500 error, and stayed up. The reader now rejects all three cases.

@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width">
 <title>{{block "title" .}}Hello{{end}}</title>
+{{/* Before the stylesheets, so its scripts never wait for them. */}}
+{{block "head-early" .}}{{end}}
 <link rel="stylesheet" href="{{path $ pageStylesheet}}">
 <link rel="stylesheet" href="{{path $ (asset "static/theme.css")}}">
 {{/* shell.css is the slide between the Menu page and a page on a
