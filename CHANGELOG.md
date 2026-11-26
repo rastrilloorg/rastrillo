@@ -10,7 +10,11 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
-**Upgrade: put `signin-view-head` in the new `head-early` block.** In v0.48.0, the instructions said to put it in `head`, after the stylesheets. The script waits for them, so on a slow connection the sign-in card can move once. Every shell now has a `head-early` block before its stylesheets. If you used `rastrillo new --auth=signin`, add `{{block "head-early" .}}{{end}}` to `templates/stage.html`, just before its first `<link rel="stylesheet">`. Then change `{{define "head"}}` to `{{define "head-early"}}` on the `signin-view-head` line in `templates/signin.html`. If your app renders `signin` itself, move `signin-head` the same way. The script still works in `head`.
+## v0.49.0
+
+**Upgrade: add a `head-early` block to your own layouts, then put `signin-view-head` in it.** The five ui shell layouts now call a `head-early` block before their stylesheets. If your app keeps its own copy of a layout, add `{{block "head-early" .}}{{end}}` just before its first `<link rel="stylesheet">`. Apps made with `rastrillo new --auth=signin` own a copy at `templates/stage.html`; it does not have this block until you add it. In `templates/signin.html`, change the `signin-view-head` definition from `{{define "head"}}` to `{{define "head-early"}}`. If your app renders `signin` itself, move `signin-head` the same way. Add the block first. A template definition for a block the layout never calls renders nothing.
+
+In v0.48.0, the instructions said to put the script in `head`, after the stylesheets. There it waits for them, so on a slow connection the sign-in card can move once. The script still works in `head`.
 
 **Fixed: proof of work no longer moves the form.** Every pow form showed "If this form doesn't respond, reload the page." under its submit button until `pow.js` loaded and hid it, moving everything below up. On the centred sign-in screen, Continue moved 46px at 320px wide. The words now sit in a live region that only screen readers read. `Form.Script` now loads `pow-hint.js` from `pow.Assets()` before `pow.js`. The words appear on the page only if `pow.js` fails to load or its worker fails. The button shows a spinner while the proof runs. `aria-busy` marks it busy. Under forced colours, the button shows no spinner. If you serve the pow assets yourself, serve `pow-hint.js` beside `pow.js`. If you write the script tag yourself, render `{{.Proof.Script}}` instead. The hidden region uses `rst-sr-only` from `tokens.css`.
 
