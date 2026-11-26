@@ -16,6 +16,17 @@ with no `Agent-Session` sees write tools, but each write call is
 `claude mcp add --transport http <app> https://<host>/api/v1/mcp --header "Authorization: Bearer <token>"`.
 docs/site/mcp.md
 
+**Connectors need sign-in.** claude.ai, ChatGPT, Claude Code and Codex
+connect by address through OAuth, and OAuth needs sign-in: a signed-in
+person approves each connection. An app with no sign-in adds it first
+(skill/add-signin.md; a new app, `rastrillo new --auth=signin`), then
+mounts OAuth as below. The app's token page also requires sign-in.
+Never put a secret in the MCP URL (a secret path or a `?token=`), even
+when a connector cannot send a header. A URL lands in access and proxy
+logs, browser history and the connector's settings, and leaks through
+`Referer`. Anyone with the URL can use it. If several people share
+it, you must change it for everyone to revoke access.
+
 **OAuth.** To let a person connect Claude Code, Codex, claude.ai or
 ChatGPT with only the address, mount `oauth`. Add `oauth.Schema` to
 `BootSchema`. Declare `var server *oauth.Server` first, because the two

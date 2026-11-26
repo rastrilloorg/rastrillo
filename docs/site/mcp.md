@@ -62,6 +62,11 @@ page, then keeps and renews its own token:
 | claude.ai | a custom connector with the address |
 | ChatGPT | a custom connector with the address |
 
+OAuth needs sign-in, because a signed-in person approves each
+connection. An app without sign-in adds it first, with
+[the default sign-in](/docs/signin) or [passwords](/docs/passwords).
+`rastrillo new --scaffold accounts` starts a new app with it.
+
 Without OAuth, make a token on the app's token page. Then give the
 client the endpoint and token. In Claude Code:
 
@@ -89,7 +94,10 @@ whether or not it sent the header. In Claude Code, add
 session is `oauth:<connection ID>`.
 
 claude.ai and ChatGPT can't send a token you give them, so they need
-OAuth. A request with no token gets 401. With OAuth mounted, its
+OAuth. Don't put a secret in the MCP URL instead. A secret URL can
+appear in logs, browser history and `Referer` headers. Anyone with the
+URL can use it. If several people share it, you must change it for
+everyone to revoke access. A request with no token gets 401. With OAuth mounted, its
 `WWW-Authenticate` header tells the client where to find the app's
 OAuth metadata; without OAuth, it is a bare `Bearer`.
 

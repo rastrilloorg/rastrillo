@@ -14,6 +14,11 @@ backwards from commits is a guess wearing a date.
 
 **Fixed: templates compile on Go 1.27.** On Go 1.27, `rastrillo new` scaffolded the app but printed `templates not compiled … export data version 5 is greater than maximum supported version 4`, and `rastrillo generate` failed with the same error. Rastrillo now requires `golang.org/x/tools` v0.53.0, which reads Go 1.27's export data. Upgrade Rastrillo in your app, install the new `rastrillo` command (`go install amadan.net/rastrillo/rastrillo/cmd/rastrillo@latest`), then run `rastrillo generate`. An older `rastrillo` binary still fails on Go 1.27, whatever your app requires.
 
+### Docs
+
+- Connecting claude.ai, ChatGPT, Claude Code or Codex to `/api/v1/mcp` by its address uses OAuth, and OAuth needs sign-in: a signed-in person approves each connection. An app with no sign-in adds it first, with `skill/add-signin.md`, or starts from `rastrillo new --auth=signin`. `skill/mcp.md`, `skill/port.md`, the skill's index and the MCP and `oauth` docs pages now say so. They also say never to put a secret in the MCP URL, even for a connector that cannot send a header. A URL ends up in logs, browser history and `Referer` headers, and you cannot end one person's access without changing it for everyone.
+- A new app's `AGENTS.md` says the same under Growing. In an app without sign-in, its sign-in line now points at `skill/add-signin.md`, the steps for adding sign-in to an app that has none. To update an older app, copy the line about claude.ai and ChatGPT from a fresh scaffold.
+
 ## v0.49.0
 
 **Upgrade: add a `head-early` block to your own layouts, then put `signin-view-head` in it.** The five ui shell layouts now call a `head-early` block before their stylesheets. If your app keeps its own copy of a layout, add `{{block "head-early" .}}{{end}}` just before its first `<link rel="stylesheet">`. Apps made with `rastrillo new --auth=signin` own a copy at `templates/stage.html`; it does not have this block until you add it. In `templates/signin.html`, change the `signin-view-head` definition from `{{define "head"}}` to `{{define "head-early"}}`. If your app renders `signin` itself, move `signin-head` the same way. Add the block first. A template definition for a block the layout never calls renders nothing.

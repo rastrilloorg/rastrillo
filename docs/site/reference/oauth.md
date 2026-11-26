@@ -9,6 +9,15 @@ own token. Nobody copies a secret. The app is its own authorization
 server, as the MCP authorization specification (2026-07-28) describes.
 Claude Code, Codex, claude.ai and ChatGPT connect this way.
 
+The app needs sign-in first: a signed-in person approves each
+connection, so `Session` and `SignIn` are required. An app without
+sign-in adds it, with [the default sign-in](/docs/signin) or
+[passwords](/docs/passwords), before it mounts `oauth`. Don't put a
+secret in the MCP URL instead, even for a client that can't send a
+header. A secret URL can appear in logs, browser history and `Referer`
+headers. Anyone with the URL can use it. If several people share it,
+you must change it for everyone to revoke access.
+
 ## Wiring it into an app
 
 The server mints its access tokens with the app's `apitoken` store, and

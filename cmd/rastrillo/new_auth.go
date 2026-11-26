@@ -335,12 +335,19 @@ func (edit *magicAuth) agents() {
 			"AGENTS.md says how to mount it.",
 		"It needs *sessions.Sessions,\n// "+
 			"which this app's sign-in (auth.go) has: app.auth.Sessions().")
-	edit.swap(agents, "- Sign-in: `skill/signin.md`. With "+
+	edit.swap(agents, "- Sign-in: `skill/add-signin.md`. With "+
 		"`*sessions.Sessions`, keep\n  `NewTokenPage(database, sessions)` "+
 		"on `App` and call\n  `app.tokens.Mount(guarded)` in `Routes`' "+
 		"page group.", "- More sign-in, such as 2FA: `skill/signin.md`. "+
 		"tokens.go's page\n  needs `*sessions.Sessions`: "+
 		"`app.auth.Sessions()`.")
+	// This app has sign-in already, and its AGENTS.md is at its cap.
+	edit.swap(agents, "can connect to MCP by\n  address through OAuth "+
+		"(`skill/mcp.md`), which needs sign-in. Never\n  put a secret in "+
+		"the MCP URL; it can appear in logs, browser history\n  and "+
+		"`Referer` headers.", "connect to MCP via OAuth:\n  "+
+		"`skill/mcp.md`. Never put a secret in its URL; logs and history\n"+
+		"  keep it.")
 	edit.swap(agents, "\n## Layout", "\n"+fmt.Sprintf(signinSection,
 		"`", edit.pkg, edit.env)+"\n\n## Layout")
 }

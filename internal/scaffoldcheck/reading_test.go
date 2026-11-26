@@ -61,15 +61,25 @@ import (
 // one copy, magicapp two (layout.html and stage.html) and its sign-in
 // page's define "head-early" (6): 102 and 210, with both apps 8 bytes
 // under their limits, so 94 and 202 went over.
+//
+// connectors is the sixth: every app mounts /api/v1/mcp, and an agent
+// porting an app with no sign-in put a secret in the MCP URL so that
+// claude.ai could connect, because nothing in the app said connectors
+// take OAuth and OAuth takes sign-in. AGENTS.md's Growing section now
+// says so in one bullet, with the clients and why a URL leaks (230),
+// and plainapp's sign-in pointer names skill/add-signin.md, the recipe
+// for an app with none (4). magicapp's AGENTS.md sits at its own cap,
+// so its bullet is shorter and omits the sign-in it already has (147).
+// Both apps were at their limits: 234 and 147.
 var before = map[string]struct {
 	total, agents, cutPercent, migrationCheck, defaultSignin,
-	lintGate, auditCheck, headEarly int
+	lintGate, auditCheck, headEarly, connectors int
 }{
 	// plainapp was 41 bytes under its limit, so 508 of the 549 went over.
-	"plainapp": {73438, 6536, 25, 508, 0, 1244, 409, 94},
+	"plainapp": {73438, 6536, 25, 508, 0, 1244, 409, 94, 234},
 	// magicapp was already 495 bytes under its limit, so only 54 of the
 	// 549 went over.
-	"magicapp": {91400, 7360, 19, 54, 5151, 1284, 485, 202},
+	"magicapp": {91400, 7360, 19, 54, 5151, 1284, 485, 202, 147},
 }
 
 // iconGrowth is the code, not prose, that Fiesta 1.4.0's icons added to
@@ -89,15 +99,16 @@ func TestNewAppsReadInFewerBytes(t *testing.T) {
 		total := bytesToRead(t, directory)
 		limit := was.total*(100-was.cutPercent)/100 + iconGrowth +
 			was.migrationCheck + was.defaultSignin + was.lintGate +
-			was.auditCheck + was.headEarly
+			was.auditCheck + was.headEarly + was.connectors
 		if total > limit {
 			t.Errorf("%s: %d bytes outside gen/ and static/, over %d, "+
 				"%d%% less than %d, %d for the migration check, %d "+
 				"for the default sign-in, %d for the lint gate, %d "+
-				"for the audit check and %d for head-early",
+				"for the audit check, %d for head-early and %d for "+
+				"connectors",
 				variant.name, total, limit, was.cutPercent, was.total,
 				was.migrationCheck, was.defaultSignin, was.lintGate,
-				was.auditCheck, was.headEarly)
+				was.auditCheck, was.headEarly, was.connectors)
 		}
 		agents := len(readFile(t, filepath.Join(directory, "AGENTS.md")))
 		if limit := was.agents + 1000; agents > limit {
@@ -136,11 +147,17 @@ func bytesToRead(t *testing.T, root string) int {
 
 // The instructions an agent cannot work without survive the cut: where a
 // subsystem's schema goes, scoping owned rows, writing a migration, the
-// gates, and raising Go for a security release.
+// gates, raising Go for a security release, and that connectors take
+// OAuth and sign-in, never a secret in the URL.
 func TestAgentsMDKeepsTheEssentialInstructions(t *testing.T) {
 	t.Parallel()
 	owned := map[string]string{
 		"plainapp": "`scope.Owned`", "magicapp": "`app.owned(request)`",
+	}
+	// The signed-in app has sign-in, so its line need not ask for it.
+	oauth := map[string]string{
+		"plainapp": "through OAuth (`skill/mcp.md`), which needs sign-in",
+		"magicapp": "via OAuth: `skill/mcp.md`",
 	}
 	for _, variant := range variants {
 		directory := newApp(t, variant.name, variant.flags...)
@@ -152,6 +169,8 @@ func TestAgentsMDKeepsTheEssentialInstructions(t *testing.T) {
 			"Never edit a migration that has shipped",
 			"`make ci`", "`make code`", "`make routes`", "`make csp`",
 			"Raise the Makefile's `GOTOOLCHAIN` with each Go security",
+			"Claude Code, Codex, claude.ai and ChatGPT", oauth[variant.name],
+			"Never put a secret in",
 		} {
 			if !strings.Contains(agents, want) {
 				t.Errorf("%s: AGENTS.md lost %q", variant.name, want)

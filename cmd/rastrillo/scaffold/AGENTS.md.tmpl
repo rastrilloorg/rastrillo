@@ -83,9 +83,13 @@ The rest, and what each gate message means:
 
 ## Growing
 
-- Sign-in: `skill/signin.md`. With `*sessions.Sessions`, keep
+- Sign-in: `skill/add-signin.md`. With `*sessions.Sessions`, keep
   `NewTokenPage(database, sessions)` on `App` and call
   `app.tokens.Mount(guarded)` in `Routes`' page group.
+- Claude Code, Codex, claude.ai and ChatGPT can connect to MCP by
+  address through OAuth (`skill/mcp.md`), which needs sign-in. Never
+  put a secret in the MCP URL; it can appear in logs, browser history
+  and `Referer` headers.
 - Past 5,000 lines, split by feature, not an exemption:
   `internal/<app>/<feature>` with `func Mount(routes *action.Routes,
   deps *Deps)` called from `Routes`; shared code in `internal/<app>/core`.

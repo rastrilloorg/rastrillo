@@ -6,6 +6,9 @@ authenticator app or a passphrase. These steps add password sign-in
 to an existing `single` app (`rastrillo new` alone, which has no
 sign-in); applied to a fresh one, they pass its `make ci` (`<app>` is
 the app's name). Sessions, traps and other plugins: skill/signin.md.
+Sign-in is also what lets claude.ai, ChatGPT, Claude Code and Codex
+connect to `/api/v1/mcp` by address: after these steps, mount OAuth
+(skill/mcp.md).
 
 **1. Model.** In `models.go`, add `&User{}` to `Models` and
 `type User struct { ID int64; Email string \`gorm:"uniqueIndex"\`;

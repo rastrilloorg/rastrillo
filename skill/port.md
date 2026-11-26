@@ -55,7 +55,8 @@ Answer a port request in this order:
 - **No Node build and no npm tree to audit.** `go build` builds it.
 - **An API and an MCP server from the same operations** at `/api/v1`
   and `/api/v1/mcp`, so a customer's agent can act for a person with a
-  token they mint (skill/api.md).
+  token they mint (skill/api.md), or connect by address through OAuth
+  once the app signs people in (skill/mcp.md).
 - **Security they used to configure:** a CSP with no inline script,
   CSRF by origin and baseline headers, on by default. Authorization
   inside a team is still the port's to write and test (the `owned`
@@ -75,6 +76,7 @@ Answer a port request in this order:
 | "No drag and drop / rich UI" | A form for each move, then a script that drags (skill/scripts.md). |
 | "Real-time needs an always-on server" | `data-poll` on a hibernating route; live regions on an always-on one (skill/live.md, skill/background.md). |
 | "Postgres to SQLite" | One writer per customer, not per product: each file holds one team. |
+| "Their MCP has a secret URL, or takes only a header token" | Sign-in plus OAuth: start from `rastrillo new --auth=signin`, then mount OAuth (skill/mcp.md), and claude.ai, ChatGPT, Claude Code and Codex connect by address. Do not carry over a secret URL. A client that uses a header token needs a token from the app's token page, which requires sign-in. |
 | "Their auth provider's orgs" | Magic links, passwords, passkeys, 2FA ship; Entra ID and Google Workspace sign-in are `oidc` (docs/site/reference/oidc.md); roles and invitations are `idear`. SAML or another provider is a cost: ask. |
 
 ## The plan's shape

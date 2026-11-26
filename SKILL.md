@@ -37,7 +37,7 @@ Read the topic before you start work it covers, not after the source:
 | run work in the background, poll for progress, schedule | `skill/background.md` |
 | update parts of a page when data changes: live regions, forms that swap in place | `skill/live.md` |
 | use the CLI beyond `new`, manifests, doctor, pins, native or PWA | `skill/tooling.md` |
-| serve JSON or MCP, mint tokens, give an agent access, write `Authorize`, declare an `op.Define` operation, test parity | `skill/api.md`, `skill/mcp.md`, `skill/operations.md` |
+| serve JSON or MCP, mint tokens, connect an agent with Claude Code, Codex, claude.ai or ChatGPT (OAuth needs sign-in; never put a secret in the URL), write `Authorize`, declare an `op.Define` operation, test parity | `skill/api.md`, `skill/mcp.md`, `skill/operations.md` |
 
 ## Pick a shape
 
@@ -103,8 +103,8 @@ One seam, every read and write (`app.database.G` is a
 `func (app *App) owned(request *http.Request) *gorm.DB { userID, _ :=
 sessions.UserID(request); return scope.Owned(app.database.G, userID) }`.
 An `accounts` app has it already (`auth.go`), over an `Owner`
-address column: create rows with `Owner: ownerOf(request)`, never
-`UserID`. `scope.Owned(g, owner)` adds `WHERE user_id = ?`; `scope.OwnedBy(g,
+address column: create rows with `Owner: ownerOf(request)`.
+`scope.Owned(g, owner)` adds `WHERE user_id = ?`; `scope.OwnedBy(g,
 column, owner)` takes another owner column, panicking unless plain
 `lower_snake` (it is interpolated into SQL). Never
 First/Find/Update/Delete an owned model without the filter — in a
@@ -129,7 +129,6 @@ credential and calls `SignIn`. `csrf.Protect(origin)` refuses
 cross-origin writes with no tokens. **Under magic links (`auth`),
 never `sessions.UserID`:** the subject is an email, so the seam above
 would scope to `user_id = 0`.
-Everything else: `skill/signin.md`.
 
 ## Write code that reads like a sentence
 
@@ -144,8 +143,7 @@ mounts:
 - no one-letter names but a capital type parameter and the testing
   types' `t`, `b`, `f`.
 
-1. Spell names out, except those, `err` and `ctx` (`context` is the
-   package): `request`, not `r`.
+1. Spell names out, except those, `err` and `ctx`: `request`, not `r`.
 2. Name things for what the person is doing (`entries.Publish`), not
    how the code does it (`saveEntry`).
 3. One route, one intent: two buttons that mean two things post to two
@@ -166,8 +164,8 @@ The other seven, an action's shape and what each gate message means:
 - Never import `github.com/glebarez/*` or `gorm.io/driver/sqlite`: the
   binary panics at init or needs cgo.
 - Never hand-roll a labelled control (use `field-*` partials
-  in `<form rst-form>` closed by `form-foot`), an error page, a colour
-  toggle or an image grid: they ship (`skill/design.md`).
+  in `<form rst-form>` closed by `form-foot`), an error page or a
+  colour toggle: they ship (`skill/design.md`).
 - Never add a `<script>` tag for a framework component (your own are
   welcome: `skill/scripts.md`): the `field-*` partials load their own; markup built in Go asks with
   `{{needs "select.js"}}` for the script, and `{{needs "rst-card"}}` for each hook it writes, whether as an attribute or a class.
