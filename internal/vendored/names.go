@@ -12,15 +12,17 @@ import (
 )
 
 // names lists the vendored files in the order they are worth reading:
-// the structural stylesheet, the theme that colours it and the shells'
-// slide, then Rastrillo's own two scripts, the fragment shim and the
-// live pages' script (inert until a page opts in), then every script
-// the pinned Fiesta ships, in Fiesta's load order. A script a Fiesta
+// the structural stylesheet, the theme that colours it, the shells'
+// slide and the data table's and charts' sheet, then Rastrillo's own
+// two scripts, the fragment shim and the live pages' script (inert
+// until a page opts in), then every script the pinned Fiesta ships, in
+// Fiesta's load order. A script a Fiesta
 // release adds is vendored by the bump that pins it. ui's
 // TestVendoredNamesMatchVendoredAssets holds this and ui.VendoredAssets
 // to the same set.
 var names = append([]string{
-	"tokens.css", "theme.css", "shell.css", "rastrillo.js", "live.js",
+	"tokens.css", "theme.css", "shell.css", "data.css", "rastrillo.js",
+	"live.js",
 }, fiesta.ScriptNames()...)
 
 // componentScripts are the scripts a page loads only where it shows

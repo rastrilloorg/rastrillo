@@ -1,0 +1,8 @@
+{{define "content"}}{{$L := localizer $}}
+{{template "data-table" dict "L" $L "ID" "t" "Title" .User "Dense" true "Columns" (list (dict "Label" "Week") (dict "Label" .Evil "Num" true "Href" .URL "Sort" "descending")) "Rows" (list (list (dict "Value" .Evil "Href" "/w/1") .N) (list "2" .Price)) "Foot" (list "Total")}}
+{{template "data-table" dict "L" $L "ID" "e" "Title" "None" "Columns" (list (dict "Label" "Week"))}}
+{{template "chart-bar" dict "L" $L "ID" "b" "Title" .User "Desc" .Evil "Category" "Source" "Measure" "Tickets" "Points" (list (dict "Label" .Evil "Value" .N) (dict "Label" "None") (dict "Label" "Zero" "Value" 0))}}
+{{template "chart-line" dict "L" $L "ID" "l" "Title" "Sales" "Desc" .Evil "Category" "Week" "Measure" "Sold" "Points" (list (dict "Label" 1 "Value" 120) (dict "Label" 2) (dict "Label" 3 "Value" .N) (dict "Label" .Evil "Value" 7)) "Goal" 0 "GoalLabel" "Floor" "Hover" true "Places" 1 "Percent" true}}
+{{template "chart-line" dict "L" $L "ID" "n" "Title" "Nothing" "Desc" "None" "Category" "Week" "Measure" "Sold"}}
+{{template "sparkline" dict "Period" .User "Desc" .Evil "Points" (list (dict "Label" 1 "Value" 3) (dict "Label" 2) (dict "Label" 3 "Value" 5) (dict "Label" 4 "Value" 4))}}
+{{end}}

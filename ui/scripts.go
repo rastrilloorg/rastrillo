@@ -88,15 +88,17 @@ func allPageScripts() []string {
 }
 
 // scriptFuncs are the template functions behind a page's scripts and
-// stylesheet: needs, and neededScripts, pageScripts and pageStylesheet,
-// which ui.Pages binds per page. Outside ui.Pages, which alone reads
-// the page, they give every script and the whole stylesheet.
+// stylesheets: needs, and neededScripts, pageScripts, pageStylesheet
+// and pageComponentStylesheets, which ui.Pages binds per page. Outside
+// ui.Pages, which alone reads the page, they give every script and
+// every stylesheet whole.
 func scriptFuncs() template.FuncMap {
 	return template.FuncMap{
-		"needs":          needs,
-		"neededScripts":  allComponentScripts,
-		"pageScripts":    allPageScripts,
-		"pageStylesheet": func() string { return "/" + stylesheet },
+		"needs":                    needs,
+		"neededScripts":            allComponentScripts,
+		"pageScripts":              allPageScripts,
+		"pageStylesheet":           func() string { return "/" + stylesheet },
+		"pageComponentStylesheets": everyComponentStylesheet,
 	}
 }
 
@@ -127,6 +129,7 @@ func (pages *Pages) addPages(base *tmpl.Template, config PagesConfig) error {
 	if config.Assets != nil {
 		pages.bindStylesheets(plans, config.Assets)
 	}
+	pages.bindComponentStylesheets(plans, config)
 	return nil
 }
 
@@ -269,5 +272,6 @@ func hasLiveRegion(page *tmpl.Template) bool {
 func reservedFunc(name string) bool {
 	return slices.Contains(LocaleFuncs, name) ||
 		slices.Contains([]string{"localizer", "withL", "needs",
-			"neededScripts", "pageScripts", "pageStylesheet"}, name)
+			"neededScripts", "pageScripts", "pageStylesheet",
+			"pageComponentStylesheets"}, name)
 }

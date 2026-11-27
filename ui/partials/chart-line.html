@@ -1,0 +1,52 @@
+{{/* chart-line — one series as a line, with its values in a table
+     under the plot: ID, Title, Desc, Category, Measure, Points[]
+     (Label, Value, Missing); optional Goal, GoalLabel, Min, Max,
+     Places, Percent, Hover, Empty; or Chart, a chart.Line.
+
+     Fiesta's line chart (data.css, 1.10): an SVG drawn here, with no
+     script, and every word and number in HTML. The plot is hidden from
+     screen readers. Desc, one sentence on what the line does, is read
+     instead, and the Show the numbers table holds every value, the
+     goal included. Where the chart runs right to left, the plot
+     mirrors with its labels.
+
+     The points are evenly spaced, first to last, up to 366. The y axis
+     covers every value, the goal, Min and Max when set, and zero
+     unless Min is set, in steps of 1, 2 or 5. A narrow chart labels
+     about six points on the x axis, and past a dozen points only those
+     six carry a label at any width. Goal is a hairline named by
+     GoalLabel; a goal of 0 is a goal. Values, Places and Percent are
+     as chart-bar's. A Missing point breaks the line and reads "No
+     data". Hover gives each point the browser's own tooltip, which
+     costs about 40 bytes a point. With no value at all, the plot says
+     Empty, or that there is no data yet. */}}
+{{define "chart-line"}}{{$L := localizer $}}{{$c := chartLine $}}{{$f := $c.Format}}<div rst-box-head><h2 id="{{$c.ID}}-h">{{$c.Title}}</h2></div>
+<div rst-card><figure rst-chart aria-labelledby="{{$c.ID}}-h" aria-describedby="{{$c.ID}}-d">
+<p rst-chart-desc id="{{$c.ID}}-d">{{$c.Desc}}</p>
+{{if $c.NoData}}<p rst-chart-empty>{{or $c.Empty (T $L "rastrillo.ui.chart_empty")}}</p>{{else}}<div rst-chart-plot aria-hidden="true">
+<div rst-chart-y>{{range $c.Ticks}}<span>{{number $L . $c.TickFormat.Style}}</span>{{end}}</div>
+<svg viewBox="0 0 1000 1000" preserveAspectRatio="none" focusable="false">
+{{- with $c.Grid}}<path rst-chart-grid d="{{.}}"/>{{end}}<path rst-chart-base d="{{$c.Base}}"/>
+{{- with $c.Goal}}<path rst-chart-goal d="{{.}}"/>{{end}}
+{{- range $c.Runs}}<polyline rst-chart-line points="{{.}}"/>{{end}}
+{{- range $c.Lone}}<path rst-chart-dot d="{{.}}"/>{{end}}<path rst-chart-ring d="{{$c.End}}"/><path rst-chart-dot d="{{$c.End}}"/></svg>
+{{- if $c.Hover}}
+<div rst-chart-hits>{{range $c.Rows}}<span{{if not .Missing}} title="{{Tf $L "rastrillo.ui.chart_point" "label" .Label "value" (number $L .Value "places" $f.Places $f.Style)}}"{{end}}></span>{{end}}</div>{{end}}
+<div rst-chart-x>{{range $c.X}}<span{{if .Keep}} rst-chart-keep{{end}}>{{.Text}}</span>{{end}}</div>
+</div>{{end}}
+{{- if $c.HasGoal}}
+<p rst-chart-key>{{Tf $L "rastrillo.ui.chart_point" "label" $c.GoalLabel "value" (number $L $c.GoalValue "places" $f.Places $f.Style)}}</p>{{end}}
+{{- if $c.Rows}}
+<details rst-chart-data><summary>{{T $L "rastrillo.ui.chart_numbers"}}</summary>
+<div rst-table-scroll tabindex="0" role="region" aria-labelledby="{{$c.ID}}-h">
+<table rst-table="dense" aria-labelledby="{{$c.ID}}-h">
+<thead><tr><th scope="col">{{$c.Category}}</th><th scope="col" rst-num>{{$c.Measure}}</th></tr></thead>
+<tbody>{{range $c.Rows}}
+<tr><th scope="row">{{.Label}}</th><td rst-num>{{if .Missing}}{{T $L "rastrillo.ui.chart_no_data"}}{{else}}{{number $L .Value "places" $f.Places $f.Style}}{{end}}</td></tr>{{end}}
+</tbody>
+{{- if $c.HasGoal}}
+<tfoot><tr><th scope="row">{{$c.GoalLabel}}</th><td rst-num>{{number $L $c.GoalValue "places" $f.Places $f.Style}}</td></tr></tfoot>{{end}}
+</table>
+</div>
+</details>{{end}}
+</figure></div>{{end}}

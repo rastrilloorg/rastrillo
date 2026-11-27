@@ -48,6 +48,7 @@ func TestVendoredAssetsCarryTheLibraryBytes(t *testing.T) {
 	plain, _ := ThemeCSS("plain")
 	for name, want := range map[string][]byte{
 		"tokens.css":   TokensCSS(),
+		"data.css":     DataCSS(),
 		"theme.css":    plain,
 		"rastrillo.js": ShimJS(),
 		"light.js":     LightJS(),

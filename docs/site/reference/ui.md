@@ -42,7 +42,7 @@ checkbox and kebab a list row carries. See
 func Funcs(opts ...Option) template.FuncMap
 ```
 
-The function map the partials need, for an app that renders through its own template tree instead of [`ui.Pages`](#pages). It holds thirty: `dict`, `list`, `menuGroup`, `searchClear`, `icon`, `iconAssets`, `opt`, `stageArt`, `displayURL`, `safeHref`, `rowMenuItems`, `paginationItems`, `localizer`, `withL`, `strong`, `path`, `needs`, `neededScripts`, `pageStylesheet`, `pageScripts`, and the locale functions `T`, `Tf`, `Tbdi`, `Taround`, `number`, `displayValue`, `dateWords`, `money`, `actor` and `date`. Add your own on top; do not drop any. `rowMenuItems` checks `row-menu`'s items and stops the render on one it cannot show. Outside `ui.Pages`, `pageStylesheet` links the whole `tokens.css` at `/static/tokens.css`, without a hash, `pageScripts` gives every optional script, and `neededScripts` gives the three component scripts; bind your own `pageStylesheet` to link the hashed file or a slice from `Assets.Stylesheet`.
+The function map the partials need, for an app that renders through its own template tree instead of [`ui.Pages`](#pages). It holds thirty-five: `dict`, `list`, `menuGroup`, `searchClear`, `icon`, `iconAssets`, `opt`, `stageArt`, `displayURL`, `safeHref`, `rowMenuItems`, `paginationItems`, `localizer`, `withL`, `strong`, `path`, `needs`, `neededScripts`, `pageStylesheet`, `pageComponentStylesheets`, `pageScripts`, the data partials' `dataTable`, `chartBar`, `chartLine` and `chartSpark`, and the locale functions `T`, `Tf`, `Tbdi`, `Taround`, `number`, `displayValue`, `dateWords`, `money`, `actor` and `date`. Add your own on top; do not drop any. `rowMenuItems` checks `row-menu`'s items and stops the render on one it cannot show. Outside `ui.Pages`, `pageStylesheet` links the whole `tokens.css` at `/static/tokens.css`, without a hash, `pageComponentStylesheets` the whole `/static/data.css`, `pageScripts` gives every optional script, and `neededScripts` gives the three component scripts; bind your own `pageStylesheet` to link the hashed file or a slice from `Assets.Stylesheet`.
 
 `opt` reads an optional key off a partial's data, whether it is a map or
 a struct, and gives nil when it is missing. `Tbdi` is `Tf` for a
@@ -758,6 +758,7 @@ func CalendarJS() []byte
 func ShellJS() []byte
 func TransitionJS() []byte
 func ShellCSS() []byte
+func DataCSS() []byte
 ```
 
 Every file here but `rastrillo.js` and `live.js` is Fiesta's, from the
@@ -783,6 +784,13 @@ navigation of the topbar, sidebar and console shells, with the slide
 between pages, a way back that uses the browser's history when it can,
 and focus returned to the section you left. Only those three layouts
 link them, and both are optional.
+
+`DataCSS` is `data.css`, the stylesheet for data tables and charts. The
+layouts link it through `pageComponentStylesheets`, only on a page that
+shows a table or a chart; see
+[Templates](/docs/templates#tables-and-charts).
+
+`ComponentStylesheetsShown(layout, shared, page)` returns the component stylesheets, such as `data.css`, that a page built from those template sources would link under `ui.Pages`, read the way `ui.Pages` reads it. The app's own template functions are stood in for, so only what the templates say is read. `rastrillo doctor` uses it to find a layout that leaves a table or a chart unstyled.
 
 `AnchorJS` is `anchor.js`: in a browser without CSS anchor positioning
 it opens a dropdown's menu from its summary's other edge when the menu

@@ -40,7 +40,19 @@ const standalone = "scheme-menu/standalone"
 // differsFromFiesta names the example states a partial renders
 // differently on purpose, each with its reason. An entry that no
 // longer differs fails, so the map cannot outlive its reasons.
-var differsFromFiesta = map[string]string{}
+var differsFromFiesta = map[string]string{
+	"api-tokens/four-tokens-two-of-them-live":       tokenRoles,
+	"api-tokens/just-created-the-secret-shown-once": tokenRoles,
+}
+
+// tokenRoles is why the token list differs from Fiesta 1.9's: Fiesta
+// gave it table roles and names its blank columns, which takes three
+// new strings ("Tokens", "Status" and "Actions") through the copy
+// review and eleven translations. Rows without the roles render as
+// before (Fiesta 1.9.0's notes), so the partial keeps them until a
+// branch of its own.
+const tokenRoles = "the token list keeps 1.8's markup until its " +
+	"table roles' three strings are reviewed and translated"
 
 func TestEveryPartialMatchesItsFiestaExample(t *testing.T) {
 	seed := newSeedRender(t)

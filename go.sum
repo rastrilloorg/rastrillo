@@ -1,5 +1,7 @@
 amadan.net/rastrillo/fiesta v1.8.0 h1:mlCirW/SynX3HqYFEuxXVzsdQ8dlLpBEgstRMQpBwQY=
 amadan.net/rastrillo/fiesta v1.8.0/go.mod h1:LpO391W1dIRUxOIKklHm+bGyWXtlFyBRRPQCysb9LjY=
+amadan.net/rastrillo/fiesta v1.10.0 h1:nS38dlE+W/o2MMZms0TGI0kH30JJ3IaJtN7Mbro2lmk=
+amadan.net/rastrillo/fiesta v1.10.0/go.mod h1:LpO391W1dIRUxOIKklHm+bGyWXtlFyBRRPQCysb9LjY=
 amadan.net/rastrillo/rastrillo/money v0.1.0 h1:MxU4oqNrW8abxRTkgZBv24OYNpFnvonajNqeLIzmmaM=
 amadan.net/rastrillo/rastrillo/money v0.1.0/go.mod h1:cmgkjBEIQh1pFSYvQk0UU6oPYS8kSDypdT9+t4Flx0U=
 github.com/BurntSushi/toml v1.6.0 h1:dRaEfpa2VI55EwlIW72hMRHdWouJeRF7TPYhI+AUQjk=

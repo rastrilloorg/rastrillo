@@ -10,6 +10,18 @@ backwards from commits is a guess wearing a date.
 
 ## Unreleased
 
+**Upgrade: add one line to your layout so data tables and charts are styled.** The five shell layouts now link Fiesta's `data.css` on a page that shows a data table or a chart, with `{{range pageComponentStylesheets}}<link rel="stylesheet" href="{{path $ .}}">{{end}}` after the theme's link. An app made with `rastrillo new` has its own copy of its layout. Add the line to it before you use the new partials below, or they are unstyled. Then run `rastrillo doctor -fix` to copy `data.css` into `static/`. Until the file is there, no page links it. `rastrillo doctor` names a layout without the line when one of your pages shows a table or a chart.
+
+**Added: a data table and three charts.** `data-table` is a table of figures in a card. On a phone, scroll the card sideways to see every column. Row headers stay in view. Mark number columns with `Num`, link a column's head to sort by it, and add a row of totals with `Foot`. `chart-bar` draws values of zero or more as a table with a name, bar and value in each row. `chart-line` draws one series over evenly spaced points, with an optional goal line, and puts every value in a table under the plot. `sparkline` is a small line beside a caption you write. The charts are SVG drawn on the server, with no script, so a strict Content Security Policy does not block them. Pass numbers, not formatted text. The partials format each number for the page's language and round it only when you set `Places`. A missing value reads "No data" and is never drawn as 0. Each partial takes a dict, or a `chart.Table`, `chart.Bars`, `chart.Line` or `chart.Spark` from the new `chart` package as `Chart`. See Tables and charts in the templates guide.
+
+A page that shows none of them does not load `data.css`. A page that shows one links only the part of `data.css` it needs, within the same 16 kB first-load budget. In the column shell, a list with a 25-row table weighs 12.9 kB and a dashboard with two stats, a line and bars 13.1 kB. In the topbar, sidebar and console shells, a page that links `data.css` is allowed its `data.css` slice on top of the 16 kB budget. `perftest.FirstLoad` now weighs the slice and checks that it styles every table and chart hook the page shows, as it does for `tokens.css`. A live page links every page's slice, so its limit rises from 34,700 to 36,900 bytes.
+
+### Added: Fiesta 1.10.0
+
+Rastrillo now uses Fiesta 1.10.0. This release adds `data.css` and includes Fiesta 1.9.0's changes: an empty state has no dashed border, a card placed directly in a page has 16px of space above and below it, a disabled pagination step has no border, and a destructive menu item uses the danger colour. Apps that keep their own `tokens.css` get these changes with `rastrillo doctor -fix`.
+
+The API token list keeps Fiesta 1.8's markup for now. Fiesta 1.9 adds table roles to it for screen readers, which need three new strings; they will come in a later release.
+
 ## v0.50.0
 
 **Upgrade: the newer `golang.org/x` modules this release needs can break code that uses them directly.** Upgrading Rastrillo raises `x/crypto` to v0.59.0 and `x/net` to v0.63.0 in your app. `x/crypto` v0.59.0 removes `openpgp` and its subpackages, and no longer parses DSA SSH keys. In `x/net`, `quic.ApplicationError` is now `ConnectionCloseError`, `StreamErrorCode` is now `StreamError`, and several stream methods now return errors. Before upgrading, replace OpenPGP with a maintained package, stop parsing DSA SSH keys, and update any code that uses the renamed `quic` types or changed stream methods.

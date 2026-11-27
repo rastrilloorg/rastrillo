@@ -1,0 +1,33 @@
+{{/* data-table — figures in a card that scrolls sideways: ID, Title,
+     Columns[] (Label, Num, Href, Sort), Rows (one value per column,
+     the first the row's header); optional Foot, Empty, Dense, Bounded;
+     or Chart, a chart.Table.
+
+     Fiesta's data table (data.css, 1.10). A phone keeps every column:
+     the card scrolls, never the page, and the row headers stay pinned
+     at the inline start. The card is the one focusable region, named
+     by the heading, so a keyboard can scroll it.
+
+     A Num column's cells are written by {{number}} in the page's
+     locale, end-aligned in tabular figures; pass numbers, not text you
+     formatted. A cell may be a chart.Cell, or a dict with Value and
+     Href, to link it, as a row's name links to its record. A column
+     with an Href is sortable: its head links to the list sorted by it,
+     and Sort ("ascending" or "descending") marks the column the list
+     is sorted by, with the chevron. Foot is a row of totals, no longer
+     than the columns. With no rows the table keeps its head and says
+     Empty ("No weeks match."), or that there is no data yet.
+
+     Every value is checked before anything is written: a row with
+     the wrong number of cells stops the render with an error that
+     says which. */}}
+{{define "data-table"}}{{$L := localizer $}}{{$t := dataTable $}}<div rst-box-head><h2 id="{{$t.ID}}-h">{{$t.Title}}</h2></div>
+<div rst-card rst-table-scroll="{{if $t.Bounded}}bounded{{end}}" tabindex="0" role="region" aria-labelledby="{{$t.ID}}-h">
+<table rst-table="{{if $t.Dense}}dense{{end}}" aria-labelledby="{{$t.ID}}-h">
+<thead><tr>{{range $t.Columns}}<th scope="col"{{if .Num}} rst-num{{end}}{{with .Sort}} aria-sort="{{.}}"{{end}}>{{if .Href}}<a href="{{.Href}}">{{.Label}}{{icon "chevron-down"}}</a>{{else}}{{.Label}}{{end}}</th>{{end}}</tr></thead>
+<tbody>{{range $t.Rows}}<tr>{{range .}}{{if .Head}}<th scope="row"{{if .Num}} rst-num{{end}}>{{else}}<td{{if .Num}} rst-num{{end}}>{{end}}{{if .Href}}<a href="{{.Href}}">{{end}}{{if .Num}}{{number $L .Value}}{{else}}{{displayValue $L .Value}}{{end}}{{if .Href}}</a>{{end}}{{if .Head}}</th>{{else}}</td>{{end}}{{end}}</tr>{{else}}<tr rst-table-empty><td colspan="{{len $t.Columns}}">{{or $t.Empty (T $L "rastrillo.ui.chart_empty")}}</td></tr>{{end}}</tbody>
+{{- with $t.Foot}}
+<tfoot><tr>{{range .}}{{if .Head}}<th scope="row"{{if .Num}} rst-num{{end}}>{{else}}<td{{if .Num}} rst-num{{end}}>{{end}}{{if .Href}}<a href="{{.Href}}">{{end}}{{if .Num}}{{number $L .Value}}{{else}}{{displayValue $L .Value}}{{end}}{{if .Href}}</a>{{end}}{{if .Head}}</th>{{else}}</td>{{end}}{{end}}</tr></tfoot>{{end}}
+</table>
+</div>{{end}}
+

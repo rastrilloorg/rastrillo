@@ -49,6 +49,7 @@ func VendoredAssets(theme string) (map[string][]byte, bool) {
 		"tokens.css": TokensCSS(),
 		"theme.css":  themeCSS,
 		"shell.css":  ShellCSS(),
+		"data.css":   DataCSS(),
 	}
 	for _, name := range VendoredNames() {
 		if path.Ext(name) == ".js" {

@@ -7,6 +7,7 @@
 package tickets
 
 import (
+	"amadan.net/rastrillo/rastrillo/chart"
 	"amadan.net/rastrillo/rastrillo/tmpl/tmplrt"
 	"amadan.net/rastrillo/rastrillo/ui"
 	"bytes"
@@ -29,12 +30,15 @@ func init() {
 	tmplrt.Register("0f24630096c49b29aa43337714800bfc335d6d73609f8da91cb1893841aebf9c", bind_0f24630096c49b29)
 	tmplrt.Register("1073ec0d38c56faf597bf6b9a9656536883222dade5359abcb1a15605b60bb8f", bind_1073ec0d38c56faf)
 	tmplrt.Register("13171a839254134d00f632a28d18db413fdd7f660264baacd3bb2430efe14d93", bind_13171a839254134d)
+	tmplrt.Register("1634b17f4ecf1debe306922b14254772fb8930fd310595497072038e7c32ff56", bind_1634b17f4ecf1deb)
 	tmplrt.Register("1824615ebc0f69526863cb59910ef70b0463a8d91c84b2490b1cb42c14d96deb", bind_1824615ebc0f6952)
 	tmplrt.Register("1cd80f8ffc770b1d8aa043a8cd29314df595538ca2cbd6efdc9944034bd8a3f1", bind_1cd80f8ffc770b1d)
 	tmplrt.Register("1d5a2d72973107db765e5b078cbb4d67b35f7eba51f965efae543c0b05a869f0", bind_1d5a2d72973107db)
 	tmplrt.Register("20672c55a07cc47d202ee1213d4d35cb25fe32fb0e018b2eed5e08843edd5e2c", bind_20672c55a07cc47d)
 	tmplrt.Register("23e655118776ffdc6152ccf110aab549b851b71fe1c88d2f5aed3b1d1ad23d5c", bind_23e655118776ffdc)
 	tmplrt.Register("24f6f6b170dbb06f4f7b0c21005a609b6aa61e057f5d94ea548f79af94d63c96", bind_24f6f6b170dbb06f)
+	tmplrt.Register("250332dd5512c43281bed9b6122be18d2bbc100a602061985e772493a91cc3b7", bind_250332dd5512c432)
+	tmplrt.Register("2b0ccc015d3a9034304ebe9fe533f18116b133cd9a0a88aa009dac158e3c962e", bind_2b0ccc015d3a9034)
 	tmplrt.Register("31cb3007823cf32ebf79a32ce73ba3f9071eab06f9592a9b4cee6d3ad6474fc9", bind_31cb3007823cf32e)
 	tmplrt.Register("342f5d9dc0cfc75084b56450808e18b37443abd9be8b96b884a9f51487851c87", bind_342f5d9dc0cfc750)
 	tmplrt.Register("38bf6520640d9dfc17d40e99b67f9e087e9a53e3a64cd878dbd4f93610e1070f", bind_38bf6520640d9dfc)
@@ -75,6 +79,7 @@ func init() {
 	tmplrt.Register("73f5122c9a581587f6176839908efc9aceecb8984a01cfe7ae5aa6442327639e", bind_73f5122c9a581587)
 	tmplrt.Register("74dcb7c9cc20a8cd0db1ff57ef9ff9b5de6e9d6b9e546e0dd431e4361def5615", bind_74dcb7c9cc20a8cd)
 	tmplrt.Register("75872bf8c39825fad076bf4d515ddc20626b8ac1e618bc38f1a4005245ad9166", bind_75872bf8c39825fa)
+	tmplrt.Register("7663d4c67de71de295439b57f76d14bb3aa773cd2f6d631561900910fbb70711", bind_7663d4c67de71de2)
 	tmplrt.Register("77ca247387c83766ec664e420a325aac189359af8f369cee707e97185ba1d6b6", bind_77ca247387c83766)
 	tmplrt.Register("787d990b0a5fcb83f6cd197dba2234f772faf72e56d8cf8e874e0d0e4aaeb32e", bind_787d990b0a5fcb83)
 	tmplrt.Register("79a90e53b961a5abac36cd7ab4051bba16352767e69406d32d9d4e71406c6570", bind_79a90e53b961a5ab)
@@ -89,6 +94,7 @@ func init() {
 	tmplrt.Register("8e84db4a12da5f22b1fba8c3a29d12ad2b8f301d37ec27fd3c7b89ed7eae4419", bind_8e84db4a12da5f22)
 	tmplrt.Register("932530568cadf4d0fb26c1421bea3490ace3ba77be2f299984479da9eb3630c2", bind_932530568cadf4d0)
 	tmplrt.Register("96bdf2b5ade56abd7d3c23c6009db9dcd0a958a7d8407737b376b9144576dadb", bind_96bdf2b5ade56abd)
+	tmplrt.Register("9834bdbc8cbf763eee7e9192949ff25c041dd61bb9eb46b26e54eb76b8e5e3e3", bind_9834bdbc8cbf763e)
 	tmplrt.Register("98717b1a252f93a754ea23790c256a594cc9c817de9dd75668a50d6923fa46b0", bind_98717b1a252f93a7)
 	tmplrt.Register("9ad2f8749261fec7ed56266f20738f2278796ce8bb954421eff860e5d4337cf3", bind_9ad2f8749261fec7)
 	tmplrt.Register("a1b66b7e4058cd53f757e7b3d90a1235913e3cb58162280ad95fce6bd8251330", bind_a1b66b7e4058cd53)
@@ -109,6 +115,7 @@ func init() {
 	tmplrt.Register("c003f4adf65848a764f1d56ecf80efe0d156bbd39c040520af7b802f1bd2cce4", bind_c003f4adf65848a7)
 	tmplrt.Register("c06ed44f1184dc1333e99ba0040776f83f05fd9a5a9c6db81073ea1e50d2965b", bind_c06ed44f1184dc13)
 	tmplrt.Register("c38122c89e3ba228c2159b6dfbf22d906e850ecd1157be379ba1c04a18e0e38a", bind_c38122c89e3ba228)
+	tmplrt.Register("c49791ef381fd4b1229b26263c33e1c79f2843a32d1ead05cbd90c6a2781e516", bind_c49791ef381fd4b1)
 	tmplrt.Register("c5e5f758eb0c59b4a3459c962a2ffa74a1f406a0cc468c8174955fb8a524032b", bind_c5e5f758eb0c59b4)
 	tmplrt.Register("c7590ac83700031b3be3573dae0155ee5c93a6afdd59bf5ade508572f7223987", bind_c7590ac83700031b)
 	tmplrt.Register("cb1570905b2ef34a7f47a62a196c373b7bb9d0588fd794a254b42d869eb216c1", bind_cb1570905b2ef34a)
@@ -118,8 +125,10 @@ func init() {
 	tmplrt.Register("d12a5ada0c678fb2eddd7eb551b1dfb9d338e3eeeb57751c91eba43f26f6e5f9", bind_d12a5ada0c678fb2)
 	tmplrt.Register("d1dbe2f11f65b81e9be547cf08a4ac5f5dc6203f16030f6dd813868c0340c72f", bind_d1dbe2f11f65b81e)
 	tmplrt.Register("d36a134e4c20e2a002f0fcafd5e20b592d184b570c9a650fa506e0cb328772d0", bind_d36a134e4c20e2a0)
+	tmplrt.Register("d67443d1ee562b22073bb93f7f2ab6a7085a5c102607a4de807b061ade5a896d", bind_d67443d1ee562b22)
 	tmplrt.Register("d7096847caf9e0a237ed1bc8f5f809e9dd927934bda1b72323bc85411aad5629", bind_d7096847caf9e0a2)
 	tmplrt.Register("d815f33d3a90f814cf8c4020e01d3f657283854dbc8a01187b2d31cea0c2fbcd", bind_d815f33d3a90f814)
+	tmplrt.Register("d918a2ab9991e5b94ce803942b835cc95d8eefc71850068647aa71cd0710042d", bind_d918a2ab9991e5b9)
 	tmplrt.Register("dc310a2892314a5ba10c7080c916351304fe1c870d208942287432cd560f0e8c", bind_dc310a2892314a5b)
 	tmplrt.Register("e071ec706a9a8b5188a23ba19d697dda3a196bb7b5b4275e187500dfd6d8a334", bind_e071ec706a9a8b51)
 	tmplrt.Register("e38d9af5e5da0244e90ceb381fe387a8bd67cc99083e3cac5e798276232fce27", bind_e38d9af5e5da0244)
@@ -148,6 +157,10 @@ type templateFuncs struct {
 	Tbdi_a3eca208         func(...any) (any, error)
 	Tf_a3eca208           func(...any) (any, error)
 	actor_a3eca208        func(...any) (any, error)
+	chartBar_0b9f9587     func(any) (chart.BarsPlot, error)
+	chartLine_e8725114    func(any) (chart.LinePlot, error)
+	chartSpark_18eb7dea   func(any) (chart.SparkPlot, error)
+	dataTable_8ebe8b73    func(any) (chart.TablePlot, error)
 	dateWords_a3eca208    func(...any) (any, error)
 	dict_72aa8d8f         func(...any) (map[string]any, error)
 	displayValue_a3eca208 func(...any) (any, error)
@@ -349,6 +362,14 @@ func bind_13171a839254134d(map[string]any) (tmplrt.Exec, error) {
 	}, nil
 }
 
+// bind_1634b17f4ecf1deb binds "data-table.html".
+func bind_1634b17f4ecf1deb(map[string]any) (tmplrt.Exec, error) {
+	return func(b *bytes.Buffer, data any) (err error) {
+		defer tmplrt.Recover(&err, "data-table.html")
+		return exec_a21c07886afc8746(b, tmplrt.Data(data), nil, 0)
+	}, nil
+}
+
 // bind_1824615ebc0f6952 binds "signin".
 func bind_1824615ebc0f6952(funcs map[string]any) (tmplrt.Exec, error) {
 	fn := new(templateFuncs)
@@ -504,6 +525,22 @@ func bind_24f6f6b170dbb06f(map[string]any) (tmplrt.Exec, error) {
 	return func(b *bytes.Buffer, data any) (err error) {
 		defer tmplrt.Recover(&err, "job-status.html")
 		return exec_ab9cf25a4bf91d21(b, tmplrt.Data(data), nil, 0)
+	}, nil
+}
+
+// bind_250332dd5512c432 binds "chart-bar.html".
+func bind_250332dd5512c432(map[string]any) (tmplrt.Exec, error) {
+	return func(b *bytes.Buffer, data any) (err error) {
+		defer tmplrt.Recover(&err, "chart-bar.html")
+		return exec_517a756b773cf4ee(b, tmplrt.Data(data), nil, 0)
+	}, nil
+}
+
+// bind_2b0ccc015d3a9034 binds "sparkline.html".
+func bind_2b0ccc015d3a9034(map[string]any) (tmplrt.Exec, error) {
+	return func(b *bytes.Buffer, data any) (err error) {
+		defer tmplrt.Recover(&err, "sparkline.html")
+		return exec_581c142266a96d5e(b, tmplrt.Data(data), nil, 0)
 	}, nil
 }
 
@@ -1396,6 +1433,31 @@ func bind_75872bf8c39825fa(funcs map[string]any) (tmplrt.Exec, error) {
 	}, nil
 }
 
+// bind_7663d4c67de71de2 binds "chart-bar".
+func bind_7663d4c67de71de2(funcs map[string]any) (tmplrt.Exec, error) {
+	fn := new(templateFuncs)
+	var ok bool
+	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("T", funcs["T"])
+	}
+	if fn.chartBar_0b9f9587, ok = funcs["chartBar"].(func(any) (chart.BarsPlot, error)); !ok {
+		return nil, tmplrt.BindError("chartBar", funcs["chartBar"])
+	}
+	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
+		return nil, tmplrt.BindError("localizer", funcs["localizer"])
+	}
+	if fn.number_a3eca208, ok = funcs["number"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("number", funcs["number"])
+	}
+	if err := tmplrt.Holds(&facts_e59c8e4b5dca931f); err != nil {
+		return nil, err
+	}
+	return func(b *bytes.Buffer, data any) (err error) {
+		defer tmplrt.Recover(&err, "chart-bar")
+		return exec_e59c8e4b5dca931f(b, tmplrt.Data(data), fn, 0)
+	}, nil
+}
+
 // bind_77ca247387c83766 binds "dropdown.html".
 func bind_77ca247387c83766(map[string]any) (tmplrt.Exec, error) {
 	return func(b *bytes.Buffer, data any) (err error) {
@@ -1664,6 +1726,14 @@ func bind_96bdf2b5ade56abd(map[string]any) (tmplrt.Exec, error) {
 	return func(b *bytes.Buffer, data any) (err error) {
 		defer tmplrt.Recover(&err, "meter.html")
 		return exec_55ad072ac84916d6(b, tmplrt.Data(data), nil, 0)
+	}, nil
+}
+
+// bind_9834bdbc8cbf763e binds "chart-line.html".
+func bind_9834bdbc8cbf763e(map[string]any) (tmplrt.Exec, error) {
+	return func(b *bytes.Buffer, data any) (err error) {
+		defer tmplrt.Recover(&err, "chart-line.html")
+		return exec_e60d43a8a6b36f41(b, tmplrt.Data(data), nil, 0)
 	}, nil
 }
 
@@ -1978,6 +2048,34 @@ func bind_c38122c89e3ba228(funcs map[string]any) (tmplrt.Exec, error) {
 	}, nil
 }
 
+// bind_c49791ef381fd4b1 binds "chart-line".
+func bind_c49791ef381fd4b1(funcs map[string]any) (tmplrt.Exec, error) {
+	fn := new(templateFuncs)
+	var ok bool
+	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("T", funcs["T"])
+	}
+	if fn.Tf_a3eca208, ok = funcs["Tf"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("Tf", funcs["Tf"])
+	}
+	if fn.chartLine_e8725114, ok = funcs["chartLine"].(func(any) (chart.LinePlot, error)); !ok {
+		return nil, tmplrt.BindError("chartLine", funcs["chartLine"])
+	}
+	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
+		return nil, tmplrt.BindError("localizer", funcs["localizer"])
+	}
+	if fn.number_a3eca208, ok = funcs["number"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("number", funcs["number"])
+	}
+	if err := tmplrt.Holds(&facts_d0929d9eb3939c2e); err != nil {
+		return nil, err
+	}
+	return func(b *bytes.Buffer, data any) (err error) {
+		defer tmplrt.Recover(&err, "chart-line")
+		return exec_d0929d9eb3939c2e(b, tmplrt.Data(data), fn, 0)
+	}, nil
+}
+
 // bind_c5e5f758eb0c59b4 binds "content".
 func bind_c5e5f758eb0c59b4(funcs map[string]any) (tmplrt.Exec, error) {
 	fn := new(templateFuncs)
@@ -2175,6 +2273,22 @@ func bind_d36a134e4c20e2a0(funcs map[string]any) (tmplrt.Exec, error) {
 	}, nil
 }
 
+// bind_d67443d1ee562b22 binds "sparkline".
+func bind_d67443d1ee562b22(funcs map[string]any) (tmplrt.Exec, error) {
+	fn := new(templateFuncs)
+	var ok bool
+	if fn.chartSpark_18eb7dea, ok = funcs["chartSpark"].(func(any) (chart.SparkPlot, error)); !ok {
+		return nil, tmplrt.BindError("chartSpark", funcs["chartSpark"])
+	}
+	if err := tmplrt.Holds(&facts_46b0dc9bb8b51e80); err != nil {
+		return nil, err
+	}
+	return func(b *bytes.Buffer, data any) (err error) {
+		defer tmplrt.Recover(&err, "sparkline")
+		return exec_46b0dc9bb8b51e80(b, tmplrt.Data(data), fn, 0)
+	}, nil
+}
+
 // bind_d7096847caf9e0a2 binds "dropdown".
 func bind_d7096847caf9e0a2(funcs map[string]any) (tmplrt.Exec, error) {
 	fn := new(templateFuncs)
@@ -2199,6 +2313,37 @@ func bind_d815f33d3a90f814(map[string]any) (tmplrt.Exec, error) {
 	return func(b *bytes.Buffer, data any) (err error) {
 		defer tmplrt.Recover(&err, "choice-field.html")
 		return exec_5bae48b7db798602(b, tmplrt.Data(data), nil, 0)
+	}, nil
+}
+
+// bind_d918a2ab9991e5b9 binds "data-table".
+func bind_d918a2ab9991e5b9(funcs map[string]any) (tmplrt.Exec, error) {
+	fn := new(templateFuncs)
+	var ok bool
+	if fn.T_a3eca208, ok = funcs["T"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("T", funcs["T"])
+	}
+	if fn.dataTable_8ebe8b73, ok = funcs["dataTable"].(func(any) (chart.TablePlot, error)); !ok {
+		return nil, tmplrt.BindError("dataTable", funcs["dataTable"])
+	}
+	if fn.displayValue_a3eca208, ok = funcs["displayValue"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("displayValue", funcs["displayValue"])
+	}
+	if fn.icon_bd1e407c, ok = funcs["icon"].(func(string) template.HTML); !ok {
+		return nil, tmplrt.BindError("icon", funcs["icon"])
+	}
+	if fn.localizer_634df8c4, ok = funcs["localizer"].(func(any) *ui.Localizer); !ok {
+		return nil, tmplrt.BindError("localizer", funcs["localizer"])
+	}
+	if fn.number_a3eca208, ok = funcs["number"].(func(...any) (any, error)); !ok {
+		return nil, tmplrt.BindError("number", funcs["number"])
+	}
+	if err := tmplrt.Holds(&facts_fe23b68e4d9740ce); err != nil {
+		return nil, err
+	}
+	return func(b *bytes.Buffer, data any) (err error) {
+		defer tmplrt.Recover(&err, "data-table")
+		return exec_fe23b68e4d9740ce(b, tmplrt.Data(data), fn, 0)
 	}, nil
 }
 
@@ -4368,6 +4513,65 @@ func exec_452843fb8e86ab18(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs
 	return nil
 }
 
+// exec_46b0dc9bb8b51e80 renders "sparkline".
+func exec_46b0dc9bb8b51e80(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
+	root := dot
+	v1, err := fn.chartSpark_18eb7dea(tmplrt.Arg(root))
+	if err != nil {
+		return tmplrt.ExecError("sparkline", "chartSpark $", tmplrt.CallError("chartSpark", err))
+	}
+	x1 := v1
+	_ = x1
+	b.WriteString("<figure rst-spark>")
+	v2 := !x1.NoData
+	if v2 {
+		b.WriteString("<svg viewBox=\"0 0 100 24\" preserveAspectRatio=\"none\" aria-hidden=\"true\" focusable=\"false\">")
+		v3 := x1.Runs
+		for v4 := range v3 {
+			dot := &v3[v4]
+			_ = dot
+			b.WriteString("<polyline rst-chart-line points=\"")
+			tmplrt.WriteAttrEscaped(b, (*dot))
+			b.WriteString("\"/>")
+		}
+		v5 := x1.Lone
+		for v6 := range v5 {
+			dot := &v5[v6]
+			_ = dot
+			b.WriteString("<path rst-chart-dot d=\"")
+			tmplrt.WriteAttrEscaped(b, (*dot))
+			b.WriteString("\"/>")
+		}
+		b.WriteString("<path rst-chart-ring d=\"")
+		tmplrt.WriteAttrEscaped(b, x1.End)
+		b.WriteString("\"/><path rst-chart-dot d=\"")
+		tmplrt.WriteAttrEscaped(b, x1.End)
+		b.WriteString("\"/></svg>")
+	}
+	b.WriteString("\n<figcaption><strong>")
+	tmplrt.WriteHTMLEscaped(b, x1.Period)
+	b.WriteString("</strong> ")
+	tmplrt.WriteHTMLEscaped(b, x1.Desc)
+	b.WriteString("</figcaption></figure>")
+	return nil
+}
+
+// facts_46b0dc9bb8b51e80 is what exec_46b0dc9bb8b51e80 assumes of the types it reads.
+var facts_46b0dc9bb8b51e80 = tmplrt.Facts{
+	Funcs: map[string]reflect.Type{
+		"chartSpark_18eb7dea": reflect.TypeFor[func(any) (chart.SparkPlot, error)](),
+	},
+	Facts: []tmplrt.Fact{
+		{Func: "chartSpark_18eb7dea", Type: "amadan.net/rastrillo/rastrillo/chart.SparkPlot struct"},
+		{Func: "chartSpark_18eb7dea", Path: []string{".NoData"}, Type: "bool"},
+		{Func: "chartSpark_18eb7dea", Path: []string{".Runs"}, Type: "[]string"},
+		{Func: "chartSpark_18eb7dea", Path: []string{".Lone"}, Type: "[]string"},
+		{Func: "chartSpark_18eb7dea", Path: []string{".End"}, Type: "string"},
+		{Func: "chartSpark_18eb7dea", Path: []string{".Period"}, Type: "string"},
+		{Func: "chartSpark_18eb7dea", Path: []string{".Desc"}, Type: "string"},
+	},
+}
+
 // exec_4976ad99edc8a465 renders "field-date".
 func exec_4976ad99edc8a465(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
 	root := dot
@@ -4838,6 +5042,12 @@ var facts_4d367691bf74e3e0 = tmplrt.Facts{
 
 // exec_4f06e107ff5efd20 renders "seg-tabs.html".
 func exec_4f06e107ff5efd20(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
+	b.WriteString("\n\n")
+	return nil
+}
+
+// exec_517a756b773cf4ee renders "chart-bar.html".
+func exec_517a756b773cf4ee(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
 	b.WriteString("\n\n")
 	return nil
 }
@@ -5460,6 +5670,12 @@ var facts_57e209a516540d04_b6cf1f3e = tmplrt.Facts{
 		{Path: []string{".Return"}, Type: "string"},
 		{Path: []string{".Data"}, Type: "interface {}"},
 	},
+}
+
+// exec_581c142266a96d5e renders "sparkline.html".
+func exec_581c142266a96d5e(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
+	b.WriteString("\n\n")
+	return nil
 }
 
 // exec_5bae48b7db798602 renders "choice-field.html".
@@ -10125,6 +10341,12 @@ var facts_9bf03fab7cbd1fbf = tmplrt.Facts{
 	},
 }
 
+// exec_a21c07886afc8746 renders "data-table.html".
+func exec_a21c07886afc8746(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
+	b.WriteString("\n\n\n")
+	return nil
+}
+
 // exec_a4f7ff492cb16382 renders "layout".
 func exec_a4f7ff492cb16382(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
 	root := dot
@@ -12195,6 +12417,265 @@ var facts_cb7841979300ac80 = tmplrt.Facts{
 func exec_d01cd085a02fd11b(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
 	b.WriteString("\n\n")
 	return nil
+}
+
+// exec_d0929d9eb3939c2e renders "chart-line".
+func exec_d0929d9eb3939c2e(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
+	root := dot
+	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
+	x1 := v1
+	_ = x1
+	v2, err := fn.chartLine_e8725114(tmplrt.Arg(root))
+	if err != nil {
+		return tmplrt.ExecError("chart-line", "chartLine $", tmplrt.CallError("chartLine", err))
+	}
+	x2 := v2
+	_ = x2
+	x3 := x2.Format
+	_ = x3
+	b.WriteString("<div rst-box-head><h2 id=\"")
+	tmplrt.WriteAttrEscaped(b, x2.ID)
+	b.WriteString("-h\">")
+	tmplrt.WriteHTMLEscaped(b, x2.Title)
+	b.WriteString("</h2></div>\n<div rst-card><figure rst-chart aria-labelledby=\"")
+	tmplrt.WriteAttrEscaped(b, x2.ID)
+	b.WriteString("-h\" aria-describedby=\"")
+	tmplrt.WriteAttrEscaped(b, x2.ID)
+	b.WriteString("-d\">\n<p rst-chart-desc id=\"")
+	tmplrt.WriteAttrEscaped(b, x2.ID)
+	b.WriteString("-d\">")
+	tmplrt.WriteHTMLEscaped(b, x2.Desc)
+	b.WriteString("</p>\n")
+	if x2.NoData {
+		b.WriteString("<p rst-chart-empty>")
+		v3 := tmplrt.ValueArg(reflect.ValueOf(x2.Empty))
+		if !tmplrt.Truth(v3) {
+			v4, err := fn.T_a3eca208(x1, "rastrillo.ui.chart_empty")
+			if err != nil {
+				return tmplrt.ExecError("chart-line", "T $L \"rastrillo.ui.chart_empty\"", tmplrt.CallError("T", err))
+			}
+			v5 := reflect.ValueOf(v4)
+			v3 = tmplrt.ValueArg(v5)
+		}
+		v6 := tmplrt.Unwrap(v3)
+		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v6)))
+		b.WriteString("</p>")
+	} else {
+		b.WriteString("<div rst-chart-plot aria-hidden=\"true\">\n<div rst-chart-y>")
+		v7 := x2.Ticks
+		for v8 := range v7 {
+			dot := &v7[v8]
+			_ = dot
+			b.WriteString("<span>")
+			v9, err := fn.number_a3eca208(x1, (*dot), x2.TickFormat.Style)
+			if err != nil {
+				return tmplrt.ExecError("chart-line", "number $L . $c.TickFormat.Style", tmplrt.CallError("number", err))
+			}
+			v10 := reflect.ValueOf(v9)
+			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v10)))
+			b.WriteString("</span>")
+		}
+		b.WriteString("</div>\n<svg viewBox=\"0 0 1000 1000\" preserveAspectRatio=\"none\" focusable=\"false\">")
+		v11 := x2.Grid
+		if v11 != "" {
+			dot := v11
+			_ = dot
+			b.WriteString("<path rst-chart-grid d=\"")
+			tmplrt.WriteAttrEscaped(b, dot)
+			b.WriteString("\"/>")
+		}
+		b.WriteString("<path rst-chart-base d=\"")
+		tmplrt.WriteAttrEscaped(b, x2.Base)
+		b.WriteString("\"/>")
+		v12 := x2.Goal
+		if v12 != "" {
+			dot := v12
+			_ = dot
+			b.WriteString("<path rst-chart-goal d=\"")
+			tmplrt.WriteAttrEscaped(b, dot)
+			b.WriteString("\"/>")
+		}
+		v13 := x2.Runs
+		for v14 := range v13 {
+			dot := &v13[v14]
+			_ = dot
+			b.WriteString("<polyline rst-chart-line points=\"")
+			tmplrt.WriteAttrEscaped(b, (*dot))
+			b.WriteString("\"/>")
+		}
+		v15 := x2.Lone
+		for v16 := range v15 {
+			dot := &v15[v16]
+			_ = dot
+			b.WriteString("<path rst-chart-dot d=\"")
+			tmplrt.WriteAttrEscaped(b, (*dot))
+			b.WriteString("\"/>")
+		}
+		b.WriteString("<path rst-chart-ring d=\"")
+		tmplrt.WriteAttrEscaped(b, x2.End)
+		b.WriteString("\"/><path rst-chart-dot d=\"")
+		tmplrt.WriteAttrEscaped(b, x2.End)
+		b.WriteString("\"/></svg>")
+		if x2.Hover {
+			b.WriteString("\n<div rst-chart-hits>")
+			v17 := x2.Rows
+			for v18 := range v17 {
+				dot := &v17[v18]
+				_ = dot
+				b.WriteString("<span")
+				v19 := !dot.Missing
+				if v19 {
+					b.WriteString(" title=\"")
+					v20, err := fn.number_a3eca208(x1, dot.Value, "places", x3.Places, x3.Style)
+					if err != nil {
+						return tmplrt.ExecError("chart-line", "number $L .Value \"places\" $f.Places $f.Style", tmplrt.CallError("number", err))
+					}
+					v21 := reflect.ValueOf(v20)
+					v22, err := fn.Tf_a3eca208(x1, "rastrillo.ui.chart_point", "label", dot.Label, "value", tmplrt.Arg(v21))
+					if err != nil {
+						return tmplrt.ExecError("chart-line", "Tf $L \"rastrillo.ui.chart_point\" \"label\" .Label \"value\" (number $L .Value \"places\" $f.Places $f.Style)", tmplrt.CallError("Tf", err))
+					}
+					v23 := reflect.ValueOf(v22)
+					b.WriteString(tmplrt.AttrEscaper(tmplrt.Arg(v23)))
+					b.WriteString("\"")
+				}
+				b.WriteString("></span>")
+			}
+			b.WriteString("</div>")
+		}
+		b.WriteString("\n<div rst-chart-x>")
+		v24 := x2.X
+		for v25 := range v24 {
+			dot := &v24[v25]
+			_ = dot
+			b.WriteString("<span")
+			if dot.Keep {
+				b.WriteString(" rst-chart-keep")
+			}
+			b.WriteString(">")
+			tmplrt.WriteHTMLEscaped(b, dot.Text)
+			b.WriteString("</span>")
+		}
+		b.WriteString("</div>\n</div>")
+	}
+	if x2.HasGoal {
+		b.WriteString("\n<p rst-chart-key>")
+		v26, err := fn.number_a3eca208(x1, x2.GoalValue, "places", x3.Places, x3.Style)
+		if err != nil {
+			return tmplrt.ExecError("chart-line", "number $L $c.GoalValue \"places\" $f.Places $f.Style", tmplrt.CallError("number", err))
+		}
+		v27 := reflect.ValueOf(v26)
+		v28, err := fn.Tf_a3eca208(x1, "rastrillo.ui.chart_point", "label", x2.GoalLabel, "value", tmplrt.Arg(v27))
+		if err != nil {
+			return tmplrt.ExecError("chart-line", "Tf $L \"rastrillo.ui.chart_point\" \"label\" $c.GoalLabel \"value\" (number $L $c.GoalValue \"places\" $f.Places $f.Style)", tmplrt.CallError("Tf", err))
+		}
+		v29 := reflect.ValueOf(v28)
+		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v29)))
+		b.WriteString("</p>")
+	}
+	if len(x2.Rows) > 0 {
+		b.WriteString("\n<details rst-chart-data><summary>")
+		v30, err := fn.T_a3eca208(x1, "rastrillo.ui.chart_numbers")
+		if err != nil {
+			return tmplrt.ExecError("chart-line", "T $L \"rastrillo.ui.chart_numbers\"", tmplrt.CallError("T", err))
+		}
+		v31 := reflect.ValueOf(v30)
+		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v31)))
+		b.WriteString("</summary>\n<div rst-table-scroll tabindex=\"0\" role=\"region\" aria-labelledby=\"")
+		tmplrt.WriteAttrEscaped(b, x2.ID)
+		b.WriteString("-h\">\n<table rst-table=\"dense\" aria-labelledby=\"")
+		tmplrt.WriteAttrEscaped(b, x2.ID)
+		b.WriteString("-h\">\n<thead><tr><th scope=\"col\">")
+		tmplrt.WriteHTMLEscaped(b, x2.Category)
+		b.WriteString("</th><th scope=\"col\" rst-num>")
+		tmplrt.WriteHTMLEscaped(b, x2.Measure)
+		b.WriteString("</th></tr></thead>\n<tbody>")
+		v32 := x2.Rows
+		for v33 := range v32 {
+			dot := &v32[v33]
+			_ = dot
+			b.WriteString("\n<tr><th scope=\"row\">")
+			tmplrt.WriteHTMLEscaped(b, dot.Label)
+			b.WriteString("</th><td rst-num>")
+			if dot.Missing {
+				v34, err := fn.T_a3eca208(x1, "rastrillo.ui.chart_no_data")
+				if err != nil {
+					return tmplrt.ExecError("chart-line", "T $L \"rastrillo.ui.chart_no_data\"", tmplrt.CallError("T", err))
+				}
+				v35 := reflect.ValueOf(v34)
+				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v35)))
+			} else {
+				v36, err := fn.number_a3eca208(x1, dot.Value, "places", x3.Places, x3.Style)
+				if err != nil {
+					return tmplrt.ExecError("chart-line", "number $L .Value \"places\" $f.Places $f.Style", tmplrt.CallError("number", err))
+				}
+				v37 := reflect.ValueOf(v36)
+				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v37)))
+			}
+			b.WriteString("</td></tr>")
+		}
+		b.WriteString("\n</tbody>")
+		if x2.HasGoal {
+			b.WriteString("\n<tfoot><tr><th scope=\"row\">")
+			tmplrt.WriteHTMLEscaped(b, x2.GoalLabel)
+			b.WriteString("</th><td rst-num>")
+			v38, err := fn.number_a3eca208(x1, x2.GoalValue, "places", x3.Places, x3.Style)
+			if err != nil {
+				return tmplrt.ExecError("chart-line", "number $L $c.GoalValue \"places\" $f.Places $f.Style", tmplrt.CallError("number", err))
+			}
+			v39 := reflect.ValueOf(v38)
+			b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v39)))
+			b.WriteString("</td></tr></tfoot>")
+		}
+		b.WriteString("\n</table>\n</div>\n</details>")
+	}
+	b.WriteString("\n</figure></div>")
+	return nil
+}
+
+// facts_d0929d9eb3939c2e is what exec_d0929d9eb3939c2e assumes of the types it reads.
+var facts_d0929d9eb3939c2e = tmplrt.Facts{
+	Funcs: map[string]reflect.Type{
+		"chartLine_e8725114": reflect.TypeFor[func(any) (chart.LinePlot, error)](),
+		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
+	},
+	Facts: []tmplrt.Fact{
+		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
+		{Func: "chartLine_e8725114", Type: "amadan.net/rastrillo/rastrillo/chart.LinePlot struct"},
+		{Func: "chartLine_e8725114", Path: []string{".Format"}, Type: "amadan.net/rastrillo/rastrillo/chart.Format struct"},
+		{Func: "chartLine_e8725114", Path: []string{".ID"}, Type: "string"},
+		{Func: "chartLine_e8725114", Path: []string{".Title"}, Type: "string"},
+		{Func: "chartLine_e8725114", Path: []string{".Desc"}, Type: "string"},
+		{Func: "chartLine_e8725114", Path: []string{".NoData"}, Type: "bool"},
+		{Func: "chartLine_e8725114", Path: []string{".Empty"}, Type: "string"},
+		{Func: "chartLine_e8725114", Path: []string{".Ticks"}, Type: "[]amadan.net/rastrillo/rastrillo/number.Decimal"},
+		{Func: "chartLine_e8725114", Path: []string{".Ticks", "[]"}, Type: "amadan.net/rastrillo/rastrillo/number.Decimal string"},
+		{Func: "chartLine_e8725114", Path: []string{".TickFormat"}, Type: "amadan.net/rastrillo/rastrillo/chart.Format struct"},
+		{Func: "chartLine_e8725114", Path: []string{".TickFormat", ".Style"}, Type: "string"},
+		{Func: "chartLine_e8725114", Path: []string{".Grid"}, Type: "string"},
+		{Func: "chartLine_e8725114", Path: []string{".Base"}, Type: "string"},
+		{Func: "chartLine_e8725114", Path: []string{".Goal"}, Type: "string"},
+		{Func: "chartLine_e8725114", Path: []string{".Runs"}, Type: "[]string"},
+		{Func: "chartLine_e8725114", Path: []string{".Lone"}, Type: "[]string"},
+		{Func: "chartLine_e8725114", Path: []string{".End"}, Type: "string"},
+		{Func: "chartLine_e8725114", Path: []string{".Hover"}, Type: "bool"},
+		{Func: "chartLine_e8725114", Path: []string{".Rows"}, Type: "[]amadan.net/rastrillo/rastrillo/chart.Row"},
+		{Func: "chartLine_e8725114", Path: []string{".Rows", "[]"}, Type: "amadan.net/rastrillo/rastrillo/chart.Row struct"},
+		{Func: "chartLine_e8725114", Path: []string{".Rows", "[]", "&.Missing"}, Type: "bool"},
+		{Func: "chartLine_e8725114", Path: []string{".Rows", "[]", "&.Label"}, Type: "string"},
+		{Func: "chartLine_e8725114", Path: []string{".Rows", "[]", "&.Value"}, Type: "amadan.net/rastrillo/rastrillo/number.Decimal string"},
+		{Func: "chartLine_e8725114", Path: []string{".Format", ".Places"}, Type: "int"},
+		{Func: "chartLine_e8725114", Path: []string{".Format", ".Style"}, Type: "string"},
+		{Func: "chartLine_e8725114", Path: []string{".X"}, Type: "[]amadan.net/rastrillo/rastrillo/chart.AxisLabel"},
+		{Func: "chartLine_e8725114", Path: []string{".X", "[]"}, Type: "amadan.net/rastrillo/rastrillo/chart.AxisLabel struct"},
+		{Func: "chartLine_e8725114", Path: []string{".X", "[]", "&.Keep"}, Type: "bool"},
+		{Func: "chartLine_e8725114", Path: []string{".X", "[]", "&.Text"}, Type: "string"},
+		{Func: "chartLine_e8725114", Path: []string{".HasGoal"}, Type: "bool"},
+		{Func: "chartLine_e8725114", Path: []string{".GoalLabel"}, Type: "string"},
+		{Func: "chartLine_e8725114", Path: []string{".GoalValue"}, Type: "amadan.net/rastrillo/rastrillo/number.Decimal string"},
+		{Func: "chartLine_e8725114", Path: []string{".Category"}, Type: "string"},
+		{Func: "chartLine_e8725114", Path: []string{".Measure"}, Type: "string"},
+	},
 }
 
 // exec_d1285cef9f043c97 renders "form-foot".
@@ -14958,6 +15439,149 @@ var facts_e1bbbda806c9e1c9 = tmplrt.Facts{
 	Facts: []tmplrt.Fact{
 		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
 	},
+}
+
+// exec_e59c8e4b5dca931f renders "chart-bar".
+func exec_e59c8e4b5dca931f(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
+	root := dot
+	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
+	x1 := v1
+	_ = x1
+	v2, err := fn.chartBar_0b9f9587(tmplrt.Arg(root))
+	if err != nil {
+		return tmplrt.ExecError("chart-bar", "chartBar $", tmplrt.CallError("chartBar", err))
+	}
+	x2 := v2
+	_ = x2
+	b.WriteString("<div rst-box-head><h2 id=\"")
+	tmplrt.WriteAttrEscaped(b, x2.ID)
+	b.WriteString("-h\">")
+	tmplrt.WriteHTMLEscaped(b, x2.Title)
+	b.WriteString("</h2></div>\n<div rst-card><figure rst-chart aria-labelledby=\"")
+	tmplrt.WriteAttrEscaped(b, x2.ID)
+	b.WriteString("-h\"")
+	if x2.Desc != "" {
+		b.WriteString(" aria-describedby=\"")
+		tmplrt.WriteAttrEscaped(b, x2.ID)
+		b.WriteString("-d\"")
+	}
+	b.WriteString(">")
+	v3 := x2.Desc
+	if v3 != "" {
+		dot := v3
+		_ = dot
+		b.WriteString("\n<p rst-chart-desc id=\"")
+		tmplrt.WriteAttrEscaped(b, x2.ID)
+		b.WriteString("-d\">")
+		tmplrt.WriteHTMLEscaped(b, dot)
+		b.WriteString("</p>")
+	}
+	b.WriteString("\n")
+	if len(x2.Rows) > 0 {
+		b.WriteString("<div rst-table-scroll tabindex=\"0\" role=\"region\" aria-labelledby=\"")
+		tmplrt.WriteAttrEscaped(b, x2.ID)
+		b.WriteString("-h\">\n<table rst-table=\"bars\" aria-labelledby=\"")
+		tmplrt.WriteAttrEscaped(b, x2.ID)
+		b.WriteString("-h\"")
+		if x2.Desc != "" {
+			b.WriteString(" aria-describedby=\"")
+			tmplrt.WriteAttrEscaped(b, x2.ID)
+			b.WriteString("-d\"")
+		}
+		b.WriteString(">\n<thead><tr><th scope=\"col\">")
+		tmplrt.WriteHTMLEscaped(b, x2.Category)
+		b.WriteString("</th><th scope=\"col\"><span class=\"rst-sr-only\">")
+		v4, err := fn.T_a3eca208(x1, "rastrillo.ui.chart_bar")
+		if err != nil {
+			return tmplrt.ExecError("chart-bar", "T $L \"rastrillo.ui.chart_bar\"", tmplrt.CallError("T", err))
+		}
+		v5 := reflect.ValueOf(v4)
+		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v5)))
+		b.WriteString("</span></th><th scope=\"col\" rst-num>")
+		tmplrt.WriteHTMLEscaped(b, x2.Measure)
+		b.WriteString("</th></tr></thead>\n<tbody>")
+		v6 := x2.Rows
+		for v7 := range v6 {
+			dot := &v6[v7]
+			_ = dot
+			b.WriteString("\n<tr><th scope=\"row\">")
+			tmplrt.WriteHTMLEscaped(b, dot.Label)
+			b.WriteString("</th><td rst-table-bar>")
+			v8 := !dot.Missing
+			if v8 {
+				b.WriteString("<svg viewBox=\"0 0 1000 1\" preserveAspectRatio=\"none\" aria-hidden=\"true\" focusable=\"false\"><rect width=\"")
+				tmplrt.WriteAttrEscaped(b, dot.Width)
+				b.WriteString("\" height=\"1\"/></svg>")
+			}
+			b.WriteString("</td><td rst-num>")
+			if dot.Missing {
+				v9, err := fn.T_a3eca208(x1, "rastrillo.ui.chart_no_data")
+				if err != nil {
+					return tmplrt.ExecError("chart-bar", "T $L \"rastrillo.ui.chart_no_data\"", tmplrt.CallError("T", err))
+				}
+				v10 := reflect.ValueOf(v9)
+				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v10)))
+			} else {
+				v11, err := fn.number_a3eca208(x1, dot.Value, "places", x2.Format.Places, x2.Format.Style)
+				if err != nil {
+					return tmplrt.ExecError("chart-bar", "number $L .Value \"places\" $c.Format.Places $c.Format.Style", tmplrt.CallError("number", err))
+				}
+				v12 := reflect.ValueOf(v11)
+				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v12)))
+			}
+			b.WriteString("</td></tr>")
+		}
+		b.WriteString("\n</tbody>\n</table>\n</div>")
+	} else {
+		b.WriteString("<p rst-chart-empty>")
+		v13 := tmplrt.ValueArg(reflect.ValueOf(x2.Empty))
+		if !tmplrt.Truth(v13) {
+			v14, err := fn.T_a3eca208(x1, "rastrillo.ui.chart_empty")
+			if err != nil {
+				return tmplrt.ExecError("chart-bar", "T $L \"rastrillo.ui.chart_empty\"", tmplrt.CallError("T", err))
+			}
+			v15 := reflect.ValueOf(v14)
+			v13 = tmplrt.ValueArg(v15)
+		}
+		v16 := tmplrt.Unwrap(v13)
+		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v16)))
+		b.WriteString("</p>")
+	}
+	b.WriteString("\n</figure></div>")
+	return nil
+}
+
+// facts_e59c8e4b5dca931f is what exec_e59c8e4b5dca931f assumes of the types it reads.
+var facts_e59c8e4b5dca931f = tmplrt.Facts{
+	Funcs: map[string]reflect.Type{
+		"chartBar_0b9f9587":  reflect.TypeFor[func(any) (chart.BarsPlot, error)](),
+		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
+	},
+	Facts: []tmplrt.Fact{
+		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
+		{Func: "chartBar_0b9f9587", Type: "amadan.net/rastrillo/rastrillo/chart.BarsPlot struct"},
+		{Func: "chartBar_0b9f9587", Path: []string{".ID"}, Type: "string"},
+		{Func: "chartBar_0b9f9587", Path: []string{".Title"}, Type: "string"},
+		{Func: "chartBar_0b9f9587", Path: []string{".Desc"}, Type: "string"},
+		{Func: "chartBar_0b9f9587", Path: []string{".Rows"}, Type: "[]amadan.net/rastrillo/rastrillo/chart.BarRow"},
+		{Func: "chartBar_0b9f9587", Path: []string{".Category"}, Type: "string"},
+		{Func: "chartBar_0b9f9587", Path: []string{".Measure"}, Type: "string"},
+		{Func: "chartBar_0b9f9587", Path: []string{".Rows", "[]"}, Type: "amadan.net/rastrillo/rastrillo/chart.BarRow struct"},
+		{Func: "chartBar_0b9f9587", Path: []string{".Rows", "[]", "&.Label"}, Type: "string"},
+		{Func: "chartBar_0b9f9587", Path: []string{".Rows", "[]", "&.Missing"}, Type: "bool"},
+		{Func: "chartBar_0b9f9587", Path: []string{".Rows", "[]", "&.Width"}, Type: "string"},
+		{Func: "chartBar_0b9f9587", Path: []string{".Rows", "[]", "&.Value"}, Type: "amadan.net/rastrillo/rastrillo/number.Decimal string"},
+		{Func: "chartBar_0b9f9587", Path: []string{".Format"}, Type: "amadan.net/rastrillo/rastrillo/chart.Format struct"},
+		{Func: "chartBar_0b9f9587", Path: []string{".Format", ".Places"}, Type: "int"},
+		{Func: "chartBar_0b9f9587", Path: []string{".Format", ".Style"}, Type: "string"},
+		{Func: "chartBar_0b9f9587", Path: []string{".Empty"}, Type: "string"},
+	},
+}
+
+// exec_e60d43a8a6b36f41 renders "chart-line.html".
+func exec_e60d43a8a6b36f41(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
+	b.WriteString("\n\n")
+	return nil
 }
 
 // exec_e68f82bd5b53faee renders "content".
@@ -17793,6 +18417,232 @@ func exec_fbb2ae177143aba6(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs
 func exec_fdeabaf3c84aceef(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
 	b.WriteString("\n\n")
 	return nil
+}
+
+// exec_fe23b68e4d9740ce renders "data-table".
+func exec_fe23b68e4d9740ce(b *bytes.Buffer, dot reflect.Value, fn *templateFuncs, depth int) error {
+	root := dot
+	v1 := fn.localizer_634df8c4(tmplrt.Arg(root))
+	x1 := v1
+	_ = x1
+	v2, err := fn.dataTable_8ebe8b73(tmplrt.Arg(root))
+	if err != nil {
+		return tmplrt.ExecError("data-table", "dataTable $", tmplrt.CallError("dataTable", err))
+	}
+	x2 := v2
+	_ = x2
+	b.WriteString("<div rst-box-head><h2 id=\"")
+	tmplrt.WriteAttrEscaped(b, x2.ID)
+	b.WriteString("-h\">")
+	tmplrt.WriteHTMLEscaped(b, x2.Title)
+	b.WriteString("</h2></div>\n<div rst-card rst-table-scroll=\"")
+	if x2.Bounded {
+		b.WriteString("bounded")
+	}
+	b.WriteString("\" tabindex=\"0\" role=\"region\" aria-labelledby=\"")
+	tmplrt.WriteAttrEscaped(b, x2.ID)
+	b.WriteString("-h\">\n<table rst-table=\"")
+	if x2.Dense {
+		b.WriteString("dense")
+	}
+	b.WriteString("\" aria-labelledby=\"")
+	tmplrt.WriteAttrEscaped(b, x2.ID)
+	b.WriteString("-h\">\n<thead><tr>")
+	v3 := x2.Columns
+	for v4 := range v3 {
+		dot := &v3[v4]
+		_ = dot
+		b.WriteString("<th scope=\"col\"")
+		if dot.Num {
+			b.WriteString(" rst-num")
+		}
+		v5 := &dot.Sort
+		if (*v5) != "" {
+			dot := v5
+			_ = dot
+			b.WriteString(" aria-sort=\"")
+			tmplrt.WriteAttrEscaped(b, (*dot))
+			b.WriteString("\"")
+		}
+		b.WriteString(">")
+		if dot.Href != "" {
+			b.WriteString("<a href=\"")
+			tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(dot.Href)))
+			b.WriteString("\">")
+			tmplrt.WriteHTMLEscaped(b, dot.Label)
+			v6 := fn.icon_bd1e407c("chevron-down")
+			b.WriteString(tmplrt.HTMLEscaper(v6))
+			b.WriteString("</a>")
+		} else {
+			tmplrt.WriteHTMLEscaped(b, dot.Label)
+		}
+		b.WriteString("</th>")
+	}
+	b.WriteString("</tr></thead>\n<tbody>")
+	v7 := x2.Rows
+	if len(v7) == 0 {
+		b.WriteString("<tr rst-table-empty><td colspan=\"")
+		v8 := len(x2.Columns)
+		tmplrt.WriteInt(b, int64(v8))
+		b.WriteString("\">")
+		v9 := tmplrt.ValueArg(reflect.ValueOf(x2.Empty))
+		if !tmplrt.Truth(v9) {
+			v10, err := fn.T_a3eca208(x1, "rastrillo.ui.chart_empty")
+			if err != nil {
+				return tmplrt.ExecError("data-table", "T $L \"rastrillo.ui.chart_empty\"", tmplrt.CallError("T", err))
+			}
+			v11 := reflect.ValueOf(v10)
+			v9 = tmplrt.ValueArg(v11)
+		}
+		v12 := tmplrt.Unwrap(v9)
+		b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v12)))
+		b.WriteString("</td></tr>")
+	} else {
+		for v13 := range v7 {
+			dot := &v7[v13]
+			_ = dot
+			b.WriteString("<tr>")
+			for v14 := 0; v14 < len(*dot); v14++ {
+				dot := &(*dot)[v14]
+				_ = dot
+				if dot.Head {
+					b.WriteString("<th scope=\"row\"")
+					if dot.Num {
+						b.WriteString(" rst-num")
+					}
+					b.WriteString(">")
+				} else {
+					b.WriteString("<td")
+					if dot.Num {
+						b.WriteString(" rst-num")
+					}
+					b.WriteString(">")
+				}
+				if dot.Href != "" {
+					b.WriteString("<a href=\"")
+					tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(dot.Href)))
+					b.WriteString("\">")
+				}
+				if dot.Num {
+					v15, err := fn.number_a3eca208(x1, dot.Value)
+					if err != nil {
+						return tmplrt.ExecError("data-table", "number $L .Value", tmplrt.CallError("number", err))
+					}
+					v16 := reflect.ValueOf(v15)
+					b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v16)))
+				} else {
+					v17, err := fn.displayValue_a3eca208(x1, dot.Value)
+					if err != nil {
+						return tmplrt.ExecError("data-table", "displayValue $L .Value", tmplrt.CallError("displayValue", err))
+					}
+					v18 := reflect.ValueOf(v17)
+					b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v18)))
+				}
+				if dot.Href != "" {
+					b.WriteString("</a>")
+				}
+				if dot.Head {
+					b.WriteString("</th>")
+				} else {
+					b.WriteString("</td>")
+				}
+			}
+			b.WriteString("</tr>")
+		}
+	}
+	b.WriteString("</tbody>")
+	v19 := x2.Foot
+	if len(v19) > 0 {
+		dot := v19
+		_ = dot
+		b.WriteString("\n<tfoot><tr>")
+		for v20 := range dot {
+			dot := &dot[v20]
+			_ = dot
+			if dot.Head {
+				b.WriteString("<th scope=\"row\"")
+				if dot.Num {
+					b.WriteString(" rst-num")
+				}
+				b.WriteString(">")
+			} else {
+				b.WriteString("<td")
+				if dot.Num {
+					b.WriteString(" rst-num")
+				}
+				b.WriteString(">")
+			}
+			if dot.Href != "" {
+				b.WriteString("<a href=\"")
+				tmplrt.WriteAttrEscaped(b, tmplrt.URLNormalizerString(tmplrt.URLFilterString(dot.Href)))
+				b.WriteString("\">")
+			}
+			if dot.Num {
+				v21, err := fn.number_a3eca208(x1, dot.Value)
+				if err != nil {
+					return tmplrt.ExecError("data-table", "number $L .Value", tmplrt.CallError("number", err))
+				}
+				v22 := reflect.ValueOf(v21)
+				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v22)))
+			} else {
+				v23, err := fn.displayValue_a3eca208(x1, dot.Value)
+				if err != nil {
+					return tmplrt.ExecError("data-table", "displayValue $L .Value", tmplrt.CallError("displayValue", err))
+				}
+				v24 := reflect.ValueOf(v23)
+				b.WriteString(tmplrt.HTMLEscaper(tmplrt.Arg(v24)))
+			}
+			if dot.Href != "" {
+				b.WriteString("</a>")
+			}
+			if dot.Head {
+				b.WriteString("</th>")
+			} else {
+				b.WriteString("</td>")
+			}
+		}
+		b.WriteString("</tr></tfoot>")
+	}
+	b.WriteString("\n</table>\n</div>")
+	return nil
+}
+
+// facts_fe23b68e4d9740ce is what exec_fe23b68e4d9740ce assumes of the types it reads.
+var facts_fe23b68e4d9740ce = tmplrt.Facts{
+	Funcs: map[string]reflect.Type{
+		"dataTable_8ebe8b73": reflect.TypeFor[func(any) (chart.TablePlot, error)](),
+		"icon_bd1e407c":      reflect.TypeFor[func(string) template.HTML](),
+		"localizer_634df8c4": reflect.TypeFor[func(any) *ui.Localizer](),
+	},
+	Facts: []tmplrt.Fact{
+		{Func: "localizer_634df8c4", Type: "*amadan.net/rastrillo/rastrillo/ui.Localizer Format"},
+		{Func: "dataTable_8ebe8b73", Type: "amadan.net/rastrillo/rastrillo/chart.TablePlot struct"},
+		{Func: "dataTable_8ebe8b73", Path: []string{".ID"}, Type: "string"},
+		{Func: "dataTable_8ebe8b73", Path: []string{".Title"}, Type: "string"},
+		{Func: "dataTable_8ebe8b73", Path: []string{".Bounded"}, Type: "bool"},
+		{Func: "dataTable_8ebe8b73", Path: []string{".Dense"}, Type: "bool"},
+		{Func: "dataTable_8ebe8b73", Path: []string{".Columns"}, Type: "[]amadan.net/rastrillo/rastrillo/chart.Column"},
+		{Func: "dataTable_8ebe8b73", Path: []string{".Columns", "[]"}, Type: "amadan.net/rastrillo/rastrillo/chart.Column struct"},
+		{Func: "dataTable_8ebe8b73", Path: []string{".Columns", "[]", "&.Num"}, Type: "bool"},
+		{Func: "dataTable_8ebe8b73", Path: []string{".Columns", "[]", "&.Sort"}, Type: "string"},
+		{Func: "dataTable_8ebe8b73", Path: []string{".Columns", "[]", "&.Href"}, Type: "string"},
+		{Func: "dataTable_8ebe8b73", Path: []string{".Columns", "[]", "&.Label"}, Type: "string"},
+		{Func: "icon_bd1e407c", Type: "html/template.HTML string"},
+		{Func: "dataTable_8ebe8b73", Path: []string{".Rows"}, Type: "[][]amadan.net/rastrillo/rastrillo/chart.TableCell"},
+		{Func: "dataTable_8ebe8b73", Path: []string{".Empty"}, Type: "string"},
+		{Func: "dataTable_8ebe8b73", Path: []string{".Rows", "[]"}, Type: "[]amadan.net/rastrillo/rastrillo/chart.TableCell"},
+		{Func: "dataTable_8ebe8b73", Path: []string{".Rows", "[]", "[]"}, Type: "amadan.net/rastrillo/rastrillo/chart.TableCell struct"},
+		{Func: "dataTable_8ebe8b73", Path: []string{".Rows", "[]", "[]", "&.Head"}, Type: "bool"},
+		{Func: "dataTable_8ebe8b73", Path: []string{".Rows", "[]", "[]", "&.Num"}, Type: "bool"},
+		{Func: "dataTable_8ebe8b73", Path: []string{".Rows", "[]", "[]", "&.Href"}, Type: "string"},
+		{Func: "dataTable_8ebe8b73", Path: []string{".Rows", "[]", "[]", "&.Value"}, Type: "interface {}"},
+		{Func: "dataTable_8ebe8b73", Path: []string{".Foot"}, Type: "[]amadan.net/rastrillo/rastrillo/chart.TableCell"},
+		{Func: "dataTable_8ebe8b73", Path: []string{".Foot", "[]"}, Type: "amadan.net/rastrillo/rastrillo/chart.TableCell struct"},
+		{Func: "dataTable_8ebe8b73", Path: []string{".Foot", "[]", "&.Head"}, Type: "bool"},
+		{Func: "dataTable_8ebe8b73", Path: []string{".Foot", "[]", "&.Num"}, Type: "bool"},
+		{Func: "dataTable_8ebe8b73", Path: []string{".Foot", "[]", "&.Href"}, Type: "string"},
+		{Func: "dataTable_8ebe8b73", Path: []string{".Foot", "[]", "&.Value"}, Type: "interface {}"},
+	},
 }
 
 // exec_fff3271be2d8a070 renders "list-bar-search.html".

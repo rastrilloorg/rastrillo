@@ -1,0 +1,19 @@
+{{/* sparkline — a small line beside its caption: Period, Desc,
+     Points[] (Label, Value, Missing); or Chart, a chart.Spark.
+
+     Fiesta's sparkline (data.css, 1.10). The line is hidden from screen
+     readers, so the caption is all they get: Period says what it covers
+     ("Last 8 weeks"), and Desc, in your words, what the line does,
+     with any dip or spike. Where it starts and ends is not enough:
+     100, 1000, 100 and 100, 100, 100 start and end alike. Both are
+     required.
+
+     The line runs from its lowest value at the bottom to its highest
+     at the top, with a dot on the last value. A Missing point breaks
+     it. Call it where you show it, beside a stat or in a table cell:
+     a page that never calls it does not pay for its styles. */}}
+{{define "sparkline"}}{{$s := chartSpark $}}<figure rst-spark>
+{{- if not $s.NoData}}<svg viewBox="0 0 100 24" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+{{- range $s.Runs}}<polyline rst-chart-line points="{{.}}"/>{{end}}
+{{- range $s.Lone}}<path rst-chart-dot d="{{.}}"/>{{end}}<path rst-chart-ring d="{{$s.End}}"/><path rst-chart-dot d="{{$s.End}}"/></svg>{{end}}
+<figcaption><strong>{{$s.Period}}</strong> {{$s.Desc}}</figcaption></figure>{{end}}

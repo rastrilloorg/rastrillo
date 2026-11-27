@@ -310,8 +310,10 @@ const (
 	// keys signin-options now lists, which took it to 10,109. Raised on
 	// 2026-11-26 for signin-head and signin-view-head, the passkey probe
 	// a sign-in page loads in its head (discussion #433), which took it
-	// to 10,233.
-	skillPartialsBudget = 10_300
+	// to 10,233. Raised on 2026-11-26 for the data table, the bar and
+	// line charts and the sparkline, whose keys a Go reader takes and
+	// so are in each summary, which took it to 11,075.
+	skillPartialsBudget = 11_100
 )
 
 // skillFiles are SKILL.md and every topic, by path.

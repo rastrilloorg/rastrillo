@@ -12,6 +12,7 @@
      phone; the three shells with an index link it, because the opt-in
      it holds cannot be scoped from tokens.css. */}}
 <link rel="stylesheet" href="{{path $ (asset "static/shell.css")}}">
+{{range pageComponentStylesheets}}<link rel="stylesheet" href="{{path $ .}}">{{end}}
 <script defer src="{{path $ (asset "static/rastrillo.js")}}"></script>
 {{template "live-head" .}}
 {{/* blocking="render": shell.js types the slide in pagereveal, at the

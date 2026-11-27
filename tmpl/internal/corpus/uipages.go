@@ -75,6 +75,9 @@ func pagesConfig(def string, compat bool) (ui.PagesConfig, error) {
 			"nilnew": {Path: "nilnew.html"},
 			"arity":  {Path: "arity.html"},
 			"errors": {Path: "errors.html"},
+			// Only the corpus renders charts.html: the data partials'
+			// compiled code, held to html/template's bytes.
+			"charts": {Path: "charts.html"},
 		},
 		Locale:   cfg,
 		LocaleFS: app,
@@ -174,6 +177,8 @@ func fixtureRuns(localizer *ui.Localizer) []PageRun {
 		{"nil", data},
 		{"nilnew", data},
 		{"nilnew", typed},
+		{"charts", data},
+		{"charts", special},
 		{"errors", map[string]any{"L": localizer, "Status": 500, "Ref": "r1"}},
 		{"errors", map[string]any{"L": localizer, "Status": 404}},
 		{"errors", map[string]any{

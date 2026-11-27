@@ -216,13 +216,15 @@ back-nav      field-date       list-bar            region:notice
 badge         field-daterange  list-bar-search     row-menu
 bulk-bar      field-datetime   list-row-action     scheme-menu
 callout       field-money      list-search-submit  seg-tabs
-choice-field  field-number     live-head           signin
-confirm-form  field-select     locale-menu         signin-title
-                                                signin-head
-detail-list   field-text       media-grid          stat
-dropdown      field-textarea   meter               status-pill
-empty-state   field-time       notice
-error-page    field-url        page-header      signin-app-problem
+chart-bar     field-number     live-head           signin
+chart-line    field-select     locale-menu         signin-title
+choice-field  field-text       media-grid          signin-head
+confirm-form  field-textarea   meter               sparkline
+data-table    field-time       notice              stat
+detail-list   field-url        page-header         status-pill
+dropdown      form-error
+empty-state
+error-page                                      signin-app-problem
               form-error                        signin-forget-way
                                                 signin-glyph
                                                 signin-passkey-note
@@ -256,6 +258,56 @@ switch beside it: three icon buttons, Light, Dark and System; see
 Each partial's file carries its data contract in a comment above the
 `{{define}}`, and `ui_test.go`'s `TestAllPartialsAreDefined` is the
 authoritative list.
+
+### Tables and charts
+
+`data-table` is a table of figures. `chart-bar`, `chart-line` and
+`sparkline` draw one series each as SVG on the server, with no script.
+Their styles are in Fiesta's `data.css`. The layout links it only on
+pages that show one of them:
+
+```html
+{{range pageComponentStylesheets}}<link rel="stylesheet" href="{{path $ .}}">{{end}}
+```
+
+Put that line after the theme's link. A page with no table or chart
+does not load `data.css`. Other pages link only the part they need,
+within the same first-load budget as the rest of the CSS. A layout
+from an earlier release doesn't have the line. Add it, then run
+`rastrillo doctor -fix` to copy `data.css` into `static/` if your app
+predates that file.
+
+Pass numbers, not text you formatted: an integer, a float or a
+`number.Decimal`. The partials format each number for the page's
+language and round it only when you set `Places`. A point with no value
+(`"Missing" true`, or no `Value`) reads "No data" and is never drawn as
+0.
+
+```html
+{{template "chart-line" dict "L" $L "ID" "sales" "Title" "Weekly sales"
+  "Desc" "Sales rose almost every week and passed the target in week 6."
+  "Category" "Week" "Measure" "Sold" "Points" .Weeks
+  "Goal" 600 "GoalLabel" "Target"}}
+```
+
+Each `.Weeks` item has a `Label` and a `Value`. From Go, pass a
+`chart.Line` as `Chart` instead of the keys. `chart.Bars`, `chart.Spark`
+and `chart.Table` do the same for the other three.
+
+- `ID` must be unique on the page. The heading, the description and the
+  table take their ids from it.
+- `Desc` is one sentence a screen reader hears in place of the plot. Say
+  what the line does, including any dip or spike, not just where it
+  ends. A sparkline's `Desc` and `Period` are its caption.
+- A line chart puts every value and the goal in a table under the plot.
+  A bar chart is a table already.
+- A bar chart takes values of zero or more. A line takes up to 366 points,
+  and a bar chart up to 50.
+- On a phone, scroll a data table's card sideways to see every column.
+  Row headers stay in view. Mark number columns with `Num`.
+
+Anything a partial cannot draw stops the render with an error that names
+the field to fix.
 
 ### The elements they use
 

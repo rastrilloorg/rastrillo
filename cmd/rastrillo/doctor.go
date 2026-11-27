@@ -210,6 +210,7 @@ type report struct {
 	layoutAdvice  string // relative path of an old shell layout, if the app has one
 	profileAdvice string // relative path of a layout whose app keeps the person in account
 	phoneAdvice   string // relative path of a layout with the old phone menu
+	dataAdvice    string // relative path of a layout without data.css
 	noDesign      bool   // no vendored files and no layout: nothing to compare
 
 	// fiestaAdvice lists the layouts that load rastrillo.js and no

@@ -135,11 +135,12 @@ func WithT(t func(key string, args ...any) string) Option {
 // page's language, naming people through ActorName:
 // {{actor $L .Actor}} is "Claude for Paul"; {{date $L .At "time"}} 9:09 PM.
 //
-// ui.Pages binds pageStylesheet, pageScripts and neededScripts per page.
-// Outside it, pageStylesheet is the whole /static/tokens.css, unhashed,
-// pageScripts fiesta.js and every optional script, neededScripts the
-// component scripts. Bind your own pageStylesheet to link the hashed
-// file or a slice (Assets.Stylesheet), as designsystem's shellAssets does.
+// ui.Pages binds pageStylesheet, pageComponentStylesheets, pageScripts
+// and neededScripts per page. Outside it, the first two are the whole
+// /static/tokens.css and /static/data.css, unhashed, pageScripts
+// fiesta.js and every optional script, neededScripts the component
+// scripts. Bind your own pageStylesheet to link the hashed file or a
+// slice (Assets.Stylesheet), as designsystem's shellAssets does.
 //
 // path puts the page's base path in front of a root-absolute URL:
 // {{path $ (asset "static/tokens.css")}}, {{path $ "/"}}. The base comes
@@ -149,7 +150,7 @@ func WithT(t func(key string, args ...any) string) Option {
 // a page at the root renders as it always did.
 //
 // An app is free to add its own entries on top; it must not drop these
-// thirty. The shipped partials and shells stop parsing without
+// thirty-five. The shipped partials and shells stop parsing without
 // most of them, and the docs promise the rest.
 func Funcs(opts ...Option) template.FuncMap {
 	c := config{
@@ -164,16 +165,15 @@ func Funcs(opts ...Option) template.FuncMap {
 	m := template.FuncMap{
 		"dict": dict, "list": list, "menuGroup": menuGroup, "searchClear": searchClear,
 		"icon": c.icon, "iconAssets": c.assets,
-		"opt":        opt,
-		"stageArt":   stageArt,
+		"opt": opt, "stageArt": stageArt,
 		"displayURL": form.DisplayURL, "safeHref": form.SafeHref,
 		"rowMenuItems": rowMenuItems, "paginationItems": paginationItems,
 		"localizer": localizer, "withL": withL,
-		"strong": strong,
-		"path":   pathFunc,
+		"strong": strong, "path": pathFunc,
 	}
 	maps.Copy(m, localeFuncs(c))
 	maps.Copy(m, scriptFuncs())
+	maps.Copy(m, dataFuncs())
 	return m
 }
 

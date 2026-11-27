@@ -3434,7 +3434,7 @@ columns cmd/rastrillo/doctor.go f8a8b84c4867 1
 columns cmd/rastrillo/doctor.go fb8e8756c242 1
 columns cmd/rastrillo/doctor.go fd24af5b2925 1
 columns cmd/rastrillo/doctor.go fdab31e1ef54 1
-file cmd/rastrillo/doctor.go - 1041 raised from 1048 by scaffold shapes: an app with no design system (bare's --design-system=false) is told there is nothing to compare instead of failing
+file cmd/rastrillo/doctor.go - 1042 raised from 1048 by scaffold shapes: an app with no design system (bare's --design-system=false) is told there is nothing to compare instead of failing; raised from 1041 to 1042 by data-partials: the report names a layout that leaves a page's table or chart unstyled (dataAdvice, doctor_data.go)
 func cmd/rastrillo/doctor.go diagnose 98 raised from 110 by Fiesta part 2 Task 4: diagnose lists the layouts that load rastrillo.js and no fiesta.js, for the advice --fix decides on the files it leaves; raised from 111 by scaffold shapes: an app with no design system (bare's --design-system=false) is told there is nothing to compare instead of failing
 func cmd/rastrillo/doctor.go readPin 80
 func cmd/rastrillo/doctor.go report.applyFix 61 raised from 58 by scaffold shapes: an app with no design system (bare's --design-system=false) is told there is nothing to compare instead of failing
@@ -8465,9 +8465,9 @@ columns internal/designsystem/page.go fa7c5352e30d 1
 columns internal/designsystem/page.go fdc97acb2e04 1 the rail template line, edited in place for Fiesta's links (rastrillo-components Task 1); a template line is written whole like its neighbours
 columns internal/designsystem/page.go fe44bdea88a0 1
 columns internal/designsystem/page.go ffcdcfbc1ea4 1
-file internal/designsystem/page.go - 2953 galleryTitle, one call for the gallery's name in every document title, and the Russian topbar shell's Mobile height for its longer back-link (rastrillo-components Task 2); the five preview heights of the signin package's pages on the Screens page (default-signin Task 10); their measured Desktop, Mobile and per-language Mobile heights, with the four secret-door screens' (default-signin Task 14)
+file internal/designsystem/page.go - 2958 galleryTitle, one call for the gallery's name in every document title, and the Russian topbar shell's Mobile height for its longer back-link (rastrillo-components Task 2); the five preview heights of the signin package's pages on the Screens page (default-signin Task 10); their measured Desktop, Mobile and per-language Mobile heights, with the four secret-door screens' (default-signin Task 14); raised from 2953 to 2958 by data-partials: each preview links the data.css its body shows (componentStylesheetLinks), and the four data partials' preview heights
 func internal/designsystem/page.go buildFamilies 97 the stat band stays on Display as four stat calls, a sample of its own (rastrillo-components Task 1, review fix)
-func internal/designsystem/page.go previewDocStyled 49
+func internal/designsystem/page.go previewDocStyled 50 raised from 49 by data-partials: the line that links the component stylesheets a preview shows
 func internal/designsystem/page.go renderDemo 54
 func internal/designsystem/page.go renderGallery 101
 func internal/designsystem/page.go renderShell 53
@@ -8875,8 +8875,8 @@ columns internal/designsystem/samples.go fd98e40afc7e 1
 columns internal/designsystem/samples.go feec4eaa9f02 1
 columns internal/designsystem/samples.go ff2adab2a4c3 1
 columns internal/designsystem/samples.go ff64de57216c 1
-file internal/designsystem/samples.go - 1195 the stat band stays on Display as four stat calls, a sample of its own (rastrillo-components Task 1, review fix)
-func internal/designsystem/samples.go families 595 field-number joins the Form family as one call, fieldNumberDoc(), its sample in fieldnumber.go
+file internal/designsystem/samples.go - 1200 the stat band stays on Display as four stat calls, a sample of its own (rastrillo-components Task 1, review fix); raised from 1195 to 1200 by data-partials: the Tables and charts page joins as one call, dataFamily() (datasamples.go), and the search terms of the data table and the three charts (graph, plot, spreadsheet)
+func internal/designsystem/samples.go families 596 field-number joins the Form family as one call, fieldNumberDoc(), its sample in fieldnumber.go; raised from 595 to 596 by data-partials: the Tables and charts page joins as one call, dataFamily() (datasamples.go)
 names internal/designsystem/samples.go calloutStates/b 1
 names internal/designsystem/samples.go errorPageStates/s 1
 names internal/designsystem/samples.go mediaSelectable/t 1
@@ -22252,7 +22252,6 @@ columns ui/matrix_browser_test.go be149cd585ee 1
 columns ui/matrix_browser_test.go e8a9a4e454e1 1
 columns ui/matrix_browser_test.go e935df0f335f 1
 columns ui/matrix_browser_test.go ecb280c0ee3c 1
-columns ui/matrix_browser_test.go f12b1f999a5d 1
 columns ui/matrix_browser_test.go fa892464a515 1
 columns ui/matrix_browser_test.go fddc018ba504 1
 names ui/matrix_browser_test.go TestEveryThemeRendersAsItDidExceptDay/c 1

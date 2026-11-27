@@ -73,6 +73,7 @@ Answer a port request in this order:
 | "Rastrillo is single-tenant" | An instance per tenant unit is the design (skill/data.md). A home or hub signs people in and provisions instances (`provision`, skill/signin.md); its provisioning credential reaches every instance of the app, so it stays in the hub. |
 | "No cross-customer admin view" | The hub keeps a record per customer and counts what it witnesses (sign-ups, usage); other figures are facts each instance sends the hub. Pulling from every instance's `/api/v1` wakes each one and needs a credential across tenants. A real cost: design it (CARLOS's tenancy guidance lists the routes). |
 | "No combobox" | `field-select` past ten options is a searchable combobox (`select.js`); dates take "next fri 9am" (`datetime.js`). |
+| "No charts or data tables" | `data-table`, `chart-bar`, `chart-line` and `sparkline` ship: SVG drawn on the server, no chart library or script (skill/partials.md). Don't hand-build them. |
 | "No drag and drop / rich UI" | A form for each move, then a script that drags (skill/scripts.md). |
 | "Our logos and fonts are on another host" | The CSP is same-origin: add the source with `CSPAllow`, such as `CSPAllow: map[string][]string{"img-src": {"https://logos.example.com"}}`. |
 | "Real-time needs an always-on server" | `data-poll` on a hibernating route; live regions on an always-on one (skill/live.md, skill/background.md). |

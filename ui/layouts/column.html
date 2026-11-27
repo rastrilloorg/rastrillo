@@ -11,6 +11,7 @@
 {{block "head-early" .}}{{end}}
 <link rel="stylesheet" href="{{path $ pageStylesheet}}">
 <link rel="stylesheet" href="{{path $ (asset "static/theme.css")}}">
+{{range pageComponentStylesheets}}<link rel="stylesheet" href="{{path $ .}}">{{end}}
 <script defer src="{{path $ (asset "static/rastrillo.js")}}"></script>
 {{template "live-head" .}}
 {{iconAssets}}

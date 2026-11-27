@@ -64,15 +64,17 @@ func stylesheets(t *testing.T, mux *http.ServeMux) {
 // ui.Pages needs to load what stylesheets and vendoredScripts serve,
 // each file at its bare name. pageStylesheet is bound here as the
 // funcs doc tells an app to: ui.Funcs' own default is a fixed
-// /static/tokens.css, which these routes do not serve.
+// /static/tokens.css, which these routes do not serve. No fixture
+// shows a table or a chart, so none links data.css.
 func fixtureFuncs() template.FuncMap {
 	asset := func(name string) string {
 		return "/" + strings.TrimPrefix(name, "static/")
 	}
 	return template.FuncMap{
-		"asset":          asset,
-		"pageStylesheet": func() string { return asset(stylesheet) },
-		"iconAssets":     func() template.HTML { return "" },
+		"asset":                    asset,
+		"pageStylesheet":           func() string { return asset(stylesheet) },
+		"pageComponentStylesheets": func() []string { return nil },
+		"iconAssets":               func() template.HTML { return "" },
 	}
 }
 

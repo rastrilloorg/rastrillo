@@ -164,6 +164,10 @@ var searchTerms = map[string]string{
 	"partial-list-row-action": "table",
 	"partial-person":          "avatar user",
 	"partial-form-foot":       "button submit cta",
+	"partial-data-table":      "grid spreadsheet sort",
+	"partial-chart-bar":       "graph plot",
+	"partial-chart-line":      "graph plot trend",
+	"partial-sparkline":       "graph trend",
 }
 
 // selectOptions builds an n-option list for field-select. Past ten
@@ -549,6 +553,7 @@ func families() []family {
 				},
 			},
 		},
+		dataFamily(),
 		{
 			Key:   "form",
 			Title: "Form",

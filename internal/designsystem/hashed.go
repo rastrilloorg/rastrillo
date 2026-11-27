@@ -108,10 +108,12 @@ func assetFunc(mount, theme string) func(string) string {
 // shellAssets binds asset for one theme's shell pages, and the
 // pageStylesheet ui's layouts link tokens.css by to the whole file:
 // the gallery renders them outside ui.Pages, which alone slices it.
+// No shell demo shows a table or a chart, so none links data.css.
 func shellAssets(funcs map[string]any, mount, theme string) {
 	asset := assetFunc(mount, theme)
 	funcs["asset"] = asset
 	funcs["pageStylesheet"] = func() string {
 		return asset("static/tokens.css")
 	}
+	funcs["pageComponentStylesheets"] = func() []string { return nil }
 }

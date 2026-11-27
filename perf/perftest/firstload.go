@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"amadan.net/rastrillo/rastrillo/internal/budgetfile"
+	"amadan.net/rastrillo/rastrillo/internal/vendored"
 )
 
 // firstLoadBudget is what a page's framework CSS and JS may weigh,
@@ -30,6 +31,7 @@ type firstLoadBudget struct {
 	shells, live, references map[string]int
 	unsliced                 int
 	records                  map[string]budgetfile.Weight
+	sliceShells              map[string]bool
 }
 
 // frameworkBudget is measured from the shipped files, minified and
@@ -49,6 +51,11 @@ type firstLoadBudget struct {
 // every other file's reference, plus 10%, rounded up the same way. A
 // limit measured on the framework's own few screens failed the first
 // app with an admin area (the chat tour's room page, 2026-11-03).
+// data.css is out of that ceiling: a live page that links it, as one
+// does in an app with a table or a chart anywhere, gains its reference,
+// as for a component script, and a chart-free one keeps 34,700. Any
+// other page showing a table or a chart is charged its slice within
+// the shell's 16 kB, with no allowance.
 var frameworkBudget = firstLoadBudget{
 	shells: map[string]int{
 		"column": 16000, "topbar": 16000,
@@ -59,12 +66,22 @@ var frameworkBudget = firstLoadBudget{
 		"sidebar": 34700, "console": 34700, "stage": 34700,
 	},
 	unsliced: 40000,
+	// The topbar, sidebar and console shells' pages are allowed the
+	// data.css slice they link, on top of 16 kB: a list with a table, or
+	// a dashboard with a line and bars, weighs 15.2 to 16.7 kB there,
+	// and the overage is opt-in CSS only a page that shows a table or a
+	// chart loads (Paul, 2026-11-27, the data-partials branch). Column
+	// and stage pages stay at 16 kB.
+	sliceShells: map[string]bool{
+		"topbar": true, "sidebar": true, "console": true,
+	},
 	references: map[string]int{
 		"tokens.css": 21000, "theme.css": 1800, "shell.css": 500,
-		"rastrillo.js": 1000, "fiesta.js": 2000, "busy.js": 1200,
-		"live.js": 4700, "light.js": 1900, "anchor.js": 600,
-		"shell.js": 1100, "transition.js": 400, "copy.js": 1100,
-		"select.js": 7600, "datetime.js": 10200, "calendar.js": 2800,
+		"data.css": 2000, "rastrillo.js": 1000, "fiesta.js": 2000,
+		"busy.js": 1200, "live.js": 4700, "light.js": 1900,
+		"anchor.js": 600, "shell.js": 1100, "transition.js": 400,
+		"copy.js": 1100, "select.js": 7600, "datetime.js": 10200,
+		"calendar.js": 2800,
 	},
 }
 
@@ -134,13 +151,22 @@ func weighPage(
 		t.Errorf("%s %v", screen, err)
 		return
 	}
-	sheet, err := stylesheetOf(client, weights)
+	sheet, err := stylesheetOf(client, weights, stylesheetName)
 	if err != nil {
 		t.Errorf("%s %v", screen, err)
 		return
 	}
 	reportWeight(t, screen, shellOf(page), weights, sheet, budget)
-	reportUnstyled(t, screen, page, sheet)
+	reportUnstyled(t, screen, stylesheetName, page, sheet)
+	for _, name := range vendored.ComponentStylesheets() {
+		sheet, err := stylesheetOf(client, weights, name)
+		if err != nil {
+			t.Errorf("%s %v", screen, err)
+			continue
+		}
+		reportUnlinked(t, screen, name, page, sheet)
+		reportUnstyled(t, screen, name, page, sheet)
+	}
 }
 
 // requestBound caps each request FirstLoad makes, body included, so a
@@ -265,9 +291,9 @@ func fetchFramework(client *http.Client, address string) ([]byte, error) {
 // stylesheetName is the framework file a page may link a slice of.
 const stylesheetName = "tokens.css"
 
-// pageStylesheet is the tokens.css a page links: the whole file, and
+// pageStylesheet is a stylesheet a page links: the whole file, and
 // the slice the page links in its place, if it does. Both are nil for a
-// page that links no tokens.css.
+// page that links no copy of it.
 type pageStylesheet struct {
 	whole, slice []byte
 }
@@ -278,22 +304,23 @@ func (sheet pageStylesheet) unsliced() bool {
 	return sheet.whole != nil && sheet.slice == nil
 }
 
-// stylesheetOf tells whether the tokens.css among a page's weights is
-// a slice by its bytes: Assets answers the bare static/tokens.css
-// beside it with the whole file, and serves a slice only under a
-// fingerprint, which the whole file's own link also carries.
+// stylesheetOf tells whether the stylesheet called name among a page's
+// weights, tokens.css or a component stylesheet, is a slice by its
+// bytes: Assets answers the bare static/<name> beside it with the whole
+// file, and serves a slice only under a fingerprint, which the whole
+// file's own link also carries.
 func stylesheetOf(
-	client *http.Client, weights []fileWeight,
+	client *http.Client, weights []fileWeight, name string,
 ) (pageStylesheet, error) {
 	for _, weight := range weights {
-		if weight.name != stylesheetName {
+		if weight.name != name {
 			continue
 		}
 		bare, err := url.Parse(weight.address)
 		if err != nil {
 			return pageStylesheet{}, err
 		}
-		bare.Path = path.Join(path.Dir(bare.Path), stylesheetName)
+		bare.Path = path.Join(path.Dir(bare.Path), name)
 		bare.RawPath, bare.RawQuery = "", ""
 		whole, err := fetchFramework(client, bare.String())
 		if err != nil {

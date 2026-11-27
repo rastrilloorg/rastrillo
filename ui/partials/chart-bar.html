@@ -1,0 +1,32 @@
+{{/* chart-bar — a table of bars with a name and value in each row: ID,
+     Title, Category, Measure, Points[] (Label, Value, Missing);
+     optional Desc, Max, Places, Percent, Empty; or Chart, a
+     chart.Bars.
+
+     Fiesta's bar chart (data.css, 1.10). Being a table, it is its own
+     text equivalent: a screen reader hears each name and its value,
+     the bar is decoration, and its column is named "Bar" only for a
+     screen reader, so it is not announced as blank. Every bar shares
+     one track and one scale, from zero to the largest value or Max,
+     whichever is larger, so pass the same Max to compare two charts.
+
+     Values are exact, as {{number}} writes them: an integer, a float
+     or a number.Decimal. Places rounds them, half to even, and writes
+     that many digits; Percent writes 50 as 50 %. A Missing point, or
+     one with no Value, has no bar and reads "No data", never zero. A
+     value below zero stops the render: a bar from the start cannot
+     show it. With no points the chart says Empty, or that there is no
+     data yet. Desc is one sentence on what the bars show. */}}
+{{define "chart-bar"}}{{$L := localizer $}}{{$c := chartBar $}}<div rst-box-head><h2 id="{{$c.ID}}-h">{{$c.Title}}</h2></div>
+<div rst-card><figure rst-chart aria-labelledby="{{$c.ID}}-h"{{if $c.Desc}} aria-describedby="{{$c.ID}}-d"{{end}}>
+{{- with $c.Desc}}
+<p rst-chart-desc id="{{$c.ID}}-d">{{.}}</p>{{end}}
+{{if $c.Rows}}<div rst-table-scroll tabindex="0" role="region" aria-labelledby="{{$c.ID}}-h">
+<table rst-table="bars" aria-labelledby="{{$c.ID}}-h"{{if $c.Desc}} aria-describedby="{{$c.ID}}-d"{{end}}>
+<thead><tr><th scope="col">{{$c.Category}}</th><th scope="col"><span class="rst-sr-only">{{T $L "rastrillo.ui.chart_bar"}}</span></th><th scope="col" rst-num>{{$c.Measure}}</th></tr></thead>
+<tbody>{{range $c.Rows}}
+<tr><th scope="row">{{.Label}}</th><td rst-table-bar>{{if not .Missing}}<svg viewBox="0 0 1000 1" preserveAspectRatio="none" aria-hidden="true" focusable="false"><rect width="{{.Width}}" height="1"/></svg>{{end}}</td><td rst-num>{{if .Missing}}{{T $L "rastrillo.ui.chart_no_data"}}{{else}}{{number $L .Value "places" $c.Format.Places $c.Format.Style}}{{end}}</td></tr>{{end}}
+</tbody>
+</table>
+</div>{{else}}<p rst-chart-empty>{{or $c.Empty (T $L "rastrillo.ui.chart_empty")}}</p>{{end}}
+</figure></div>{{end}}

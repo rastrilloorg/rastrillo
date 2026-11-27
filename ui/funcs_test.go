@@ -841,12 +841,14 @@ func TestActorIsALocaleFunc(t *testing.T) {
 
 // documentedFuncs is every name Funcs registers: the 18 it began with,
 // then localizer, withL, money, actor, strong, path, needs,
-// neededScripts, pageStylesheet, pageScripts, date and Taround.
+// neededScripts, pageStylesheet, pageScripts, date, Taround,
+// pageComponentStylesheets and the four data partials' readers.
 var documentedFuncs = []string{
 	"dict", "list", "menuGroup", "searchClear", "icon", "iconAssets",
 	"T", "Tf", "dateWords", "opt", "Tbdi", "stageArt", "displayURL",
 	"safeHref", "number", "displayValue", "rowMenuItems", "paginationItems",
 	"localizer", "withL", "money", "actor", "strong", "path",
 	"needs", "neededScripts", "pageStylesheet", "pageScripts", "date",
-	"Taround",
+	"Taround", "pageComponentStylesheets", "dataTable", "chartBar",
+	"chartLine", "chartSpark",
 }

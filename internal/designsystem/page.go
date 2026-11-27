@@ -1584,6 +1584,10 @@ var previewHeights = map[string]int{
 	"partial-notice":      110,
 	"partial-form-error":  90,
 	"partial-job-status":  70,
+	"partial-data-table":  320,
+	"partial-chart-bar":   350,
+	"partial-chart-line":  440,
+	"partial-sparkline":   125,
 	// Form. The three enhanced fields carry the panel their script
 	// opens under them, which is the whole reason to look at them.
 	"partial-field":           210,
@@ -1748,6 +1752,7 @@ func previewDocStyled(mount, theme, locale, title, style, body string) string {
 	b.WriteString("<title>" + template.HTMLEscapeString(title) + "</title>\n")
 	b.WriteString(`<link rel="stylesheet" href="` + assetURL(mount, "tokens.css") + `">` + "\n")
 	b.WriteString(`<link rel="stylesheet" href="` + assetURL(mount, "theme-"+theme+".css") + `">` + "\n")
+	b.WriteString(componentStylesheetLinks(mount, body))
 	// A component sample gets breathing room; a whole-page sample —
 	// a shell frame, the modal's backdrop, a stage frame — fills the
 	// frame, because insetting a page inside a page is not what any of

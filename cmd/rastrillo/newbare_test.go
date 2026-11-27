@@ -63,6 +63,7 @@ func TestBareWritesOnlyItsFiles(t *testing.T) {
 		"internal/dash/static/busy.js",
 		"internal/dash/static/calendar.js",
 		"internal/dash/static/copy.js",
+		"internal/dash/static/data.css",
 		"internal/dash/static/datetime.js",
 		"internal/dash/static/fiesta.js",
 		"internal/dash/static/light.js",

@@ -271,7 +271,8 @@ func TestTheBudgetCoversEveryFileAndShell(t *testing.T) {
 	ceiling := 0
 	for name, reference := range frameworkBudget.references {
 		if name != liveScript &&
-			!slices.Contains(vendored.ComponentScripts(), name) {
+			!slices.Contains(vendored.ComponentScripts(), name) &&
+			!slices.Contains(vendored.ComponentStylesheets(), name) {
 			ceiling += reference
 		}
 	}
@@ -279,7 +280,8 @@ func TestTheBudgetCoversEveryFileAndShell(t *testing.T) {
 	for _, shell := range ui.LayoutNames() {
 		if live := frameworkBudget.live[shell]; live != ceiling {
 			t.Errorf("the %s shell's live limit is %d, not %d: every "+
-				"file but live.js and the component scripts, plus 10%%",
+				"file but live.js and the component scripts and "+
+				"stylesheets, plus 10%%",
 				shell, live, ceiling)
 		}
 	}
@@ -901,5 +903,77 @@ func TestAWeightRecordForAScreenNotWeighedIsStale(t *testing.T) {
 		"which is not a weighed screen: delete it"
 	if !slices.Equal(problems, []string{want}) {
 		t.Errorf("got %q, want %q", problems, want)
+	}
+}
+
+// dataHref is a page's slice of data.css.
+const dataHref = "/static/data.0123456789abcdef.css"
+
+// A page that shows a chart needs data.css whatever its layout links:
+// a layout without pageComponentStylesheets leaves the chart unstyled,
+// and so does a link the app cannot answer (Astra, round 2).
+func TestAChartWithoutDataCSSFails(t *testing.T) {
+	const chart = `<figure rst-chart><p rst-chart-desc>Up</p></figure>`
+	server := slicedSiteOf(chart, "[rst-btn]{color:blue}",
+		"[rst-btn]{color:blue}")
+	recorder := checkOne(server, frameworkBudget)
+	server.Close()
+	joined := strings.Join(recorder.errs, "\n")
+	for _, want := range []string{"GET /orders", "rst-chart", "data.css",
+		"pageComponentStylesheets"} {
+		if !strings.Contains(joined, want) {
+			t.Errorf("no data.css linked: got %q, want %s named", joined,
+				want)
+		}
+	}
+	missing := site(map[string]string{
+		"/orders": pageShowing(chart, tokensHref, dataHref),
+	}, map[string][]byte{tokensHref: []byte("[rst-btn]{color:blue}")})
+	defer missing.Close()
+	joined = strings.Join(checkOne(missing, frameworkBudget).errs, "\n")
+	if !strings.Contains(joined, dataHref) {
+		t.Errorf("a data.css that does not answer: got %q, want %s named",
+			joined, dataHref)
+	}
+}
+
+// A live page that links no data.css keeps the ceiling it had before
+// the charts; one that links it gains data.css's reference.
+func TestAChartFreeLivePageKeepsItsLimit(t *testing.T) {
+	sheet := pageStylesheet{whole: []byte("whole"), slice: []byte("s")}
+	live := []fileWeight{{name: "tokens.css"}, {name: liveScript}}
+	limit, _ := pageLimit("column", live, sheet, frameworkBudget)
+	want := 34700 + frameworkBudget.references[liveScript]
+	if limit != want {
+		t.Errorf("a chart-free live page's limit is %d, want %d", limit,
+			want)
+	}
+	charted := append(slices.Clone(live), fileWeight{name: "data.css"})
+	limit, _ = pageLimit("column", charted, sheet, frameworkBudget)
+	if want += frameworkBudget.references["data.css"]; limit != want {
+		t.Errorf("a live page with data.css has %d, want %d", limit, want)
+	}
+}
+
+// A page in a shell with chrome is allowed the data.css slice it
+// links, and a column or stage page, or one with no data.css, is not.
+func TestOnlyTheChromeShellsAllowTheDataSlice(t *testing.T) {
+	sheet := pageStylesheet{whole: []byte("whole"), slice: []byte("s")}
+	data := []fileWeight{{name: "tokens.css", size: 5000},
+		{name: "data.css", size: 1502}}
+	for shell, want := range map[string]int{
+		"column": 16000, "stage": 16000, "topbar": 17502,
+		"sidebar": 17502, "console": 17502,
+	} {
+		if limit, _ := pageLimit(shell, data, sheet,
+			frameworkBudget); limit != want {
+			t.Errorf("a %s page with data.css: %d, want %d", shell, limit,
+				want)
+		}
+		if limit, _ := pageLimit(shell, data[:1], sheet,
+			frameworkBudget); limit != 16000 {
+			t.Errorf("a %s page without data.css: %d, want 16000", shell,
+				limit)
+		}
 	}
 }

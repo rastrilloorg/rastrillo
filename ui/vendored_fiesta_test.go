@@ -32,6 +32,8 @@ func fiestaFile(name, theme string) ([]byte, bool) {
 		return fiesta.TokensCSS(), true
 	case "shell.css":
 		return fiesta.ShellCSS(), true
+	case "data.css":
+		return fiesta.DataCSS(), true
 	case "theme.css":
 		return fiesta.ThemeCSS(theme)
 	}

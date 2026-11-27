@@ -364,6 +364,9 @@ var coveredElsewhere = map[string]string{
 	// the page about declaring tables.
 	"audit":   "audit",
 	"privacy": "audit",
+	// The model behind the data partials: an app reaches it through
+	// their dicts, and the templates page's Tables and charts covers it.
+	"chart": "templates",
 }
 
 // localePackCoverage maps every generated CLDR locale pack under

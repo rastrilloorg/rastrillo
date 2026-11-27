@@ -71,6 +71,9 @@ func (rep *report) adviseOnLayout(dir, layout string) {
 	if profileAdvisory(src, pages) {
 		rep.profileAdvice = rel(dir, layout)
 	}
+	if leavesDataUnstyled(src, pages) {
+		rep.dataAdvice = rel(dir, layout)
+	}
 }
 
 // printLayoutAdvice prints the one line each layout advisory earns.
@@ -79,6 +82,7 @@ func (rep *report) printLayoutAdvice(out io.Writer) {
 		{rep.layoutAdvice, doctorLayoutAdvisory},
 		{rep.profileAdvice, doctorProfileAdvisory},
 		{rep.phoneAdvice, doctorPhoneMenuAdvisory},
+		{rep.dataAdvice, doctorDataAdvisory},
 	} {
 		if advice.file != "" {
 			fmt.Fprintf(out, "%s: %s\n\n", advice.file, advice.line)

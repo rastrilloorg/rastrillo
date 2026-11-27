@@ -9,8 +9,11 @@ Call one as `{{template "name" dict "L" $L "Key" value ...}}`; `L` is the locali
 - **badge**: An uppercase bordered chip for small static markers (LIVE, Draft, Sold out): distinct from status-pill, which is record status. Keys: `Label`, `Tone`.
 - **bulk-bar**: Select-mode's header strip, replacing the list-bar: count, escalate/clear link, and the actions menu whose items are real submit buttons on the surrounding form. Keys: `Actions[]` (Danger, Label, Value), `Count`, `DoneHref`, `DoneLabel`, `EscalateHref`, `EscalateLabel`, `MenuLabel`.
 - **callout**: The one alert vocabulary: tinted bordered strip, tone icon, optional bold title, one body paragraph. Keys: `Alert`, `Body`, `Focus`, `ID`, `Title`, `Tone`.
+- **chart-bar**: A table of bars with a name and value in each row: ID, Title, Category, Measure, Points[] (Label, Value, Missing); optional Desc, Max, Places, Percent, Empty; or Chart, a chart.Bars.
+- **chart-line**: One series as a line, with its values in a table under the plot: ID, Title, Desc, Category, Measure, Points[] (Label, Value, Missing); optional Goal, GoalLabel, Min, Max, Places, Percent, Hover, Empty; or Chart, a chart.Line.
 - **choice-field**: Option cards, the preferred radio/checkbox group: whole-card hit target, native input visible (it signals pick-one vs pick-any), selection ring via :has(). Keys: `LegendHidden`, `Legend`, `Name`, `Options[]` (Checked, Desc, Title, Value), `Type`.
 - **confirm-form**: The destructive-action POST, plus its page companions. Keys: `Action`, `CancelHref`, `CancelLabel`, `Danger`, `Hidden[]`, `Label`.
+- **data-table**: Figures in a card that scrolls sideways: ID, Title, Columns[] (Label, Num, Href, Sort), Rows (one value per column, the first the row's header); optional Foot, Empty, Dense, Bounded; or Chart, a chart.Table.
 - **detail-list**: A record's labelled facts as a definition list — the Show state's body. Keys: `Items[]` (DateTime, Label, Mono, Value).
 - **dropdown**: A zero-JS disclosure: a summary button that opens a panel of plain links. Keys: `Aria`, `Items[]` (Current, Href, Label), `Label`.
 - **empty-state**: The blank-state card: a heading, one specific sentence, and at most one call to action. Keys: `ActionHref`, `ActionLabel`, `Body`, `Hidden[]`, `PostAction`, `Title`.
@@ -62,5 +65,6 @@ Call one as `{{template "name" dict "L" $L "Key" value ...}}`; `L` is the locali
 - **signin-view**: Every page of the signin package, from its View. Keys: `Brand`, `HideBrand`, `Preview`, `View`.
 - **signin-view-head**: Signin-head for signin-view. Keys: `View`.
 - **signin-view-title**: The title for the same page. Keys: `Brand`, `View`.
+- **sparkline**: A small line beside its caption: Period, Desc, Points[] (Label, Value, Missing); or Chart, a chart.Spark.
 - **stat**: One reading in a stat band: a label over a number, with an optional change under it. Keys: `Delta`, `Exact`, `Label`, `Lead`, `Note`, `Tone`, `Value`.
 - **status-pill**: A status as a tinted pill. Keys: `Label`, `Tone`.

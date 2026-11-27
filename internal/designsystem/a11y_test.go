@@ -360,6 +360,12 @@ func a11yTargets() []a11yTarget {
 		{"day/en choices and actions", page("day", "en", "choices-and-actions"), "the choosers and closing rows: a select that becomes a combobox with a listbox, a checkbox skinned as a switch, radio and checkbox groups under a legend, and the busy button's aria-busy illustration: the most ARIA of any page, and the one place a role or a name lost in the skinning would show"},
 		{"day/en date and time", page("day", "en", "date-and-time"), "the heaviest page in the tree and the one nearest the byte budget: whatever is added to the gallery next is most likely to be added here"},
 		{"day/en route", page("day", "en", "route"), "the shortest of the six, and the only one whose samples are whole responses rather than pieces of one"},
+		{"day/ar tables and charts",
+			page("day", "ar", "tables-and-charts"),
+			"the data table in its scrolling region and the charts' " +
+				"figures, each named by its heading and described by its " +
+				"sentence, every plot hidden and its numbers in a " +
+				"table; in Arabic, where the plots mirror"},
 		{"day/en formats", page("day", "en", "formats"), "the eleven data-format samples: the only page carrying <address>, <abbr>, <data> and <output>, four elements no partial emits and none of the other pages can scan"},
 		{"day/en screens", page("day", "en", "screens"),
 			"the sign-in screens: the shipped partial in its states in " +

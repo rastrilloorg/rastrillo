@@ -1014,8 +1014,8 @@ body {
    link also underlines: a check that reads the focused element and its
    ancestors (the gallery's keyboard walk) never sees a pseudo-element,
    and forced-colors mode keeps text decoration. */
-.rst-row__main > a:focus-visible, [rst-row-main] > a:focus-visible, .rst-lrow > a.rst-nm:focus-visible, [rst-lrow] > a.rst-nm:focus-visible, .rst-lrow > a.rst-person:focus-visible, [rst-lrow] > a[rst-person]:focus-visible { outline: none; text-decoration: underline; }
-.rst-row__main > a:focus-visible::after, [rst-row-main] > a:focus-visible::after, .rst-lrow > a.rst-nm:focus-visible::after, [rst-lrow] > a.rst-nm:focus-visible::after, .rst-lrow > a.rst-person:focus-visible::after, [rst-lrow] > a[rst-person]:focus-visible::after { border-radius: var(--rst-radius-sm); outline: 2px solid var(--rst-accent); outline-offset: -2px; }
+.rst-row__main > a:focus-visible, [rst-row-main] > a:focus-visible, .rst-lrow > a.rst-nm:focus-visible, [rst-lrow] > a.rst-nm:focus-visible, .rst-lrow > a.rst-person:focus-visible, [rst-lrow] > a[rst-person]:focus-visible, .rst-lrow > [role="rowheader"] > a.rst-nm:focus-visible, [rst-lrow] > [role="rowheader"] > a.rst-nm:focus-visible, .rst-lrow > [role="rowheader"] > a.rst-person:focus-visible, [rst-lrow] > [role="rowheader"] > a[rst-person]:focus-visible { outline: none; text-decoration: underline; }
+.rst-row__main > a:focus-visible::after, [rst-row-main] > a:focus-visible::after, .rst-lrow > a.rst-nm:focus-visible::after, [rst-lrow] > a.rst-nm:focus-visible::after, .rst-lrow > a.rst-person:focus-visible::after, [rst-lrow] > a[rst-person]:focus-visible::after, .rst-lrow > [role="rowheader"] > a.rst-nm:focus-visible::after, [rst-lrow] > [role="rowheader"] > a.rst-nm:focus-visible::after, .rst-lrow > [role="rowheader"] > a.rst-person:focus-visible::after, [rst-lrow] > [role="rowheader"] > a[rst-person]:focus-visible::after { border-radius: var(--rst-radius-sm); outline: 2px solid var(--rst-accent); outline-offset: -2px; }
 .rst-row__main > a:hover, [rst-row-main] > a:hover {
   text-decoration: underline;
 }
@@ -1084,11 +1084,15 @@ body {
 }
 
 /* ── empty-state ──────────────────────────────────────────────────── */
+/* No box: the heading and text sit on the page. A dashed outline reads
+   as a drop target, and an empty state accepts nothing. The radius
+   stays because 1.x keeps every 1.0 declaration; it paints nothing now.
+   The padding gains the 1px the border took, so nothing moves. */
 .rst-empty, [rst-empty] {
-  background: var(--rst-surface);
-  border: 1px dashed var(--rst-line-strong);
+  background: transparent;
+  border: none;
   border-radius: var(--rst-radius);
-  padding: var(--rst-sp-6) var(--rst-sp-4);
+  padding: calc(var(--rst-sp-6) + 1px) calc(var(--rst-sp-4) + 1px);
   text-align: center;
 }
 /* Class-based, so it styles the partial's <h2> without inheriting any
@@ -1164,8 +1168,12 @@ body {
   color: var(--rst-on-accent-fill, var(--rst-on-accent));
   font-weight: 600;
 }
+/* A disabled step has no chip: no edge where a link has one, and the
+   faint text, so it is told apart by shape and not by colour alone.
+   The border stays, transparent, so the strip does not move. */
 .rst-pagination .rst-pagination__disabled, [rst-pagination] [rst-pagination-disabled] {
-  border-style: dashed;
+  border-color: transparent;
+  border-style: solid;
   color: var(--rst-text-faint);
 }
 .rst-pagination .rst-pagination__gap, [rst-pagination] [rst-pagination-gap] {
@@ -1336,7 +1344,9 @@ body {
 /* person — avatar + name + email; avatar is decoration, text is identity. */
 .rst-person, [rst-person] { align-items: center; color: inherit; display: inline-flex; gap: 0.7rem; min-width: 0; text-decoration: none; }
 .rst-person__av, [rst-person-av] { align-items: center; background: var(--rst-accent); border-radius: 50%; color: var(--rst-on-accent); display: flex; flex: none; font-size: 0.6875rem; font-weight: 600; height: 28px; justify-content: center; width: 28px; }
-.rst-person__av--empty, [rst-person-av~="empty"] { background: transparent; border: 1px dashed var(--rst-line-strong); color: transparent; }
+/* The empty avatar is a soft filled circle, not a dashed ring. The
+   border stays 1px, transparent, so the circle is the size it was. */
+.rst-person__av--empty, [rst-person-av~="empty"] { background: var(--rst-line); border: 1px solid transparent; color: transparent; }
 .rst-person__meta, [rst-person-meta] { min-width: 0; }
 .rst-person__name, [rst-person-name] { display: block; font-weight: 550; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rst-person__email, [rst-person-email] { color: var(--rst-text-muted); display: block; font-size: var(--rst-fs-xs); line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -1370,7 +1380,11 @@ body {
 @media (max-width: 800px) {
   .rst-tokens__list .rst-lrow > .rst-tokens__fact, [rst-tokens-list] [rst-lrow] > [rst-tokens-fact] { display: flex; font-size: inherit; gap: var(--rst-sp-3); grid-column: 1 / -1; justify-content: space-between; white-space: normal; }
   .rst-tokens__fact > .rst-tokens__fact-label, [rst-tokens-fact] > [rst-tokens-fact-label] { color: var(--rst-text); display: inline; }
-  .rst-tokens__list .rst-lrow > :first-child, .rst-tokens__list .rst-lrow > .rst-tokens__state, .rst-tokens__list .rst-lrow > .rst-row-menu, [rst-tokens-list] [rst-lrow] > :first-child, [rst-tokens-list] [rst-lrow] > [rst-tokens-state], [rst-tokens-list] [rst-lrow] > [rst-row-menu] { grid-row: 1; }
+  .rst-tokens__list .rst-lrow > :first-child, .rst-tokens__list .rst-lrow > .rst-tokens__state, .rst-tokens__list .rst-lrow > .rst-row-menu, [rst-tokens-list] [rst-lrow] > :first-child, [rst-tokens-list] [rst-lrow] > [rst-tokens-state], [rst-tokens-list] [rst-lrow] > [rst-row-menu], .rst-tokens__list .rst-lrow > [role="cell"]:last-child:has(> .rst-row-menu), [rst-tokens-list] [rst-lrow] > [role="cell"]:last-child:has(> [rst-row-menu]) { grid-row: 1; }
+  /* A tokens table keeps its facts on a phone, labelled in the row, so
+     the head row's fact headers are moved out of sight rather than
+     removed: each fact cell keeps its column header for a screen reader. */
+  .rst-tokens__list[role="table"] .rst-lrow--head > .rst-m-hide, [rst-tokens-list][role="table"] [rst-lrow~="head"] > .rst-m-hide { block-size: 1px; clip-path: inset(50%); display: block; inline-size: 1px; overflow: hidden; position: absolute; white-space: nowrap; }
 }
 
 /* callout — the one alert vocabulary; icon sized to the first text line. */
@@ -1571,6 +1585,18 @@ body {
   border-radius: var(--rst-radius);
   box-shadow: var(--rst-shadow-x) var(--rst-shadow-y) 1px var(--rst-depth-ambient, transparent), calc(var(--rst-shadow-x) * 2) calc(var(--rst-shadow-y) * 1.5) 3px var(--rst-depth-ambient, transparent);
 }
+/* Room above and below a card in the page's flow, as a box has, so a
+   note under a table does not touch it. Only a card that is a child of
+   the page column, the shell's main or the body gets it: a grid or a
+   component that lays cards out keeps its own spacing. Under a section
+   heading the heading's 0.5rem is the gap, first or last in its parent
+   a card adds nothing, and the count line keeps its 0.7rem. The resets
+   ask for the same parents, so a card elsewhere keeps the margins it
+   had. All weightless, so a margin an app gives a card wins. */
+:where(body, .rst-page, .rst-shell__main) > :where(.rst-card), :where(body, [rst-page], [rst-shell-main]) > :where([rst-card]) { margin-block: var(--rst-sp-4); }
+:where(body, .rst-page, .rst-shell__main) > :where(.rst-box-head) + :where(.rst-card), :where(body, [rst-page], [rst-shell-main]) > :where([rst-box-head]) + :where([rst-card]), :where(body, .rst-page, .rst-shell__main) > :where(.rst-card:first-child), :where(body, [rst-page], [rst-shell-main]) > :where([rst-card]:first-child) { margin-block-start: 0; }
+:where(body, .rst-page, .rst-shell__main) > :where(.rst-card:last-child), :where(body, [rst-page], [rst-shell-main]) > :where([rst-card]:last-child) { margin-block-end: 0; }
+:where(body, .rst-page, .rst-shell__main) > :where(.rst-card):has(+ :where(.rst-count-line)), :where(body, [rst-page], [rst-shell-main]) > :where([rst-card]):has(+ :where([rst-count-line])) { margin-block-end: 0; }
 .rst-lrow, [rst-lrow] { align-items: center; border-bottom: 1px solid var(--rst-line); display: grid; gap: 0.85rem; grid-template-columns: var(--rst-cols, 1fr); padding: 0.68rem 1rem; position: relative; }
 .rst-lrow:last-child, [rst-lrow]:last-child { border-bottom: 0; }
 .rst-lrow--head, [rst-lrow~="head"] { color: var(--rst-text-faint); font-size: var(--rst-fs-xs); font-weight: 550; letter-spacing: 0.05em; padding: 0.55rem 1rem; text-transform: uppercase; }
@@ -1579,6 +1605,15 @@ body {
    the row, as list-row-action's does. One identity cell per row: with
    both, the later overlay wins and the earlier link is unreachable. */
 .rst-lrow > a.rst-nm::after, [rst-lrow] > a.rst-nm::after, .rst-lrow > a.rst-person::after, [rst-lrow] > a[rst-person]::after { content: ""; inset: 0; position: absolute; }
+/* A list grid can be a table: role="table" on the card, named by its
+   heading, role="row" on each row, columnheader in the head row, and a
+   rowheader cell holding the identity link. Every rule that names the
+   row's own link names it in that cell too. The link stays unpositioned,
+   or its ::after would cover the cell and not the row. */
+.rst-lrow > [role="rowheader"] > a.rst-nm::after, [rst-lrow] > [role="rowheader"] > a.rst-nm::after, .rst-lrow > [role="rowheader"] > a.rst-person::after, [rst-lrow] > [role="rowheader"] > a[rst-person]::after { content: ""; inset: 0; position: absolute; }
+.rst-lrow > [role="rowheader"] > a.rst-nm, [rst-lrow] > [role="rowheader"] > a.rst-nm, .rst-lrow > [role="rowheader"] > a.rst-person, [rst-lrow] > [role="rowheader"] > a[rst-person] { position: static; z-index: auto; }
+.rst-lrow > [role="rowheader"], [rst-lrow] > [role="rowheader"] { min-width: 0; }
+.rst-lrow > [role="rowheader"] > a.rst-nm, [rst-lrow] > [role="rowheader"] > a.rst-nm { display: block; }
 .rst-nm { border-radius: var(--rst-radius-sm); color: inherit; font-weight: 550; min-width: 0; text-align: start; text-decoration: none; }
 a.rst-nm:hover { color: var(--rst-accent); }
 .rst-nm small { color: var(--rst-text-muted); display: block; font-size: var(--rst-fs-xs); font-weight: 400; }
@@ -1641,13 +1676,13 @@ a.rst-nm:hover { color: var(--rst-accent); }
    text on the old ground for a quarter of a second (Astra A3).
    Hover-in fades; hover-out, a press and a scheme change land at
    once. */
-.rst-lrow:not(.rst-lrow--head):has(> a.rst-nm:active, > a.rst-person:active), [rst-lrow]:not([rst-lrow~="head"]):has(> a.rst-nm:active, > a[rst-person]:active), .rst-row:has(> .rst-row__main > a:active), [rst-row]:has(> [rst-row-main] > a:active) { background-color: var(--rst-tint-tap, transparent); box-shadow: inset 0 1px 2px var(--rst-depth-ambient, transparent); transition: none; }
+.rst-lrow:not(.rst-lrow--head):has(> a.rst-nm:active, > a.rst-person:active), [rst-lrow]:not([rst-lrow~="head"]):has(> a.rst-nm:active, > a[rst-person]:active), .rst-lrow:not(.rst-lrow--head):has(> [role="rowheader"] > a.rst-nm:active, > [role="rowheader"] > a.rst-person:active), [rst-lrow]:not([rst-lrow~="head"]):has(> [role="rowheader"] > a.rst-nm:active, > [role="rowheader"] > a[rst-person]:active), .rst-row:has(> .rst-row__main > a:active), [rst-row]:has(> [rst-row-main] > a:active) { background-color: var(--rst-tint-tap, transparent); box-shadow: inset 0 1px 2px var(--rst-depth-ambient, transparent); transition: none; }
 .rst-media__tile:has(.rst-media__name > a:active), [rst-media-tile]:has([rst-media-name] > a:active) { --rst-pressed: 100%; background-color: var(--rst-tint-tile-press, var(--rst-surface)); box-shadow: inset 0 1px 2px var(--rst-depth-ambient, transparent); transition: none; }
 @media (hover: hover) {
-  .rst-lrow:not(.rst-lrow--head):has(> a.rst-nm, > a.rst-person):hover, [rst-lrow]:not([rst-lrow~="head"]):has(> a.rst-nm, > a[rst-person]):hover { --rst-hover: 100%; --rst-pressed: 0%; background-color: color-mix(in srgb, var(--rst-tint-press, var(--rst-accent-soft)) var(--rst-pressed), color-mix(in srgb, var(--rst-tint-hover, var(--rst-accent-soft)) var(--rst-hover), transparent)); box-shadow: inset 0 1px 0 color-mix(in srgb, var(--rst-depth-hl, transparent) var(--rst-hover), transparent), inset 0 -1px 0 color-mix(in srgb, var(--rst-depth-contact, transparent) var(--rst-hover), transparent); transition: --rst-hover 0.25s ease, --rst-pressed 0.25s ease; }
+  .rst-lrow:not(.rst-lrow--head):has(> a.rst-nm, > a.rst-person):hover, [rst-lrow]:not([rst-lrow~="head"]):has(> a.rst-nm, > a[rst-person]):hover, .rst-lrow:not(.rst-lrow--head):has(> [role="rowheader"] > a.rst-nm, > [role="rowheader"] > a.rst-person):hover, [rst-lrow]:not([rst-lrow~="head"]):has(> [role="rowheader"] > a.rst-nm, > [role="rowheader"] > a[rst-person]):hover { --rst-hover: 100%; --rst-pressed: 0%; background-color: color-mix(in srgb, var(--rst-tint-press, var(--rst-accent-soft)) var(--rst-pressed), color-mix(in srgb, var(--rst-tint-hover, var(--rst-accent-soft)) var(--rst-hover), transparent)); box-shadow: inset 0 1px 0 color-mix(in srgb, var(--rst-depth-hl, transparent) var(--rst-hover), transparent), inset 0 -1px 0 color-mix(in srgb, var(--rst-depth-contact, transparent) var(--rst-hover), transparent); transition: --rst-hover 0.25s ease, --rst-pressed 0.25s ease; }
   .rst-row:has(> .rst-row__main > a):hover, [rst-row]:has(> [rst-row-main] > a):hover { --rst-hover: 100%; --rst-pressed: 0%; background-color: color-mix(in srgb, var(--rst-row-tint-press, var(--rst-surface-2)) var(--rst-pressed), color-mix(in srgb, var(--rst-row-tint-hover, var(--rst-surface-2)) var(--rst-hover), transparent)); box-shadow: inset 0 1px 0 color-mix(in srgb, var(--rst-depth-hl, transparent) var(--rst-hover), transparent), inset 0 -1px 0 color-mix(in srgb, var(--rst-depth-contact, transparent) var(--rst-hover), transparent); transition: --rst-hover 0.25s ease, --rst-pressed 0.25s ease; }
   .rst-media__tile:has(.rst-media__name > a):hover, [rst-media-tile]:has([rst-media-name] > a):hover { --rst-hover: 100%; --rst-pressed: 0%; background-color: color-mix(in srgb, var(--rst-tint-tile-press, var(--rst-surface)) var(--rst-pressed), color-mix(in srgb, var(--rst-tint-tile-hover, var(--rst-surface)) var(--rst-hover), var(--rst-surface))); box-shadow: inset 0 1px 0 color-mix(in srgb, var(--rst-depth-hl, transparent) var(--rst-hover), transparent), inset 0 -1px 0 color-mix(in srgb, var(--rst-depth-contact, transparent) var(--rst-hover), transparent); transition: --rst-hover 0.25s ease, --rst-pressed 0.25s ease; }
-  .rst-lrow:not(.rst-lrow--head):hover:has(> a.rst-nm:active, > a.rst-person:active), [rst-lrow]:not([rst-lrow~="head"]):hover:has(> a.rst-nm:active, > a[rst-person]:active) { --rst-pressed: 100%; background-color: var(--rst-tint-press, var(--rst-accent-soft)); box-shadow: inset 0 1px 2px var(--rst-depth-ambient, transparent); transition: none; }
+  .rst-lrow:not(.rst-lrow--head):hover:has(> a.rst-nm:active, > a.rst-person:active), [rst-lrow]:not([rst-lrow~="head"]):hover:has(> a.rst-nm:active, > a[rst-person]:active), .rst-lrow:not(.rst-lrow--head):hover:has(> [role="rowheader"] > a.rst-nm:active, > [role="rowheader"] > a.rst-person:active), [rst-lrow]:not([rst-lrow~="head"]):hover:has(> [role="rowheader"] > a.rst-nm:active, > [role="rowheader"] > a[rst-person]:active) { --rst-pressed: 100%; background-color: var(--rst-tint-press, var(--rst-accent-soft)); box-shadow: inset 0 1px 2px var(--rst-depth-ambient, transparent); transition: none; }
   .rst-row:hover:has(> .rst-row__main > a:active), [rst-row]:hover:has(> [rst-row-main] > a:active) { --rst-pressed: 100%; background-color: var(--rst-row-tint-press, var(--rst-surface-2)); box-shadow: inset 0 1px 2px var(--rst-depth-ambient, transparent); transition: none; }
   .rst-media__tile:hover:has(.rst-media__name > a:active), [rst-media-tile]:hover:has([rst-media-name] > a:active) { --rst-pressed: 100%; background-color: var(--rst-tint-tile-press, var(--rst-surface)); box-shadow: inset 0 1px 2px var(--rst-depth-ambient, transparent); transition: none; }
 }
@@ -1660,14 +1695,16 @@ a.rst-nm:hover { color: var(--rst-accent); }
      spans the empty column instead. A row with a shown middle cell, or
      a head row (whose last cell is not a kebab), does not match. */
   .rst-lrow:not(:has(> :not(:first-child, .rst-m-hide, .rst-row-menu))) > :first-child,
-  [rst-lrow]:not(:has(> :not(:first-child, .rst-m-hide, [rst-row-menu]))) > :first-child { grid-column: 1 / -2; }
+  [rst-lrow]:not(:has(> :not(:first-child, .rst-m-hide, [rst-row-menu]))) > :first-child,
+  .rst-lrow[role="row"]:has(> :last-child > .rst-row-menu):not(:has(> :not(:first-child, .rst-m-hide, :last-child))) > :first-child,
+  [rst-lrow][role="row"]:has(> :last-child > [rst-row-menu]):not(:has(> :not(:first-child, .rst-m-hide, :last-child))) > :first-child { grid-column: 1 / -2; }
 }
 /* The kebab goes in the last column, never the next free one. Below
    800px a row whose middle cells are all rst-m-hide has only its name
    and its kebab left, and auto-placement put the kebab in the auto
    column: mid-row beside the name, with the empty kebab column after
    it. */
-.rst-lrow > .rst-row-menu:last-child, [rst-lrow] > [rst-row-menu]:last-child { grid-column-end: -1; }
+.rst-lrow > .rst-row-menu:last-child, [rst-lrow] > [rst-row-menu]:last-child, .rst-lrow > [role="cell"]:last-child:has(> .rst-row-menu), [rst-lrow] > [role="cell"]:last-child:has(> [rst-row-menu]) { grid-column-end: -1; }
 
 /* row-menu — the per-row kebab: native details/summary, no JS. The
    destructive item sits last, class rst-danger, label ending "…".
@@ -1716,6 +1753,10 @@ a.rst-nm:hover { color: var(--rst-accent); }
 [rst-locale] hr,
 [rst-scheme] hr { border: 0; border-top: 1px solid var(--rst-line); margin: 0.25rem 0; }
 .rst-danger { color: var(--rst-tone-negative-fg); }
+/* A menu item sets its own colour at (0,1,1), which beat the (0,1,0)
+   above, so a destructive item drew in ink. In a menu panel the danger
+   colour is restated at (0,2,0). */
+.rst-row-menu__panel .rst-danger, [rst-row-menu-panel] .rst-danger, .rst-dropdown__menu .rst-danger, [rst-dropdown-menu] .rst-danger { color: var(--rst-tone-negative-fg); }
 .rst-row-menu__panel .rst-danger:hover, [rst-row-menu-panel] .rst-danger:hover { background: var(--rst-tone-negative-bg); }
 /* A POST item is a one-button form: no margin, so it lines up with a
    link item. busy.js puts a spinner in front of a submit button's label,
@@ -2084,7 +2125,7 @@ details[open] > summary > .rst-caret, details[open] > summary > [rst-caret] { tr
   html:root { --rst-press-drop: 0px; }
   /* A row's lift lands at once rather than easing in (A8). The fade
      sits on the hover rules (Astra A3), so these are the hover rules. */
-  .rst-lrow:not(.rst-lrow--head):has(> a.rst-nm, > a.rst-person):hover, [rst-lrow]:not([rst-lrow~="head"]):has(> a.rst-nm, > a[rst-person]):hover, .rst-row:has(> .rst-row__main > a):hover, [rst-row]:has(> [rst-row-main] > a):hover, .rst-media__tile:has(.rst-media__name > a):hover, [rst-media-tile]:has([rst-media-name] > a):hover { transition: none; }
+  .rst-lrow:not(.rst-lrow--head):has(> a.rst-nm, > a.rst-person):hover, [rst-lrow]:not([rst-lrow~="head"]):has(> a.rst-nm, > a[rst-person]):hover, .rst-lrow:not(.rst-lrow--head):has(> [role="rowheader"] > a.rst-nm, > [role="rowheader"] > a.rst-person):hover, [rst-lrow]:not([rst-lrow~="head"]):has(> [role="rowheader"] > a.rst-nm, > [role="rowheader"] > a[rst-person]):hover, .rst-row:has(> .rst-row__main > a):hover, [rst-row]:has(> [rst-row-main] > a):hover, .rst-media__tile:has(.rst-media__name > a):hover, [rst-media-tile]:has([rst-media-name] > a):hover { transition: none; }
 }
 
 /* ── The form family: field, switch, choice cards, seg-tabs, layout ── */
@@ -4178,6 +4219,9 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
   html:root { --rst-depth-hl: transparent; --rst-depth-contact: transparent; --rst-depth-ambient: transparent; --rst-depth-face: 0; --rst-press-drop: 0px; --rst-sheen-fill: transparent; --rst-sheen-plain: transparent; --rst-light-wash: transparent; --rst-light-rim: var(--rst-line); --rst-press-wash: 0; --rst-press-spot: 0; --rst-press-wash-plain: 0; --rst-press-spot-plain: 0; --rst-tint-hover: var(--rst-surface); --rst-tint-press: var(--rst-surface); --rst-tint-tap: transparent; --rst-row-tint-hover: var(--rst-surface); --rst-row-tint-press: var(--rst-surface); --rst-tint-tile-hover: var(--rst-surface); --rst-tint-tile-press: var(--rst-surface); --rst-tint-card-hover: transparent; --rst-tint-group-hover: transparent; --rst-focus-halo: transparent; --rst-summary-edge: transparent; --rst-summary-edge-hover: transparent; }
   .rst-btn, [rst-btn], .rst-input, [rst-input], .rst-textarea, [rst-textarea], .rst-search, [rst-search], .rst-dropdown > summary, [rst-dropdown] > summary { border: 1px solid ButtonBorder; }
   .rst-box, [rst-box], .rst-card, [rst-card], .rst-stats, [rst-stats], .rst-list, [rst-list] { border: 1px solid CanvasText; }
+  /* Forced colours paint a transparent border, so a disabled step
+     would wear a link's edge; Canvas keeps it a step with no chip. */
+  .rst-pagination .rst-pagination__disabled, [rst-pagination] [rst-pagination-disabled] { border-color: Canvas; }
   .rst-switch__track, [rst-switch-track] { background: Canvas; border: 1px solid ButtonText; }
   .rst-switch__track::after, [rst-switch-track]::after { background: ButtonText; }
   .rst-switch:has(input:checked) .rst-switch__track, [rst-switch]:has(input:checked) [rst-switch-track], .rst-tblock > .rst-tblock__head:has(> input:checked) > .rst-switch__track, [rst-tblock] > [rst-tblock-head]:has(> input:checked) > [rst-switch-track] { background: Highlight; }
@@ -4322,7 +4366,7 @@ dialog.rst-modal-panel, dialog[rst-modal-panel] { block-size: auto; color: inher
    needs no display of its own, and align-content centres a block's
    content. As a grid it made each inline piece of the title a row:
    "Order <bdi>AB3PX</bdi>" stacked into two lines. */
-.rst-lrow > .rst-nm, [rst-lrow] > .rst-nm { align-content: center; box-sizing: border-box; min-block-size: var(--rst-target); }
+.rst-lrow > .rst-nm, [rst-lrow] > .rst-nm, .rst-lrow > [role="rowheader"], [rst-lrow] > [role="rowheader"] { align-content: center; box-sizing: border-box; min-block-size: var(--rst-target); }
 a.rst-person, a[rst-person] { box-sizing: border-box; min-block-size: var(--rst-target); min-inline-size: var(--rst-target); }
 
 /* Blocks already (an inline-block chip, a tab in a flex row), centred

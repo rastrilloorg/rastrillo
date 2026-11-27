@@ -23,13 +23,14 @@ const (
 		"%d-byte budget"
 	overMsg = "%s: %d bytes of framework CSS and JS, gzipped, " +
 		"over its %d-byte budget (%s); %s"
-	shellLimitMsg    = "%d bytes for a %s page"
-	liveLimitMsg     = "%d bytes for a live %s page"
-	unslicedLimitMsg = "%d bytes for a page linking the whole tokens.css"
-	grewMsg          = "%s grew from %d to %d bytes"
-	noneGrewMsg      = "no file grew: it loads %s"
-	largestMsg       = "its largest files are %s"
-	unslicedMsg      = "; it links the whole tokens.css: add " +
+	shellLimitMsg     = "%d bytes for a %s page"
+	liveLimitMsg      = "%d bytes for a live %s page"
+	sliceAllowanceMsg = ", plus the %d bytes of data.css it links"
+	unslicedLimitMsg  = "%d bytes for a page linking the whole tokens.css"
+	grewMsg           = "%s grew from %d to %d bytes"
+	noneGrewMsg       = "no file grew: it loads %s"
+	largestMsg        = "its largest files are %s"
+	unslicedMsg       = "; it links the whole tokens.css: add " +
 		"Assets: assets to ui.PagesConfig (PagesConfig.Assets) in " +
 		"render.go, and in the layout use {{path $ pageStylesheet}} in " +
 		"place of static/tokens.css and replace the busy.js, live.js, " +
@@ -130,7 +131,8 @@ func roomFor(total int) int {
 // pageLimit is a page's limit, and the reason it is that: the unsliced
 // limit for a page linking the whole tokens.css, its shell's live limit
 // for a live page, its shell's limit otherwise, plus the references of
-// the component scripts it loads and, on a live page, of live.js.
+// the component scripts it loads and, on a live page, of live.js and
+// any component stylesheet it links.
 func pageLimit(
 	shell string,
 	weights []fileWeight,
@@ -147,7 +149,8 @@ func pageLimit(
 	case isLive(weights):
 		limit = budget.live[shell]
 		reason = fmt.Sprintf(liveLimitMsg, limit, shell)
-		allowed = append(allowed, liveScript)
+		allowed = slices.Concat(allowed, []string{liveScript},
+			vendored.ComponentStylesheets())
 	}
 	var components []string
 	for _, weight := range weights {
@@ -160,7 +163,30 @@ func pageLimit(
 	if len(components) > 0 {
 		reason += ", plus " + strings.Join(components, ", ")
 	}
+	allowance := slicesAllowed(shell, weights, sheet, budget)
+	if allowance > 0 {
+		limit += allowance
+		reason += fmt.Sprintf(sliceAllowanceMsg, allowance)
+	}
 	return limit, reason
+}
+
+// slicesAllowed is the weight of the component stylesheet slices a
+// sliced, non-live page links, in a shell whose pages are allowed them.
+func slicesAllowed(
+	shell string, weights []fileWeight, sheet pageStylesheet,
+	budget firstLoadBudget,
+) int {
+	if !budget.sliceShells[shell] || sheet.unsliced() || isLive(weights) {
+		return 0
+	}
+	allowance := 0
+	for _, weight := range weights {
+		if slices.Contains(vendored.ComponentStylesheets(), weight.name) {
+			allowance += weight.size
+		}
+	}
+	return allowance
 }
 
 // liveScript is the script only live and polling pages load.

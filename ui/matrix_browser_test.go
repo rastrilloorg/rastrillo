@@ -48,8 +48,18 @@ import (
 // relatively so each directory resolves its own.
 
 func matrixDoc() string {
-	return strings.Replace(strings.Replace(sizingDoc("matrix", depthBody), `href="/tokens.css"`, `href="tokens.css"`, 1), `href="/theme.css"`, `href="theme.css"`, 1)
+	doc := sizingDoc("matrix", depthBody)
+	doc = strings.Replace(doc, `href="/tokens.css"`, `href="tokens.css"`, 1)
+	return strings.Replace(doc, `href="/theme.css">`,
+		`href="theme.css">`+cardFlowAsBefore, 1)
 }
+
+// cardFlowAsBefore takes back, on both pages, the 16px Fiesta 1.9 puts
+// above and below a card in the page's flow, which its notes list as a
+// change: it moves everything under the card, and the matrix holds what
+// each component paints, not where the page puts it.
+const cardFlowAsBefore = `<style>[rst-page] > [rst-card] ` +
+	`{ margin-block: 0; }</style>`
 
 // legacyRig serves /old/ and /new/ with their own stylesheet bytes in
 // front of sizingMux. The two routes are matched here, not registered
